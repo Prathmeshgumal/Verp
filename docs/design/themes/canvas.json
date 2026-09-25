@@ -1,0 +1,42 @@
+{
+  "v": 3,
+  "createdOnFiles": { "v": 1, "at": "2026-09-25T13:00:00Z" },
+  "title": "VE HR Theme Options",
+  "launch": { "view": "canvas" },
+  "pages": [],
+  "boards": {
+    "Main.dc.html": { "x": 0, "y": 0, "w": 390, "h": 844, "title": "Site Ledger · Worker ready" },
+    "LedgerWorking.dc.html": { "x": 470, "y": 0, "w": 390, "h": 844, "title": "Site Ledger · Worker working" },
+    "LedgerDashboard.dc.html": { "x": 940, "y": 0, "w": 1440, "h": 900, "title": "Site Ledger · Web dashboard" },
+    "NightHome.dc.html": { "x": 0, "y": 1300, "w": 390, "h": 844, "title": "Night Shift · Worker ready" },
+    "NightWorking.dc.html": { "x": 470, "y": 1300, "w": 390, "h": 844, "title": "Night Shift · Worker working" },
+    "NightDashboard.dc.html": { "x": 940, "y": 1300, "w": 1440, "h": 900, "title": "Night Shift · Web dashboard" },
+    "HivisHome.dc.html": { "x": 0, "y": 2600, "w": 390, "h": 844, "title": "Hi-Vis · Worker ready" },
+    "HivisWorking.dc.html": { "x": 470, "y": 2600, "w": 390, "h": 844, "title": "Hi-Vis · Worker working" },
+    "HivisDashboard.dc.html": { "x": 940, "y": 2600, "w": 1440, "h": 900, "title": "Hi-Vis · Web dashboard" },
+    "BlueprintHome.dc.html": { "x": 0, "y": 3900, "w": 390, "h": 844, "title": "Blueprint · Worker ready" },
+    "BlueprintWorking.dc.html": { "x": 470, "y": 3900, "w": 390, "h": 844, "title": "Blueprint · Worker working" },
+    "BlueprintDashboard.dc.html": { "x": 940, "y": 3900, "w": 1440, "h": 900, "title": "Blueprint · Web dashboard" }
+  },
+  "order": [
+    "Main.dc.html",
+    "LedgerWorking.dc.html",
+    "LedgerDashboard.dc.html",
+    "NightHome.dc.html",
+    "NightWorking.dc.html",
+    "NightDashboard.dc.html",
+    "HivisHome.dc.html",
+    "HivisWorking.dc.html",
+    "HivisDashboard.dc.html",
+    "BlueprintHome.dc.html",
+    "BlueprintWorking.dc.html",
+    "BlueprintDashboard.dc.html"
+  ],
+  "notes": {
+    "rowLedger": { "x": 0, "y": -300, "text": "1 · Site Ledger (current)", "kind": "title1", "maxW": 2380 },
+    "rowNight": { "x": 0, "y": 1000, "text": "2 · Night Shift (dark)", "kind": "title1", "maxW": 2380 },
+    "rowHivis": { "x": 0, "y": 2300, "text": "3 · Hi-Vis", "kind": "title1", "maxW": 2380 },
+    "rowBlueprint": { "x": 0, "y": 3600, "text": "4 · Blueprint", "kind": "title1", "maxW": 2380 }
+  },
+  "designSystems": []
+}

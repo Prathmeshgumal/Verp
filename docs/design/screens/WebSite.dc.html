@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Admin site editor</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&amp;family=Public+Sans:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Public Sans',sans-serif;color:#1B1D1F;background:#F4F1EA}
+a{color:#9A3412}a:hover{color:#7C2D12}
+</style>
+</helmet>
+<div style="width: 1440px; height: 900px; box-sizing: border-box; background: #F4F1EA; display: flex; overflow: hidden">
+<aside style="width: 232px; flex-shrink: 0; background: #1B1D1F; color: #E9E4D8; display: flex; flex-direction: column; padding: 20px 12px; gap: 4px; box-sizing: border-box">
+<div style="display: flex; align-items: center; gap: 10px; padding: 4px 8px 20px"><div style="width: 34px; height: 34px; border-radius: 8px; background: #F4F1EA; color: #1B1D1F; display: flex; align-items: center; justify-content: center; font-family: Archivo, sans-serif; font-weight: 800; font-size: 14px">VE</div><div style="font-family: Archivo, sans-serif; font-weight: 800; font-size: 19px; color: #FFFFFF">VE HR</div></div>
+<a href="#dashboard" style="height: 44px; display: flex; align-items: center; gap: 12px; padding: 0 12px; border-radius: 10px; color: #D8D2C4; text-decoration: none; font-weight: 500; font-size: 15px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Dashboard</a>
+<a href="#attendance" style="height: 44px; display: flex; align-items: center; gap: 12px; padding: 0 12px; border-radius: 10px; color: #D8D2C4; text-decoration: none; font-weight: 500; font-size: 15px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Attendance</a>
+<a href="#employees" style="height: 44px; display: flex; align-items: center; gap: 12px; padding: 0 12px; border-radius: 10px; color: #D8D2C4; text-decoration: none; font-weight: 500; font-size: 15px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6 6 0 0 1 3.5 6"/></svg>Employees</a>
+<a href="#sites" style="height: 44px; display: flex; align-items: center; gap: 12px; padding: 0 12px; border-radius: 10px; background: #34373A; color: #FFFFFF; text-decoration: none; font-weight: 600; font-size: 15px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/></svg>Sites</a>
+<a href="#settings" style="height: 44px; display: flex; align-items: center; gap: 12px; padding: 0 12px; border-radius: 10px; color: #D8D2C4; text-decoration: none; font-weight: 500; font-size: 15px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>Settings</a>
+<div style="flex-grow: 1"></div>
+<div style="display: flex; align-items: center; gap: 10px; padding: 12px 8px; border-top: 1px solid #34373A"><div style="width: 34px; height: 34px; border-radius: 17px; background: #4A4D50; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px">PS</div><div style="flex-grow: 1; display: flex; flex-direction: column"><div style="font-size: 14px; font-weight: 600; color: #FFFFFF">Priya Shah</div><div style="font-size: 12px; color: #BDB6A6">Admin</div></div></div>
+</aside>
+<section style="width: 420px; flex-shrink: 0; background: #FFFFFF; border-right: 1px solid #DDD6C8; padding: 28px 28px; box-sizing: border-box; display: flex; flex-direction: column; gap: 20px">
+<div style="display: flex; flex-direction: column; gap: 4px"><a href="#sites" style="font-size: 14px; font-weight: 600; text-decoration: none">← All sites</a><h1 style="margin: 0; font-family: Archivo, sans-serif; font-weight: 800; font-size: 30px">Edit site</h1></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="wsname" style="font-size: 14px; font-weight: 600">Site name</label><input id="wsname" value="Plot 7, Hinjewadi" style="height: 44px; box-sizing: border-box; border: 1px solid #CFC7B6; border-radius: 10px; padding: 0 12px; font-family: inherit; font-size: 15px"></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="wsaddr" style="font-size: 14px; font-weight: 600">Find address</label>
+<div style="display: flex; gap: 8px"><input id="wsaddr" value="Hinjewadi Phase 2, Pune" style="flex-grow: 1; height: 44px; box-sizing: border-box; border: 1px solid #CFC7B6; border-radius: 10px; padding: 0 12px; font-family: inherit; font-size: 15px"><button style="height: 44px; border: 0; border-radius: 10px; padding: 0 16px; background: #1B1D1F; color: #FFFFFF; font-family: inherit; font-weight: 600; font-size: 14px">Search</button></div>
+<div style="font-size: 13px; color: #4A4944">Then drag the pin to the exact gate or centre</div></div>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+<div style="display: flex; flex-direction: column; gap: 4px"><div style="font-size: 13px; font-weight: 600; color: #4A4944">Latitude</div><div style="font-family: 'IBM Plex Mono', monospace; font-size: 15px; background: #FAF8F3; border-radius: 8px; padding: 10px 12px">18.591512</div></div>
+<div style="display: flex; flex-direction: column; gap: 4px"><div style="font-size: 13px; font-weight: 600; color: #4A4944">Longitude</div><div style="font-family: 'IBM Plex Mono', monospace; font-size: 15px; background: #FAF8F3; border-radius: 8px; padding: 10px 12px">73.738204</div></div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; justify-content: space-between"><label for="wsr" style="font-size: 14px; font-weight: 600">Allowed distance</label><div style="font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: 15px">100 m</div></div>
+<div style="position: relative; height: 28px; display: flex; align-items: center"><div style="height: 6px; width: 100%; border-radius: 3px; background: #DDD6C8"></div><div style="position: absolute; left: 0; height: 6px; width: 9%; border-radius: 3px; background: #B8480F"></div><div style="position: absolute; left: 9%; margin-left: -12px; width: 24px; height: 24px; border-radius: 12px; background: #FFFFFF; border: 3px solid #B8480F; box-sizing: border-box"></div></div>
+<div style="display: flex; justify-content: space-between; font-size: 12px; color: #4A4944"><span>10 m</span><span>1000 m</span></div>
+</div>
+<label style="display: flex; align-items: center; justify-content: space-between; font-size: 14px; font-weight: 600">Active (workers can check in)<span style="width: 44px; height: 26px; border-radius: 13px; background: #1E6B45; position: relative; display: inline-block"><span style="position: absolute; right: 3px; top: 3px; width: 20px; height: 20px; border-radius: 10px; background: #FFFFFF"></span></span></label>
+<div style="font-size: 14px; color: #4A4944">12 workers assigned</div>
+<div style="flex-grow: 1"></div>
+<div style="display: flex; gap: 10px; justify-content: flex-end">
+<button style="height: 44px; border: 1px solid #CFC7B6; border-radius: 10px; padding: 0 16px; background: #FFFFFF; font-family: inherit; font-size: 14px; font-weight: 600">Cancel</button>
+<button style="height: 44px; border: 0; border-radius: 10px; padding: 0 20px; background: #1B1D1F; color: #FFFFFF; font-family: inherit; font-size: 14px; font-weight: 700">Save site</button>
+</div>
+</section>
+<div style="flex-grow: 1; position: relative; background: #E9E4D8; overflow: hidden">
+<svg width="788" height="900" viewBox="0 0 788 900" style="position: absolute; left: 0; top: 0">
+<rect x="0" y="0" width="788" height="900" fill="#E9E4D8"/>
+<rect x="40" y="60" width="220" height="160" rx="6" fill="#DDD5C3"/>
+<rect x="520" y="70" width="210" height="130" rx="6" fill="#DDD5C3"/>
+<rect x="60" y="610" width="200" height="200" rx="6" fill="#CFE0C4"/>
+<rect x="540" y="600" width="200" height="220" rx="6" fill="#DDD5C3"/>
+<rect x="300" y="720" width="160" height="110" rx="6" fill="#DDD5C3"/>
+<path d="M0 420 L788 450" stroke="#FFFFFF" stroke-width="30"/>
+<path d="M400 0 L380 900" stroke="#FFFFFF" stroke-width="24"/>
+<path d="M0 280 L330 300" stroke="#FFFFFF" stroke-width="12"/>
+<path d="M470 560 L788 580" stroke="#FFFFFF" stroke-width="12"/>
+<path d="M620 0 L600 420" stroke="#FFFFFF" stroke-width="10"/>
+<text x="560" y="438" font-family="Public Sans, sans-serif" font-size="13" fill="#6B6860">Hinjewadi–Maan Road</text>
+<circle cx="410" cy="440" r="190" fill="#B8480F" fill-opacity="0.13" stroke="#B8480F" stroke-width="3"/>
+<path d="M410 446 C410 446 434 420 434 402 A24 24 0 0 0 386 402 C386 420 410 446 410 446Z" fill="#B8480F" stroke="#7E300A" stroke-width="2"/>
+<circle cx="410" cy="402" r="8" fill="#FFFFFF"/>
+</svg>
+<div style="position: absolute; right: 16px; top: 16px; display: flex; flex-direction: column; background: #FFFFFF; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); overflow: hidden">
+<button aria-label="Zoom in" style="width: 40px; height: 40px; border: 0; border-bottom: 1px solid #EDE7DA; background: #FFFFFF; color: #1B1D1F; font-size: 20px; font-weight: 600">+</button>
+<button aria-label="Zoom out" style="width: 40px; height: 40px; border: 0; background: #FFFFFF; color: #1B1D1F; font-size: 20px; font-weight: 600">−</button>
+</div>
+<button style="position: absolute; left: 16px; top: 16px; height: 42px; border: 0; border-radius: 21px; padding: 0 16px; background: #FFFFFF; color: #1B1D1F; font-family: inherit; font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.15)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="7"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="2"/></svg>Use my location</button>
+<div style="position: absolute; right: 10px; bottom: 8px; font-size: 12px; background: rgba(255,255,255,0.85); padding: 2px 8px; border-radius: 4px; color: #3A3934">© OpenStreetMap contributors · search by Nominatim</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Worker login</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&amp;family=Public+Sans:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Public Sans',sans-serif;color:#1B1D1F;background:#F4F1EA}
+a{color:#9A3412}a:hover{color:#7C2D12}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F4F1EA; display: flex; flex-direction: column; padding: 40px 24px 20px; gap: 20px">
+<div style="display: flex; align-items: center; gap: 10px">
+<div style="width: 40px; height: 40px; border-radius: 10px; background: #1B1D1F; color: #F4F1EA; display: flex; align-items: center; justify-content: center; font-family: Archivo, sans-serif; font-weight: 800; font-size: 16px">VE</div>
+<div style="font-family: Archivo, sans-serif; font-weight: 800; font-size: 22px; letter-spacing: -0.01em">VE HR</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<h1 style="margin: 0; font-family: Archivo, sans-serif; font-weight: 800; font-size: 32px; line-height: 1.1">Log in</h1>
+<p style="margin: 0; font-size: 17px; color: #4A4944">Your phone number and PIN</p>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<label for="phone" style="font-size: 15px; font-weight: 600">Phone number</label>
+<input id="phone" value="98765 43210" style="height: 64px; box-sizing: border-box; border: 2px solid #1B1D1F; border-radius: 12px; padding: 0 16px; font-family: 'IBM Plex Mono', monospace; font-size: 24px; font-weight: 600; background: #FFFFFF; color: #1B1D1F">
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<div style="font-size: 15px; font-weight: 600">PIN</div>
+<div style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px">
+<div style="height: 56px; border-radius: 10px; background: #FFFFFF; border: 2px solid #CFC7B6; display: flex; align-items: center; justify-content: center"><div style="width: 14px; height: 14px; border-radius: 7px; background: #1B1D1F"></div></div>
+<div style="height: 56px; border-radius: 10px; background: #FFFFFF; border: 2px solid #CFC7B6; display: flex; align-items: center; justify-content: center"><div style="width: 14px; height: 14px; border-radius: 7px; background: #1B1D1F"></div></div>
+<div style="height: 56px; border-radius: 10px; background: #FFFFFF; border: 2px solid #CFC7B6; display: flex; align-items: center; justify-content: center"><div style="width: 14px; height: 14px; border-radius: 7px; background: #1B1D1F"></div></div>
+<div style="height: 56px; border-radius: 10px; background: #FFFFFF; border: 2px solid #1B1D1F"></div>
+<div style="height: 56px; border-radius: 10px; background: #FFFFFF; border: 2px solid #CFC7B6"></div>
+<div style="height: 56px; border-radius: 10px; background: #FFFFFF; border: 2px solid #CFC7B6"></div>
+</div>
+</div>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 4px">
+<button style="height: 64px; border: 0; border-radius: 12px; background: #FFFFFF; font-family: 'IBM Plex Mono', monospace; font-size: 26px; font-weight: 600; color: #1B1D1F">1</button>
+<button style="height: 64px; border: 0; border-radius: 12px; background: #FFFFFF; font-family: 'IBM Plex Mono', monospace; font-size: 26px; font-weight: 600; color: #1B1D1F">2</button>
+<button style="height: 64px; border: 0; border-radius: 12px; background: #FFFFFF; font-family: 'IBM Plex Mono', monospace; font-size: 26px; font-weight: 600; color: #1B1D1F">3</button>
+<button style="height: 64px; border: 0; border-radius: 12px; background: #FFFFFF; font-family: 'IBM Plex Mono', monospace; font-size: 26px; font-weight: 600; color: #1B1D1F">4</button>
+<button style="height: 64px; border: 0; border-radius: 12px; background: #FFFFFF; font-family: 'IBM Plex Mono', monospace; font-size: 26px; font-weight: 600; color: #1B1D1F">5</button>
+<button style="height: 64px; border: 0; border-radius: 12px; background: #FFFFFF; font-family: 'IBM Plex Mono', monospace; font-size: 26px; font-weight: 600; color: #1B1D1F">6</button>
+<button style="height: 64px; border: 0; border-radius: 12px; background: #FFFFFF; font-family: 'IBM Plex Mono', monospace; font-size: 26px; font-weight: 600; color: #1B1D1F">7</button>
+<button style="height: 64px; border: 0; border-radius: 12px; background: #FFFFFF; font-family: 'IBM Plex Mono', monospace; font-size: 26px; font-weight: 600; color: #1B1D1F">8</button>
+<button style="height: 64px; border: 0; border-radius: 12px; background: #FFFFFF; font-family: 'IBM Plex Mono', monospace; font-size: 26px; font-weight: 600; color: #1B1D1F">9</button>
+<div></div>
+<button style="height: 64px; border: 0; border-radius: 12px; background: #FFFFFF; font-family: 'IBM Plex Mono', monospace; font-size: 26px; font-weight: 600; color: #1B1D1F">0</button>
+<button aria-label="Delete" style="height: 64px; border: 0; border-radius: 12px; background: transparent; color: #1B1D1F; display: flex; align-items: center; justify-content: center"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5h11v14H9l-6-7z"/><path d="m13 9 4 6M17 9l-4 6"/></svg></button>
+</div>
+<div style="flex-grow: 1"></div>
+<a href="#admin" style="align-self: center; font-size: 15px; font-weight: 500; padding: 12px">Admin login</a>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

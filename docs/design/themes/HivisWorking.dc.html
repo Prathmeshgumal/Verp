@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Hi-Vis worker working</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&amp;family=Barlow:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:Barlow,sans-serif;color:#111111;background:#FFFFFF}
+a{color:#111111}a:hover{color:#3F3F3F}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #FFFFFF; display: flex; flex-direction: column">
+<div style="background: #FFD60A; padding: 22px 20px 18px; display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid #111111">
+<div style="display: flex; flex-direction: column; gap: 0">
+<div style="font-size: 16px; font-weight: 600">FRI 25 SEP</div>
+<div style="font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 32px; text-transform: uppercase; line-height: 1.05">Namaste, Anil</div>
+</div>
+<button aria-label="Menu" style="width: 56px; height: 56px; border: 3px solid #111111; border-radius: 8px; background: #FFFFFF; color: #111111; display: flex; align-items: center; justify-content: center"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+</div>
+<div style="margin: 20px 20px 0; padding: 16px 18px; background: #111111; color: #FFFFFF; border-radius: 8px; display: flex; flex-direction: column; gap: 4px">
+<div style="display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 700; color: #FFD60A"><div style="width: 12px; height: 12px; border-radius: 6px; background: #3DDC84"></div>WORKING</div>
+<div style="font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 36px; line-height: 1.05">SINCE 9:02 AM</div>
+<div style="font-size: 17px; color: #E0E0E0">Plot 7, Hinjewadi · 3 h 28 min so far</div>
+</div>
+<div style="flex-grow: 1; display: flex; flex-direction: column; justify-content: center; padding: 0 20px; gap: 16px">
+<button style="height: 150px; border: 3px solid #111111; border-radius: 10px; background: #C2410C; color: #FFFFFF; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; box-shadow: 6px 6px 0 #111111">
+<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4H5v16h4"/><path d="m14 16 4-4-4-4"/><path d="M18 12H8"/></svg>
+<span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 38px; letter-spacing: 0.04em">CHECK OUT</span>
+</button>
+<div style="display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 17px; font-weight: 500; color: #3F3F3F"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10 21h4"/></svg>Reminder at 7:00 PM</div>
+</div>
+<nav style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border-top: 3px solid #111111; background: #FFFFFF">
+<a href="#home" style="height: 76px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; background: #FFD60A; color: #111111; text-decoration: none; font-weight: 700; font-size: 15px"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11 12 4l9 7"/><path d="M5 10v10h14V10"/></svg>HOME</a>
+<a href="#history" style="height: 76px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: #111111; text-decoration: none; font-weight: 600; font-size: 15px; border-left: 3px solid #111111"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>MY ATTENDANCE</a>
+</nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>
