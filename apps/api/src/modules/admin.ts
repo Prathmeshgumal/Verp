@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { requireRole } from '../plugins/auth';
 import { adminAttendanceRoutes } from './attendance/admin-routes';
+import { dashboardRoutes } from './dashboard/routes';
 import { employeesRoutes } from './employees/routes';
 import { settingsRoutes } from './settings/routes';
 import { sitesRoutes } from './sites/routes';
@@ -13,4 +14,5 @@ export async function adminRoutes(app: FastifyInstance) {
   await app.register(sitesRoutes);
   await app.register(employeesRoutes);
   await app.register(adminAttendanceRoutes);
+  await app.register(dashboardRoutes);
 }
