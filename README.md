@@ -1,0 +1,39 @@
+# VE HR
+
+Construction workforce attendance: geofenced check-in/check-out for workers, admin dashboard.
+
+- `packages/shared`: schemas, error codes, DTO types, geo maths (used by API, web, mobile)
+- `apps/api`: Fastify + Postgres REST API
+- Design spec: `docs/superpowers/specs/2026-09-25-ve-hr-phase1-design.md`
+
+## Local setup
+
+Requires Node ≥ 22, Docker, and corepack (`corepack enable`).
+
+```bash
+pnpm install
+docker compose up -d                      # Postgres on localhost:5433 (dbs: ve, ve_test)
+cp apps/api/.env.example apps/api/.env    # set a real JWT_SECRET (≥ 32 chars)
+pnpm --filter @ve/api db:migrate
+ADMIN_PASSWORD='choose-a-long-password' pnpm --filter @ve/api seed:admin --email you@example.com --name "Your Name"
+pnpm --filter @ve/api dev                 # http://localhost:3000/health
+```
+
+## Checks
+
+```bash
+pnpm lint && pnpm typecheck && pnpm test  # API tests need the docker Postgres running
+```
+
+## Changing the database
+
+Edit `apps/api/src/db/schema.ts`, then `pnpm --filter @ve/api db:generate --name <change>` and commit the new SQL in `apps/api/drizzle/`.
+
+## Deployment notes
+
+- Needs Postgres (Supabase works: use the direct/session connection string) and one always-on Node process. Sleeping free tiers add 30–60 s cold starts for workers.
+- Run `node dist/scripts/migrate.js` (or `pnpm db:migrate`) on each deploy, from `apps/api` so `./drizzle` resolves (or set `MIGRATIONS_DIR`).
+- Production env: `NODE_ENV=production`, `COOKIE_SECURE=true`, a random `JWT_SECRET`, `WEB_ORIGIN` = the admin site URL. Set `TRUST_PROXY=true` behind a load balancer so rate limits and logged IPs use the real client IP.
+- The web dashboard and API **must share a registrable domain** (e.g. `admin.example.com` + `api.example.com`): the admin refresh cookie is `SameSite=Strict`.
+- RLS is enabled on every table with no policies; the API connects as the table owner. Do not use Supabase's anon key from any client.
+- The missed-checkout job runs inside the API process (at startup and every 15 minutes). It is idempotent, so running several instances is safe.

@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch --env-file=.env src/server.ts",
-    "build": "tsup src/server.ts src/scripts/migrate.ts src/scripts/seed-admin.ts --format esm --platform node --target node22 --out-dir dist --clean --no-external @ve/shared",
+    "build": "tsup",
     "start": "node dist/server.js",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
