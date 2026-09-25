@@ -9,6 +9,8 @@ Source of the Phase 1 screen mockups. Each folder is the file set of a Claude de
 
 ## Themes
 
+**Chosen for Phase 1: Site Ledger.** The others are kept for reference.
+
 Every theme keeps the same meaning for colour: green is check in, orange is check out, amber is a warning. Only the look changes.
 
 | Token                  | Site Ledger           | Night Shift           | Hi-Vis                               | Blueprint                   |
