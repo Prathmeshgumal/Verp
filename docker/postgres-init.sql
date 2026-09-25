@@ -1,0 +1,1 @@
+CREATE DATABASE ve_test;
