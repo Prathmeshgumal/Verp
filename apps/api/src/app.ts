@@ -8,6 +8,9 @@ import type { Config } from './config';
 import type { Db } from './db/client';
 import { systemClock, type Clock } from './lib/clock';
 import { errorHandler, notFoundHandler } from './lib/errors';
+import { authRoutes } from './modules/auth/routes';
+import { meRoutes } from './modules/me/routes';
+import { makeAuthenticate } from './plugins/auth';
 
 export interface AppDeps {
   config: Config;
@@ -38,6 +41,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
 
   app.decorate('deps', resolved);
   app.decorateRequest('auth', null);
+  app.decorate('authenticate', makeAuthenticate(resolved));
 
   await app.register(helmet);
   await app.register(cors, { origin: [deps.config.WEB_ORIGIN], credentials: true });
@@ -49,7 +53,8 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
 
   app.get('/health', async () => ({ ok: true }));
 
-  // Feature routes are registered below (added task by task).
+  await app.register(authRoutes);
+  await app.register(meRoutes);
 
   return app;
 }
