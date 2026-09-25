@@ -31,7 +31,7 @@ export async function seedAdmin(
     return user!;
   } catch (err) {
     if (uniqueViolation(err) === 'users_email_unique') {
-      throw new Error(`An admin with email ${data.email} already exists`);
+      throw new Error(`An admin with email ${data.email} already exists`, { cause: err });
     }
     throw err;
   }
