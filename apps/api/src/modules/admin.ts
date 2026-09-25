@@ -1,5 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { requireRole } from '../plugins/auth';
+import { employeesRoutes } from './employees/routes';
 import { settingsRoutes } from './settings/routes';
 import { sitesRoutes } from './sites/routes';
 
@@ -9,4 +10,5 @@ export async function adminRoutes(app: FastifyInstance) {
   app.addHook('preHandler', requireRole('admin'));
   await app.register(settingsRoutes);
   await app.register(sitesRoutes);
+  await app.register(employeesRoutes);
 }
