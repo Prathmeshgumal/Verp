@@ -29,6 +29,7 @@ export interface SessionMeta {
 export type IssuedTokens = Required<AuthTokens>;
 
 const invalidCredentials = () => new AppError('INVALID_CREDENTIALS', 401, 'Wrong phone/email or PIN/password');
+const locked = () => new AppError('ACCOUNT_LOCKED', 423, 'Too many wrong attempts. Try again later.');
 const sessionExpired = () => new AppError('SESSION_EXPIRED', 401, 'Please log in again');
 
 async function checkCredentials(
@@ -42,15 +43,18 @@ async function checkCredentials(
     await verifySecret(null, secret);
     throw invalidCredentials();
   }
-  if (user.lockedUntil && user.lockedUntil > now) {
-    throw new AppError('ACCOUNT_LOCKED', 423, 'Too many wrong attempts. Try again later.');
+  const attempt = await repo.claimLoginAttempt(deps.db, user.id, now);
+  if (attempt === undefined) throw locked();
+  if (attempt > MAX_FAILED_LOGINS) {
+    await repo.lockAccount(deps.db, user.id, new Date(now.getTime() + LOCK_MS));
+    throw locked();
   }
   if (!(await verifySecret(user[field], secret))) {
-    await repo.recordFailedLogin(deps.db, user.id, now, MAX_FAILED_LOGINS, LOCK_MS);
+    if (attempt === MAX_FAILED_LOGINS) await repo.lockAccount(deps.db, user.id, new Date(now.getTime() + LOCK_MS));
     throw invalidCredentials();
   }
   if (!user.isActive) throw new AppError('ACCOUNT_INACTIVE', 403, 'Account is inactive');
-  if (user.failedLogins > 0 || user.lockedUntil) await repo.resetFailedLogins(deps.db, user.id);
+  await repo.resetFailedLogins(deps.db, user.id);
   return user;
 }
 
@@ -97,13 +101,16 @@ export async function refresh(deps: ResolvedDeps, token: string): Promise<Issued
     const s = await repo.findSessionForUpdate(tx, parsed.sessionId);
     if (!s || s.revokedAt || s.expiresAt <= now) return { kind: 'expired' } as const;
 
+    // The previous token stays usable for a short grace window after rotation, so a phone whose
+    // refresh response was lost (or two requests racing) is not logged out. Retrying it rotates
+    // again but never restarts the window. Any other reuse is treated as theft.
     const presented = hashToken(parsed.secret);
-    if (presented !== s.refreshTokenHash) {
-      const concurrent =
-        presented === s.prevRefreshTokenHash &&
-        s.rotatedAt !== null &&
-        now.getTime() - s.rotatedAt.getTime() <= REFRESH_REUSE_GRACE_MS;
-      if (concurrent) return { kind: 'conflict' } as const;
+    const isCurrent = presented === s.refreshTokenHash;
+    const withinGrace =
+      presented === s.prevRefreshTokenHash &&
+      s.rotatedAt !== null &&
+      now.getTime() - s.rotatedAt.getTime() <= REFRESH_REUSE_GRACE_MS;
+    if (!isCurrent && !withinGrace) {
       await repo.revokeSession(tx, s.id, now);
       return { kind: 'expired' } as const;
     }
@@ -117,17 +124,14 @@ export async function refresh(deps: ResolvedDeps, token: string): Promise<Issued
     const secret = newRefreshSecret();
     await repo.rotateSession(tx, s.id, {
       refreshTokenHash: hashToken(secret),
-      prevRefreshTokenHash: s.refreshTokenHash,
-      rotatedAt: now,
+      prevRefreshTokenHash: isCurrent ? s.refreshTokenHash : s.prevRefreshTokenHash,
+      rotatedAt: isCurrent ? now : s.rotatedAt,
       lastUsedAt: now,
       expiresAt: new Date(now.getTime() + SESSION_TTL_MS[user.role]),
     });
     return { kind: 'ok', user, sessionId: s.id, secret } as const;
   });
 
-  if (outcome.kind === 'conflict') {
-    throw new AppError('REFRESH_CONFLICT', 409, 'Token was just refreshed; retry with the latest token');
-  }
   if (outcome.kind === 'expired') throw sessionExpired();
 
   const accessToken = await signAccessToken(

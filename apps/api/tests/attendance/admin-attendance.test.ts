@@ -175,6 +175,23 @@ describe('GET /admin/attendance/export.csv', () => {
   });
 });
 
+describe('GET /admin/attendance/export.csv size limit', () => {
+  it('refuses an export that would exceed the row limit instead of dropping rows', async () => {
+    await setup();
+    const site = await makeSite();
+    const emp = await makeEmployee({ siteId: site.id });
+    await testDb.pool.query(
+      `INSERT INTO attendance_days (employee_id, site_id, work_date, status, check_in_at, check_in_lat, check_in_lng, check_in_accuracy_m, check_in_distance_m)
+       SELECT $1, $2, d::date, 'COMPLETED', d + interval '4 hours', 18.52, 73.85, 10, 5
+       FROM generate_series('2000-01-01'::date, '2000-01-01'::date + 10000, interval '1 day') AS d`,
+      [emp.user.id, site.id],
+    );
+    const res = await call('GET', '/admin/attendance/export.csv?from=2000-01-01&to=2030-01-01');
+    expect(res.statusCode).toBe(400);
+    expect(res.json()).toMatchObject({ code: 'VALIDATION_ERROR', message: expect.stringContaining('narrow the date range') });
+  });
+});
+
 describe('authorization', () => {
   it('forbids employees', async () => {
     ({ app } = await createTestApp());

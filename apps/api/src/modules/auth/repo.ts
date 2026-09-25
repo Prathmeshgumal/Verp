@@ -1,4 +1,4 @@
-import { and, eq, isNull, sql } from 'drizzle-orm';
+import { and, eq, isNull, lte, or, sql } from 'drizzle-orm';
 import type { DbOrTx } from '../../db/client';
 import { sessions, users, type SessionRow, type UserRow } from '../../db/schema';
 
@@ -17,23 +17,22 @@ export async function findUserByEmail(db: DbOrTx, email: string): Promise<UserRo
   return row;
 }
 
-/** Atomically increments failures; on reaching maxAttempts, locks and resets the counter. */
-export async function recordFailedLogin(
-  db: DbOrTx,
-  userId: string,
-  now: Date,
-  maxAttempts: number,
-  lockMs: number,
-): Promise<void> {
-  const nextCount = sql`${users.failedLogins} + 1`;
-  const lockUntil = new Date(now.getTime() + lockMs).toISOString();
-  await db
+/**
+ * Atomically counts a login attempt before the secret is checked, so a parallel burst cannot
+ * verify more than the allowed number. Returns the attempt number, or undefined while locked.
+ */
+export async function claimLoginAttempt(db: DbOrTx, userId: string, now: Date): Promise<number | undefined> {
+  const [row] = await db
     .update(users)
-    .set({
-      failedLogins: sql`CASE WHEN ${nextCount} >= ${maxAttempts} THEN 0 ELSE ${nextCount} END`,
-      lockedUntil: sql`CASE WHEN ${nextCount} >= ${maxAttempts} THEN ${lockUntil}::timestamptz ELSE ${users.lockedUntil} END`,
-    })
-    .where(eq(users.id, userId));
+    .set({ failedLogins: sql`${users.failedLogins} + 1` })
+    .where(and(eq(users.id, userId), or(isNull(users.lockedUntil), lte(users.lockedUntil, now))))
+    .returning({ attempt: users.failedLogins });
+  return row?.attempt;
+}
+
+/** Locks the account and starts a fresh count for when the lock expires. */
+export async function lockAccount(db: DbOrTx, userId: string, until: Date): Promise<void> {
+  await db.update(users).set({ failedLogins: 0, lockedUntil: until }).where(eq(users.id, userId));
 }
 
 export async function resetFailedLogins(db: DbOrTx, userId: string): Promise<void> {

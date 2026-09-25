@@ -58,6 +58,18 @@ describe('employee login', () => {
     expect((await attempt(emp.pin)).statusCode).toBe(200);
   });
 
+  it('checks at most 5 PINs from a parallel burst of wrong guesses', async () => {
+    ({ app } = await createTestApp());
+    const emp = await makeEmployee();
+    const results = await Promise.all(
+      Array.from({ length: 25 }, () => employeeLogin({ phone: emp.user.phone, pin: '000000', deviceId: 'd' })),
+    );
+    const codes = results.map((r) => r.json().code as string);
+    expect(codes.filter((c) => c === 'INVALID_CREDENTIALS')).toHaveLength(5);
+    expect(codes.filter((c) => c === 'ACCOUNT_LOCKED')).toHaveLength(20);
+    expect((await employeeLogin({ phone: emp.user.phone, pin: emp.pin, deviceId: 'd' })).statusCode).toBe(423);
+  });
+
   it('resets the failure counter on success', async () => {
     ({ app } = await createTestApp());
     const emp = await makeEmployee();
@@ -121,7 +133,7 @@ describe('admin login', () => {
 });
 
 describe('refresh rotation', () => {
-  it('rotates tokens, tolerates a concurrent refresh, and revokes on late reuse', async () => {
+  it('rotates tokens and revokes the session when an old token is reused later', async () => {
     ({ app, clock } = await createTestApp());
     const emp = await makeEmployee();
     const login = await employeeLogin({ phone: emp.user.phone, pin: emp.pin, deviceId: 'd' });
@@ -132,21 +144,41 @@ describe('refresh rotation', () => {
     expect(r2.statusCode).toBe(200);
     const rt2 = r2.json().refreshToken as string;
     expect(rt2).not.toBe(rt1);
+    const rt3 = (await refresh(rt2)).json().refreshToken as string;
 
-    // A concurrent request with the old token (within 60 s) must not log the worker out.
-    const conflict = await refresh(rt1);
-    expect(conflict.statusCode).toBe(409);
-    expect(conflict.json().code).toBe('REFRESH_CONFLICT');
-    const r3 = await refresh(rt2);
-    expect(r3.statusCode).toBe(200);
-    const rt3 = r3.json().refreshToken as string;
-
-    // Reusing an old token later is treated as theft: the whole session dies.
+    // Reusing an old token after the grace window is treated as theft: the whole session dies.
     clock.advance(2 * 60_000);
     const reuse = await refresh(rt2);
     expect(reuse.statusCode).toBe(401);
     expect(reuse.json().code).toBe('SESSION_EXPIRED');
     expect((await refresh(rt3)).statusCode).toBe(401);
+  });
+
+  it('recovers when the refresh response was lost on the way to the phone', async () => {
+    ({ app, clock } = await createTestApp());
+    const emp = await makeEmployee();
+    const rt1 = (await employeeLogin({ phone: emp.user.phone, pin: emp.pin, deviceId: 'd' })).json().refreshToken as string;
+
+    clock.advance(60_000);
+    expect((await refresh(rt1)).statusCode).toBe(200); // server rotated, phone never got the reply
+
+    clock.advance(20_000);
+    const retry = await refresh(rt1);
+    expect(retry.statusCode).toBe(200);
+    const rt3 = retry.json().refreshToken as string;
+    expect(rt3).not.toBe(rt1);
+    expect((await refresh(rt3)).statusCode).toBe(200);
+  });
+
+  it('does not extend the grace window by retrying the old token', async () => {
+    ({ app, clock } = await createTestApp());
+    const emp = await makeEmployee();
+    const rt1 = (await employeeLogin({ phone: emp.user.phone, pin: emp.pin, deviceId: 'd' })).json().refreshToken as string;
+    await refresh(rt1);
+    clock.advance(50_000);
+    expect((await refresh(rt1)).statusCode).toBe(200);
+    clock.advance(20_000); // 70 s after the first rotation
+    expect((await refresh(rt1)).statusCode).toBe(401);
   });
 
   it('slides the 180-day employee session and expires when unused', async () => {

@@ -128,7 +128,16 @@ const CSV_HEADER = [
 
 export async function exportAttendanceCsv(deps: ResolvedDeps, q: AttendanceListQuery): Promise<string> {
   const { timezone } = await getSettings(deps.db);
-  const rows = await repo.listAdminDays(deps.db, filtersOf(q), CSV_ROW_LIMIT, 0);
+  const filters = filtersOf(q);
+  const total = await repo.countAdminDays(deps.db, filters);
+  if (total > CSV_ROW_LIMIT) {
+    throw new AppError(
+      'VALIDATION_ERROR',
+      400,
+      `Export has ${total} rows, more than the ${CSV_ROW_LIMIT} limit; narrow the date range`,
+    );
+  }
+  const rows = await repo.listAdminDays(deps.db, filters, CSV_ROW_LIMIT, 0);
   const lines: CsvCell[][] = rows.map(({ day, employeeName, employeeCode, siteName }) => [
     employeeCode,
     employeeName,
