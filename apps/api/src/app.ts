@@ -9,6 +9,7 @@ import type { Db } from './db/client';
 import { systemClock, type Clock } from './lib/clock';
 import { errorHandler, notFoundHandler } from './lib/errors';
 import { adminRoutes } from './modules/admin';
+import { attendanceRoutes } from './modules/attendance/routes';
 import { authRoutes } from './modules/auth/routes';
 import { meRoutes } from './modules/me/routes';
 import { makeAuthenticate } from './plugins/auth';
@@ -56,6 +57,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
 
   await app.register(authRoutes);
   await app.register(meRoutes);
+  await app.register(attendanceRoutes);
   await app.register(adminRoutes, { prefix: '/admin' });
 
   return app;
