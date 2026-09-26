@@ -9,24 +9,26 @@ afterEach(() => {
   notifications.clean();
 });
 
-// jsdom lacks these browser APIs, which Mantine uses.
-// matchMedia must report a match: mantine-datatable hides every column whose media query does not match.
-Object.defineProperty(window, 'matchMedia', {
-  writable: true,
-  value: (query: string) => ({
-    matches: true,
-    media: query,
-    onchange: null,
-    addListener: () => {},
-    removeListener: () => {},
-    addEventListener: () => {},
-    removeEventListener: () => {},
-    dispatchEvent: () => false,
-  }),
-});
-window.ResizeObserver = class {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
-} as unknown as typeof ResizeObserver;
-window.HTMLElement.prototype.scrollIntoView = () => {};
+// jsdom lacks these browser APIs, which Mantine uses. Files marked `@vitest-environment node` have no window.
+if (typeof window !== 'undefined') {
+  // matchMedia must report a match: mantine-datatable hides every column whose media query does not match.
+  Object.defineProperty(window, 'matchMedia', {
+    writable: true,
+    value: (query: string) => ({
+      matches: true,
+      media: query,
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => false,
+    }),
+  });
+  window.ResizeObserver = class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  } as unknown as typeof ResizeObserver;
+  window.HTMLElement.prototype.scrollIntoView = () => {};
+}
