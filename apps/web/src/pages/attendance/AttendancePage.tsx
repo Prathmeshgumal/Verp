@@ -16,6 +16,7 @@ import { queryKeys } from '../../lib/queryKeys';
 import { formatMinutes, formatTime, formatWorkDate, todayIn } from '../../lib/time';
 import { useCompanyTz } from '../../lib/useCompanySettings';
 import { useServices } from '../../services';
+import { AttendanceDrawer } from './AttendanceDrawer';
 import { filtersFromParams, filtersToParams, type AttendanceFilters } from './attendanceFilters';
 
 const PAGE_SIZE = 50;
@@ -25,6 +26,7 @@ export function AttendancePage() {
   const tz = useCompanyTz();
   const [params, setParams] = useSearchParams();
   const filters = filtersFromParams(params, todayIn(tz));
+  const openDayId = params.get('day');
   const { page, ...query } = filters;
   const [exporting, setExporting] = useState(false);
 
@@ -157,6 +159,7 @@ export function AttendancePage() {
           ]}
         />
       )}
+      <AttendanceDrawer dayId={openDayId} onClose={() => setParams(filtersToParams(filters))} />
     </Stack>
   );
 }

@@ -1,4 +1,5 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
+import type { AdminDayDetailDto } from '@ve/shared';
 import { expect, test, vi } from 'vitest';
 import type { Api } from '../../api/endpoints';
 import { ApiError } from '../../api/errors';
@@ -9,6 +10,7 @@ import { renderWithProviders } from '../../testing/render';
 import { AttendancePage } from './AttendancePage';
 
 vi.mock('../../lib/download', () => ({ saveBlob: vi.fn() }));
+vi.mock('./DayMap', () => ({ DayMap: () => null }));
 
 function renderPage(route = '/attendance', api: Partial<Api> = {}, total = 1) {
   const listAttendance = vi.fn(async () => ({ items: [adminDay()], total, page: 1, pageSize: 50 }));
@@ -87,4 +89,17 @@ test('clicking a name opens that day and keeps the filters', async () => {
   const { user } = renderPage('/attendance?from=2026-09-01&to=2026-09-25');
   await user.click(await screen.findByRole('button', { name: 'Ravi Kumar' }));
   expect(screen.getByTestId('location')).toHaveTextContent('/attendance?from=2026-09-01&to=2026-09-25&day=d1');
+});
+
+test('a day in the URL opens the drawer; closing it keeps the filters', async () => {
+  const getAttendance = vi.fn(async (): Promise<AdminDayDetailDto> => ({
+    day: adminDay(),
+    site: { id: 's1', name: 'Plot 7', lat: 18.5912, lng: 73.7389, radiusM: 100 },
+    events: [],
+  }));
+  const { user } = renderPage('/attendance?from=2026-09-01&to=2026-09-25&day=d1', { getAttendance });
+  const drawer = await screen.findByRole('dialog', { name: 'Attendance day' });
+  expect(await within(drawer).findByRole('heading', { name: 'Ravi Kumar' })).toBeInTheDocument();
+  await user.click(within(drawer).getByRole('button', { name: 'Close' }));
+  expect(screen.getByTestId('location')).toHaveTextContent(/^\/attendance\?from=2026-09-01&to=2026-09-25$/);
 });
