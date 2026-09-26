@@ -16,6 +16,7 @@ function renderApp({ client = {}, api = {} }: { client?: Partial<ApiClient>; api
   const services = {
     client: fakeClient(client),
     api: fakeApi({ settings: vi.fn(async () => testSettings), dashboard: vi.fn(async () => dashboardToday()), ...api }),
+    searchPlaces: async () => [],
   };
   const user = userEvent.setup();
   render(

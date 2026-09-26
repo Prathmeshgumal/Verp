@@ -31,7 +31,12 @@ export function renderWithProviders(ui: ReactElement, { api, client, services, r
     defaultOptions: { queries: { retry: false, gcTime: Infinity }, mutations: { retry: false } },
   });
   queryClient.setQueryData(queryKeys.settings, testSettings);
-  const value: Services = { client: fakeClient(client), api: fakeApi(api), ...services } as Services;
+  const value: Services = {
+    client: fakeClient(client),
+    api: fakeApi(api),
+    searchPlaces: () => Promise.reject(new Error('searchPlaces not stubbed')),
+    ...services,
+  };
   const user = userEvent.setup();
   const result = render(
     <AppProviders services={value} queryClient={queryClient} env="test">

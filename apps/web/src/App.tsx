@@ -5,6 +5,8 @@ import { DashboardPage } from './pages/DashboardPage';
 import { EmployeeDetailPage } from './pages/employees/EmployeeDetailPage';
 import { EmployeesPage } from './pages/employees/EmployeesPage';
 import { LoginPage } from './pages/LoginPage';
+import { SiteEditPage } from './pages/sites/SiteEditPage';
+import { SitesPage } from './pages/sites/SitesPage';
 
 export function App() {
   return (
@@ -20,6 +22,9 @@ export function App() {
         <Route index element={<DashboardPage />} />
         <Route path="employees" element={<EmployeesPage />} />
         <Route path="employees/:id" element={<EmployeeDetailPage />} />
+        <Route path="sites" element={<SitesPage />} />
+        <Route path="sites/new" element={<SiteEditPage />} />
+        <Route path="sites/:id" element={<SiteEditPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>
