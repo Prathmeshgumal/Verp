@@ -175,6 +175,24 @@ test('midnight passing during the request drops the key', async () => {
   expect(await loadPending()).toBeNull();
 });
 
+test("a stale day from yesterday is refreshed first and yesterday's key is never reused", async () => {
+  await savePending({ key: 'yesterday-key', action: 'checkIn', workDate: '2026-09-24' });
+  const deps = makeDeps();
+  const outcome = await submitAttendance('checkIn', today({ workDate: '2026-09-24' }), deps);
+  expect(deps.api.today).toHaveBeenCalledTimes(1);
+  expect(outcome.code).toBe('OK');
+  expect(keysUsed(deps.api.checkIn as jest.Mock)).not.toContain('yesterday-key');
+  expect(deps.reminder.schedule).toHaveBeenCalledWith(expect.objectContaining({ workDate: '2026-09-25' }));
+});
+
+test('a stale day that cannot be refreshed sends nothing', async () => {
+  await savePending({ key: 'yesterday-key', action: 'checkIn', workDate: '2026-09-24' });
+  const deps = makeDeps({ today: jest.fn(async () => { throw new NetworkError('offline'); }) });
+  const outcome = await submitAttendance('checkIn', today({ workDate: '2026-09-24' }), deps);
+  expect(outcome.code).toBe('NETWORK');
+  expect(deps.api.checkIn).not.toHaveBeenCalled();
+});
+
 test('an idempotency conflict is final and clears the key', async () => {
   const deps = makeDeps({
     checkIn: jest.fn(async () => {

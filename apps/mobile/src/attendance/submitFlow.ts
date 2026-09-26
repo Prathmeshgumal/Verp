@@ -46,10 +46,20 @@ async function finalError(err: unknown): Promise<SubmitOutcome> {
 
 export async function submitAttendance(
   action: AttendanceAction,
-  today: MeTodayResponse,
+  shownDay: MeTodayResponse,
   deps: SubmitDeps,
   onStep: (step: SubmitStep) => void = () => {},
 ): Promise<SubmitOutcome> {
+  // A screen left open overnight still shows yesterday; its work date would reuse yesterday's key
+  // and the server would replay yesterday's answer. Ask the server for the real day first.
+  let today = shownDay;
+  if (today.workDate !== toIsoWithOffset(deps.now()).slice(0, 10)) {
+    try {
+      today = await deps.api.today();
+    } catch (err) {
+      return { code: err instanceof ApiError ? err.code : 'NETWORK' };
+    }
+  }
   const key = await keyFor(action, today.workDate);
 
   const problem = await deps.ensureLocationReady();

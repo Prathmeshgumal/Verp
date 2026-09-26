@@ -48,6 +48,13 @@ export function HomeScreen() {
     resumePendingOnLaunch(today, deps).catch((err: unknown) => console.warn('home: resume failed', err));
   }, [today, deps]);
 
+  // Android drops alarms on reboot or force-stop; re-arm the check-out reminder whenever Home sees an open day.
+  const openDay = today?.day?.status === 'CHECKED_IN' ? today : null;
+  useEffect(() => {
+    if (!openDay) return;
+    deps.reminder.schedule(openDay).catch((err: unknown) => console.warn('home: reminder re-arm failed', err));
+  }, [openDay, deps]);
+
   const run = useCallback(
     async (action: AttendanceAction) => {
       if (inFlight.current || !today) return;

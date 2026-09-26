@@ -36,12 +36,19 @@ const completed: DayDto = { ...checkedIn, status: 'COMPLETED', checkOutAt: '2026
 const okIn: AttendanceResult = { code: 'OK', message: 'ok', serverTime: checkedIn.checkInAt, day: checkedIn };
 
 beforeEach(() => {
+  // Pin only the date to the fixtures' work day; timers stay real so waitFor works.
+  jest.useFakeTimers({
+    now: new Date('2026-09-25T03:35:00Z'),
+    doNotFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'setImmediate', 'clearImmediate', 'nextTick', 'queueMicrotask', 'hrtime', 'performance', 'requestAnimationFrame', 'cancelAnimationFrame', 'requestIdleCallback', 'cancelIdleCallback'],
+  });
   jest.spyOn(PermissionsAndroid, 'requestMultiple').mockResolvedValue({
     [PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION]: 'granted',
     [PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION]: 'granted',
   } as never);
   jest.spyOn(PermissionsAndroid, 'check').mockResolvedValue(true);
 });
+
+afterEach(() => jest.useRealTimers());
 
 test('not checked in: CHECK IN saves, shows the time and sets the reminder', async () => {
   const api = fakeApi({ today: jest.fn(async () => today()), checkIn: jest.fn(async () => okIn) });
@@ -100,6 +107,12 @@ test('working: shows since time, reminder, and CHECK OUT', async () => {
   await fireEvent.press(screen.getByRole('button', { name: 'CHECK OUT' }));
   expect(await screen.findByText('6:15 PM')).toBeOnTheScreen();
   expect(checkOut).toHaveBeenCalledTimes(1);
+});
+
+test('already checked in: the reminder is set again (alarms are lost on reboot)', async () => {
+  await renderWithAuth(<HomeScreen />, { api: fakeApi({ today: jest.fn(async () => today({ day: checkedIn })) }) });
+  expect(await screen.findByText('Since 9:02 AM')).toBeOnTheScreen();
+  await waitFor(() => expect(fakeState.reminders).toEqual([expect.objectContaining({ workDate: '2026-09-25', reminderTime: '19:00' })]));
 });
 
 test('done: times and hours, no button', async () => {
