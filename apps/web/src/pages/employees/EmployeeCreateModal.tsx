@@ -1,9 +1,11 @@
-import { Alert, Button, Group, Modal, Stack } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { CreatedEmployeeDto, SiteDto } from '@ve/shared';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Notice } from '../../components/PageState';
 import { PinModal } from '../../components/PinModal';
 import { errorMessage } from '../../lib/errors';
 import { queryKeys } from '../../lib/queryKeys';
@@ -37,27 +39,32 @@ export function EmployeeCreateModal({ opened, onClose, sites }: { opened: boolea
   if (created) return <PinModal opened={opened} name={created.employee.name} pin={created.pin} onClose={close} />;
 
   return (
-    <Modal opened={opened} onClose={close} title="Add employee">
-      <form
-        noValidate
-        onSubmit={form.onSubmit((values) => {
-          setError(null);
-          create.mutate(values);
-        })}
-      >
-        <Stack>
+    <Dialog open={opened} onOpenChange={(open) => (open ? undefined : close())}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Add employee</DialogTitle>
+          <DialogDescription>They log in on the phone app with their mobile number and a PIN.</DialogDescription>
+        </DialogHeader>
+        <form
+          noValidate
+          className="grid gap-4"
+          onSubmit={form.onSubmit((values) => {
+            setError(null);
+            create.mutate(values);
+          })}
+        >
           <EmployeeFields form={form} sites={sites} />
-          {error ? <Alert color="ledgerOrange">{error}</Alert> : null}
-          <Group justify="flex-end">
-            <Button variant="default" onClick={close}>
+          {error ? <Notice>{error}</Notice> : null}
+          <DialogFooter className="mt-2">
+            <Button variant="outline" type="button" onClick={close}>
               Cancel
             </Button>
             <Button type="submit" loading={create.isPending}>
               Create employee
             </Button>
-          </Group>
-        </Stack>
-      </form>
-    </Modal>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }

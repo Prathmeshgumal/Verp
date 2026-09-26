@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, Switch, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { parseCoordinates } from '@ve/shared';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../auth/AuthContext';
 import { queryKeys } from '../../attendance/queryKeys';
@@ -19,17 +20,21 @@ import { adminErrorKey } from './adminErrors';
 
 type Props = NativeStackScreenProps<SitesStackParamList, 'SiteEdit'>;
 
-/** Pune city centre: only a starting view until the admin drags the pin or uses their location. */
-const DEFAULT_CENTER: LatLng = { lat: 18.5204, lng: 73.8567 };
 const MIN_RADIUS = 10;
 const MAX_RADIUS = 1000;
 const PRESETS = [50, 100, 200, 500];
+const FIX_TIMEOUT_MS = 20_000;
+/** Used only until company settings arrive. */
+const FALLBACK_MAX_ACCURACY_M = 50;
 
 const LOCATION_PROBLEM_KEY: Record<LocationProblem, string> = {
   LOCATION_OFF: 'result.locationOff',
   PERMISSION_DENIED: 'result.permissionDenied',
   PRECISE_LOCATION_REQUIRED: 'result.preciseRequired',
 };
+
+/** A message to show: an i18n key plus its values. */
+type Note = { key: string; values?: Record<string, number> };
 
 const clampRadius = (m: number) => Math.min(MAX_RADIUS, Math.max(MIN_RADIUS, m));
 
@@ -39,17 +44,26 @@ export function SiteEditScreen({ navigation, route }: Props) {
   const queryClient = useQueryClient();
   const id = route.params.id;
   const siteQuery = useQuery({ queryKey: queryKeys.site(id ?? 'new'), queryFn: () => api.getSite(id ?? ''), enabled: !!id });
+  const settingsQuery = useQuery({ queryKey: queryKeys.settings, queryFn: () => api.getSettings() });
+  const sitesQuery = useQuery({ queryKey: queryKeys.sites, queryFn: () => api.listSites(), enabled: !id });
+  const maxAccuracyM = settingsQuery.data?.maxAccuracyM ?? FALLBACK_MAX_ACCURACY_M;
 
+  /** Bumped on every pin move; a slow lookup that started before a move must not undo it. */
+  const moveSeq = useRef(0);
   const [loaded, setLoaded] = useState(!id);
   const [name, setName] = useState('');
   const [address, setAddress] = useState('');
-  const [center, setCenter] = useState<LatLng>(DEFAULT_CENTER);
+  const [center, setCenter] = useState<LatLng | null>(null);
+  const [accuracyM, setAccuracyM] = useState<number | null>(null);
   const [radiusM, setRadiusM] = useState(100);
   const [isActive, setIsActive] = useState(true);
   const [recenterKey, setRecenterKey] = useState(0);
   const [locating, setLocating] = useState(false);
+  const [linkText, setLinkText] = useState('');
+  const [resolving, setResolving] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [errorKey, setErrorKey] = useState<string | null>(null);
+  const [note, setNote] = useState<Note | null>(null);
+  const [error, setError] = useState<Note | null>(null);
 
   useEffect(() => {
     navigation.setOptions({ title: t(id ? 'admin.sites.editTitle' : 'admin.sites.newTitle') });
@@ -67,25 +81,64 @@ export function SiteEditScreen({ navigation, route }: Props) {
     setLoaded(true);
   }, [siteQuery.data, loaded]);
 
+  function moveTo(p: LatLng, recenter: boolean, accuracy: number | null = null) {
+    moveSeq.current += 1;
+    setCenter(p);
+    setAccuracyM(accuracy);
+    setNote(null);
+    setError(null);
+    if (recenter) setRecenterKey((k) => k + 1);
+  }
+
   async function locateMe() {
-    setErrorKey(null);
+    setError(null);
+    setNote(null);
     setLocating(true);
+    const seq = moveSeq.current;
     try {
       const problem = await ensureLocationReady();
-      if (problem) return setErrorKey(LOCATION_PROBLEM_KEY[problem]);
-      const fix = await getBestFix(20, 15_000);
-      if (!fix) return setErrorKey('result.lowAccuracy');
-      setCenter({ lat: fix.lat, lng: fix.lng });
-      setRecenterKey((k) => k + 1);
+      if (problem) return setError({ key: LOCATION_PROBLEM_KEY[problem] });
+      const fix = await getBestFix(maxAccuracyM, FIX_TIMEOUT_MS);
+      if (moveSeq.current !== seq) return;
+      if (!fix) return setError({ key: 'admin.sites.noFix' });
+      const accuracy = Math.round(fix.accuracyM);
+      if (fix.accuracyM > maxAccuracyM) return setError({ key: 'admin.sites.tooImprecise', values: { accuracy, max: maxAccuracyM } });
+      moveTo({ lat: fix.lat, lng: fix.lng }, true, fix.accuracyM);
+      setNote({ key: 'admin.sites.located', values: { accuracy } });
     } finally {
       setLocating(false);
     }
   }
 
+  async function pasteFromGoogle() {
+    const text = linkText.trim();
+    if (!text) return;
+    setError(null);
+    const local = parseCoordinates(text);
+    let place: LatLng | null = local;
+    if (!place) {
+      setResolving(true);
+      const seq = moveSeq.current;
+      try {
+        place = await api.resolvePlaceLink(text);
+        if (moveSeq.current !== seq) place = null;
+      } catch (err) {
+        setError({ key: adminErrorKey(err) });
+      } finally {
+        setResolving(false);
+      }
+    }
+    if (!place) return;
+    moveTo({ lat: place.lat, lng: place.lng }, true);
+    setNote({ key: 'admin.sites.fromGoogle' });
+    setLinkText('');
+  }
+
   async function save() {
-    if (!name.trim()) return setErrorKey('admin.errors.nameRequired');
+    if (!center) return;
+    if (!name.trim()) return setError({ key: 'admin.errors.nameRequired' });
     setBusy(true);
-    setErrorKey(null);
+    setError(null);
     try {
       if (id) {
         await api.updateSite(id, { name: name.trim(), address: address.trim() || null, lat: center.lat, lng: center.lng, radiusM, isActive });
@@ -96,7 +149,7 @@ export function SiteEditScreen({ navigation, route }: Props) {
       if (id) void queryClient.invalidateQueries({ queryKey: queryKeys.site(id) });
       navigation.goBack();
     } catch (err) {
-      setErrorKey(adminErrorKey(err));
+      setError({ key: adminErrorKey(err) });
     } finally {
       setBusy(false);
     }
@@ -111,10 +164,24 @@ export function SiteEditScreen({ navigation, route }: Props) {
     );
   }
 
+  const coords = center
+    ? `${center.lat.toFixed(5)}, ${center.lng.toFixed(5)}${accuracyM !== null ? ` · ±${Math.round(accuracyM)} m` : ''}`
+    : null;
+
   return (
     <Screen edges={[]}>
       <View>
-        <LeafletMap testID="site-map" center={center} radiusM={radiusM} height={300} draggable recenterKey={recenterKey} onMove={setCenter} />
+        <LeafletMap
+          testID="site-map"
+          center={center}
+          radiusM={radiusM}
+          height={300}
+          draggable
+          tapToPlace
+          overview={(sitesQuery.data ?? []).map((s) => ({ lat: s.lat, lng: s.lng }))}
+          recenterKey={recenterKey}
+          onMove={(p) => moveTo(p, false)}
+        />
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={t('admin.sites.useMyLocation')}
@@ -128,7 +195,38 @@ export function SiteEditScreen({ navigation, route }: Props) {
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 20, gap: 14 }} keyboardShouldPersistTaps="handled">
-        <Text variant="mono" color={colors.muted}>{`${center.lat.toFixed(5)}, ${center.lng.toFixed(5)}`}</Text>
+        {coords ? (
+          <Text variant="mono" color={colors.muted}>
+            {coords}
+          </Text>
+        ) : (
+          <Text variant="bodyStrong">{t('admin.sites.noPinHint')}</Text>
+        )}
+        {note ? (
+          <Text variant="small" color={colors.checkIn}>
+            {t(note.key, note.values)}
+          </Text>
+        ) : null}
+
+        <View style={{ gap: 6 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 8 }}>
+            <View style={{ flex: 1 }}>
+              <TextField
+                label={t('admin.sites.paste')}
+                value={linkText}
+                onChangeText={setLinkText}
+                autoCapitalize="none"
+                autoCorrect={false}
+                onSubmitEditing={() => void pasteFromGoogle()}
+              />
+            </View>
+            <Button label={t('admin.sites.pasteGo')} variant="secondary" onPress={() => void pasteFromGoogle()} disabled={resolving} />
+          </View>
+          <Text variant="small" color={colors.muted}>
+            {t('admin.sites.pasteHelp')}
+          </Text>
+        </View>
+
         <TextField label={t('admin.sites.name')} value={name} onChangeText={setName} />
         <TextField label={t('admin.sites.address')} value={address} onChangeText={setAddress} />
 
@@ -180,12 +278,12 @@ export function SiteEditScreen({ navigation, route }: Props) {
           </View>
         ) : null}
 
-        {errorKey ? (
+        {error ? (
           <Text accessibilityRole="alert" variant="bodyStrong" color={colors.checkOut}>
-            {t(errorKey)}
+            {t(error.key, error.values)}
           </Text>
         ) : null}
-        <Button label={busy ? t('admin.sites.saving') : t('admin.sites.save')} onPress={() => void save()} disabled={busy} />
+        <Button label={busy ? t('admin.sites.saving') : t('admin.sites.save')} onPress={() => void save()} disabled={busy || !center} />
       </ScrollView>
     </Screen>
   );

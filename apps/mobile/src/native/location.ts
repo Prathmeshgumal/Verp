@@ -28,6 +28,16 @@ export async function ensureLocationReady(): Promise<LocationProblem | null> {
   return 'PERMISSION_DENIED';
 }
 
+/** Like ensureLocationReady, but never shows the permission prompt (used when returning to a screen). */
+export async function checkLocationReady(): Promise<LocationProblem | null> {
+  if (!(await NativeVeDevice.isLocationEnabled())) return 'LOCATION_OFF';
+  const { ACCESS_FINE_LOCATION: FINE, ACCESS_COARSE_LOCATION: COARSE } = PermissionsAndroid.PERMISSIONS;
+  if (await PermissionsAndroid.check(FINE)) return null;
+  const { sdkInt } = await getDeviceInfo();
+  if (sdkInt >= 31 && (await PermissionsAndroid.check(COARSE))) return 'PRECISE_LOCATION_REQUIRED';
+  return 'PERMISSION_DENIED';
+}
+
 export async function getBestFix(targetAccuracyM: number, timeoutMs = FIX_TIMEOUT_MS): Promise<Fix | null> {
   try {
     const fix = await NativeVeDevice.getCurrentPosition(timeoutMs, targetAccuracyM);

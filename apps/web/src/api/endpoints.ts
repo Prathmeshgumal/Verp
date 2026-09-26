@@ -10,6 +10,7 @@ import type {
   EmployeeUpdate,
   FixCheckout,
   Paginated,
+  PlaceLinkDto,
   SettingsDto,
   SettingsUpdate,
   SiteCreate,
@@ -72,6 +73,7 @@ export function createApi(client: ApiClient) {
     getSite: (id: string) => get<SiteDto>(`/admin/sites/${id}`),
     createSite: (body: SiteCreate) => send<SiteDto>('POST', '/admin/sites', body),
     updateSite: (id: string, body: SiteUpdate) => send<SiteDto>('PATCH', `/admin/sites/${id}`, body),
+    resolvePlaceLink: (text: string) => send<PlaceLinkDto>('POST', '/admin/places/resolve-link', { text }),
 
     listAttendance: (q: AttendancePageQuery) =>
       get<Paginated<AdminDayDto>>('/admin/attendance', { ...attendanceParams(q), page: q.page, pageSize: q.pageSize }),

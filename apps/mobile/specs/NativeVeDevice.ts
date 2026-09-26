@@ -1,4 +1,4 @@
-import type { TurboModule } from 'react-native';
+import type { CodegenTypes, TurboModule } from 'react-native';
 import { TurboModuleRegistry } from 'react-native';
 
 export type NativeDeviceInfo = {
@@ -27,6 +27,10 @@ export interface Spec extends TurboModule {
   /** Schedules the one check-out reminder; returns false if that moment has already passed. */
   scheduleReminder(workDate: string, reminderTime: string, timezone: string, title: string, body: string): Promise<boolean>;
   cancelReminder(): Promise<void>;
+  /** Streams fixes about every intervalMs through onLocationUpdate until stopLocationWatch. A new call replaces the running watch. */
+  startLocationWatch(intervalMs: number): void;
+  stopLocationWatch(): void;
+  readonly onLocationUpdate: CodegenTypes.EventEmitter<NativeFix>;
 }
 
 export default TurboModuleRegistry.getEnforcing<Spec>('NativeVeDevice');

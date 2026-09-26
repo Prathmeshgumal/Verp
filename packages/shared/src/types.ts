@@ -68,6 +68,8 @@ export interface MeTodayResponse {
   reminderTime: string;
   /** IANA zone of the company; work dates and reminder time are in this zone. */
   timezone: string;
+  /** Work date the account was created; earlier days are not counted as absent. */
+  joinedOn: string;
 }
 
 export interface EmployeeDto {
@@ -145,6 +147,21 @@ export interface Paginated<T> {
   pageSize: number;
 }
 
+/** One of today's days, placed at its check-in position on the Today map. */
+export interface DashboardMapDay {
+  dayId: string;
+  employeeId: string;
+  name: string;
+  siteId: string;
+  siteName: string;
+  status: 'CHECKED_IN' | 'COMPLETED';
+  checkInAt: string;
+  checkOutAt: string | null;
+  checkInLat: number;
+  checkInLng: number;
+  needsReview: boolean;
+}
+
 export interface DashboardTodayDto {
   workDate: string;
   activeEmployees: number;
@@ -155,6 +172,24 @@ export interface DashboardTodayDto {
   missedCheckouts: number;
   needsReview: number;
   working: Array<{ employeeId: string; name: string; siteName: string; checkInAt: string }>;
+  mapDays: DashboardMapDay[];
+  /** Today's check-ins and check-outs refused for where the phone was, newest first. */
+  refused: DashboardRefusedAttempt[];
+}
+
+export interface DashboardRefusedAttempt {
+  id: string;
+  employeeId: string;
+  name: string;
+  /** The employee's assigned site, if any. */
+  siteName: string | null;
+  type: 'IN' | 'OUT';
+  result: 'OUTSIDE_SITE' | 'LOW_ACCURACY';
+  serverTime: string;
+  lat: number;
+  lng: number;
+  accuracyM: number;
+  distanceM: number | null;
 }
 
 export interface SettingsDto {
@@ -163,4 +198,10 @@ export interface SettingsDto {
   defaultRadiusM: number;
   reminderTime: string;
   clockMismatchMinutes: number;
+}
+
+/** A site pin read from a Google Maps link or pasted coordinates. */
+export interface PlaceLinkDto {
+  lat: number;
+  lng: number;
 }

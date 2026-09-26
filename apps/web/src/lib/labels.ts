@@ -1,4 +1,5 @@
 import type { AttendanceStatus, EmployeeDto } from '@ve/shared';
+import type { Tone } from '../components/Pill';
 
 export const STATUS_LABEL: Record<AttendanceStatus, string> = {
   CHECKED_IN: 'Working',
@@ -6,10 +7,10 @@ export const STATUS_LABEL: Record<AttendanceStatus, string> = {
   MISSED_CHECKOUT: 'Missed check-out',
 };
 
-export const STATUS_COLOR: Record<AttendanceStatus, string> = {
-  CHECKED_IN: 'ledgerBlue',
-  COMPLETED: 'ledgerGreen',
-  MISSED_CHECKOUT: 'ledgerOrange',
+export const STATUS_TONE: Record<AttendanceStatus, Tone> = {
+  CHECKED_IN: 'info',
+  COMPLETED: 'success',
+  MISSED_CHECKOUT: 'warning',
 };
 
 const FLAG_LABEL: Partial<Record<string, string>> = {
@@ -46,8 +47,8 @@ export function formatPhone(phone: string): string {
   return m ? `+91 ${m[1]} ${m[2]}` : phone;
 }
 
-export function employeeStatus(e: EmployeeDto, now: number = Date.now()): { label: 'Active' | 'Inactive' | 'Locked'; color: string } {
-  if (!e.isActive) return { label: 'Inactive', color: 'gray' };
-  if (e.lockedUntil && Date.parse(e.lockedUntil) > now) return { label: 'Locked', color: 'ledgerOrange' };
-  return { label: 'Active', color: 'ledgerGreen' };
+export function employeeStatus(e: EmployeeDto, now: number = Date.now()): { label: 'Active' | 'Inactive' | 'Locked'; tone: Tone } {
+  if (!e.isActive) return { label: 'Inactive', tone: 'neutral' };
+  if (e.lockedUntil && Date.parse(e.lockedUntil) > now) return { label: 'Locked', tone: 'warning' };
+  return { label: 'Active', tone: 'success' };
 }

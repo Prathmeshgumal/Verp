@@ -11,7 +11,7 @@ import { ErrorState, Loading } from '../../ui/Centered';
 import { Icon } from '../../ui/Icon';
 import { Screen } from '../../ui/Screen';
 import { Text } from '../../ui/Text';
-import { confirmLogout } from '../worker/MenuSheet';
+import { confirmLogout } from '../worker/confirmLogout';
 
 function Stat({ label, value, tone }: { label: string; value: number; tone: 'green' | 'plain' | 'warn' }) {
   const bg = tone === 'green' ? colors.checkIn : tone === 'warn' ? colors.warnBg : colors.surface;

@@ -1,14 +1,17 @@
+import { lazy } from 'react';
 import { Navigate, Route, Routes } from 'react-router';
 import { RequireAuth } from './auth/RequireAuth';
 import { AppLayout } from './layout/AppLayout';
-import { AttendancePage } from './pages/attendance/AttendancePage';
-import { DashboardPage } from './pages/DashboardPage';
-import { EmployeeDetailPage } from './pages/employees/EmployeeDetailPage';
-import { EmployeesPage } from './pages/employees/EmployeesPage';
 import { LoginPage } from './pages/LoginPage';
-import { SettingsPage } from './pages/SettingsPage';
-import { SiteEditPage } from './pages/sites/SiteEditPage';
-import { SitesPage } from './pages/sites/SitesPage';
+
+// Each page is its own chunk, so the first load does not download every page (or Leaflet).
+const DashboardPage = lazy(() => import('./pages/DashboardPage').then((m) => ({ default: m.DashboardPage })));
+const EmployeesPage = lazy(() => import('./pages/employees/EmployeesPage').then((m) => ({ default: m.EmployeesPage })));
+const EmployeeDetailPage = lazy(() => import('./pages/employees/EmployeeDetailPage').then((m) => ({ default: m.EmployeeDetailPage })));
+const SitesPage = lazy(() => import('./pages/sites/SitesPage').then((m) => ({ default: m.SitesPage })));
+const SiteEditPage = lazy(() => import('./pages/sites/SiteEditPage').then((m) => ({ default: m.SiteEditPage })));
+const AttendancePage = lazy(() => import('./pages/attendance/AttendancePage').then((m) => ({ default: m.AttendancePage })));
+const SettingsPage = lazy(() => import('./pages/SettingsPage').then((m) => ({ default: m.SettingsPage })));
 
 export function App() {
   return (

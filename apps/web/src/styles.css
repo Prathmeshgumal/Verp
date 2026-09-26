@@ -1,6 +1,147 @@
-body {
-  background: #f4f1ea;
-  color: #1b1d1f;
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* Light: near-white page, white cards, hairline borders. Safety orange marks only what is active or important. */
+:root {
+  --radius: 0.625rem;
+  --background: #f6f6f4;
+  --foreground: #17171a;
+  --card: #ffffff;
+  --card-foreground: #17171a;
+  --popover: #ffffff;
+  --popover-foreground: #17171a;
+  --primary: #17171a;
+  --primary-foreground: #fafafa;
+  --secondary: #efefec;
+  --secondary-foreground: #17171a;
+  --muted: #efefec;
+  --muted-foreground: #6b6b70;
+  --accent: #efefec;
+  --accent-foreground: #17171a;
+  --destructive: #d92d20;
+  --border: #e5e5e1;
+  --input: #dcdcd7;
+  --ring: #ff5b14;
+  --brand: #ff5b14;
+  --brand-ink: #c2410c;
+  --brand-soft: #fff1ea;
+  --success: #15803d;
+  --success-soft: #eaf6ee;
+  --warning: #b45309;
+  --warning-soft: #fdf3e2;
+  --danger: #d92d20;
+  --danger-soft: #fdecea;
+  --info: #1d4ed8;
+  --info-soft: #eaf0fd;
+  --neutral-soft: #efefec;
+  --sidebar: #fbfbfa;
+  --map-ink: #17171a;
+}
+
+/* Dark: near-black page, slightly lifted cards. */
+.dark {
+  --background: #0e0e10;
+  --foreground: #ececee;
+  --card: #161618;
+  --card-foreground: #ececee;
+  --popover: #1b1b1e;
+  --popover-foreground: #ececee;
+  --primary: #ececee;
+  --primary-foreground: #121214;
+  --secondary: #222225;
+  --secondary-foreground: #ececee;
+  --muted: #222225;
+  --muted-foreground: #9b9ba3;
+  --accent: #232327;
+  --accent-foreground: #ececee;
+  --destructive: #f04438;
+  --border: #26262a;
+  --input: #303035;
+  --ring: #ff6b2c;
+  --brand: #ff6b2c;
+  --brand-ink: #ff8a57;
+  --brand-soft: #2a1a12;
+  --success: #3ccb7f;
+  --success-soft: #11251a;
+  --warning: #f5a524;
+  --warning-soft: #2a2010;
+  --danger: #f97066;
+  --danger-soft: #2c1413;
+  --info: #7aa2ff;
+  --info-soft: #141c30;
+  --neutral-soft: #232327;
+  --sidebar: #121214;
+  --map-ink: #ececee;
+}
+
+@theme inline {
+  --font-sans: "Public Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-heading: "Archivo", "Public Sans", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-brand: var(--brand);
+  --color-brand-ink: var(--brand-ink);
+  --color-brand-soft: var(--brand-soft);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+  --color-neutral-soft: var(--neutral-soft);
+  --color-sidebar: var(--sidebar);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html {
+    color-scheme: light;
+  }
+
+  html.dark {
+    color-scheme: dark;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-size: 14px;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: "Archivo", "Public Sans", sans-serif;
+    letter-spacing: -0.02em;
+  }
 }
 
 .ve-num {
@@ -9,10 +150,313 @@ body {
 }
 
 .ve-pin {
-  width: 22px;
-  height: 22px;
-  border-radius: 11px;
-  background: #1b1d1f;
+  width: 20px;
+  height: 20px;
+  border-radius: 10px;
+  background: var(--brand);
   border: 3px solid #fff;
-  box-shadow: 0 1px 4px rgb(0 0 0 / 40%);
+  box-shadow: 0 1px 4px rgb(0 0 0 / 35%);
+}
+
+.ve-pin-off {
+  background: #8a8a90;
+}
+
+/* Maps: controls and attribution follow the theme; dark mode dims and inverts the street tiles. */
+.leaflet-container {
+  background: var(--muted);
+  font-family: "Public Sans", ui-sans-serif, system-ui, sans-serif;
+}
+
+.leaflet-bar {
+  border: 1px solid var(--border) !important;
+  box-shadow: none !important;
+  border-radius: 8px !important;
+  overflow: hidden;
+}
+
+.leaflet-bar a {
+  background: var(--card) !important;
+  color: var(--foreground) !important;
+  border-bottom-color: var(--border) !important;
+}
+
+.leaflet-control-attribution {
+  background: color-mix(in srgb, var(--card) 80%, transparent) !important;
+  color: var(--muted-foreground) !important;
+}
+
+.leaflet-control-attribution a {
+  color: var(--muted-foreground) !important;
+}
+
+.dark .leaflet-tile-pane {
+  filter: invert(1) hue-rotate(180deg) brightness(0.9) contrast(0.85) saturate(0.4);
+}
+
+/* Browsers that scale tiles by a fractional pixel ratio leave hairline gaps between them: overlap
+   each tile by half a pixel, with normal blending so the overlap does not show as a bright line. */
+.leaflet-container img.leaflet-tile {
+  mix-blend-mode: normal;
+  width: 256.5px !important;
+  height: 256.5px !important;
+}
+
+/* Sites tab: the map on the left, a fixed-width list on the right; stacked on narrow screens. */
+.ve-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(360px, 1fr);
+  gap: 16px;
+  height: clamp(440px, calc(100vh - 170px), 900px);
+}
+
+.ve-split-map,
+.ve-split-panel {
+  min-height: 0;
+}
+
+.ve-split-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.ve-split-head {
+  border-bottom: 1px solid var(--border);
+}
+
+.ve-split-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.ve-site-row {
+  cursor: pointer;
+}
+
+.ve-site-row[aria-current="true"] {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 1px var(--brand);
+}
+
+/* Today: the check-in map beside the list of who is working. */
+.ve-today {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(340px, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.ve-today-side {
+  max-height: calc(100vh - 250px);
+  overflow-y: auto;
+  align-content: start;
+}
+
+/* Site editor: a tall map on the left; finding the place and the details form on the right. */
+.ve-site-edit {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(380px, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.ve-site-edit-map {
+  position: sticky;
+  top: 76px;
+}
+
+@media (max-width: 1100px) {
+  .ve-today,
+  .ve-site-edit {
+    grid-template-columns: 1fr;
+  }
+
+  .ve-site-edit-map {
+    position: static;
+  }
+}
+
+@media (max-width: 900px) {
+  .ve-split {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+
+  .ve-split-map {
+    height: 320px;
+  }
+
+  .ve-split-list {
+    overflow: visible;
+  }
+
+  .ve-split-panel {
+    display: block;
+  }
+}
+
+/* Today map: tags sit above their point; bubbles centre on the site. */
+.ve-anchor {
+  overflow: visible;
+}
+
+.ve-tag,
+.ve-bubble {
+  position: absolute;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 35%);
+  font-family: "Public Sans", ui-sans-serif, system-ui, sans-serif;
+}
+
+.ve-tag {
+  transform: translate(-50%, calc(-100% - 8px));
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: #fff;
+}
+
+.ve-tag::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -5px;
+  margin-left: -5px;
+  border: 5px solid transparent;
+  border-bottom: 0;
+}
+
+.ve-tag-green {
+  background: #15803d;
+}
+
+.ve-tag-green::after {
+  border-top-color: #15803d;
+}
+
+.ve-tag-orange {
+  background: #e8540f;
+}
+
+.ve-tag-orange::after {
+  border-top-color: #e8540f;
+}
+
+.ve-tag-grey {
+  background: #6b675e;
+}
+
+.ve-tag-grey::after {
+  border-top-color: #6b675e;
+}
+
+.ve-bubble {
+  transform: translate(-50%, -50%);
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--map-ink);
+  color: var(--background);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+/* The one ambient motion: a soft pulse on the dashboard's live dot. */
+@keyframes ve-live {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--success) 45%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--success) 0%, transparent);
+  }
+}
+
+.ve-live {
+  animation: ve-live 2.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ve-live {
+    animation: none;
+  }
+}
+
+/* Several people at one spot: a count badge on the tag, and a list when it is clicked. */
+.ve-tag-count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 16px;
+  height: 16px;
+  margin-right: 6px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 25%);
+  font-size: 11px;
+}
+
+.ve-stack-popup .leaflet-popup-content-wrapper {
+  background: var(--popover);
+  color: var(--popover-foreground);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 18%);
+}
+
+.ve-stack-popup .leaflet-popup-tip {
+  background: var(--popover);
+}
+
+.ve-stack-popup .leaflet-popup-content {
+  margin: 6px;
+}
+
+.ve-stack-list {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ve-stack-list button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font: 500 13px "Public Sans", sans-serif;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.ve-stack-list button:hover {
+  background: var(--accent);
+}
+
+.ve-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.ve-dot-green {
+  background: #15803d;
+}
+
+.ve-dot-orange {
+  background: #e8540f;
+}
+
+.ve-dot-grey {
+  background: #6b675e;
 }

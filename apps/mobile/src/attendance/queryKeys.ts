@@ -5,6 +5,7 @@ export const queryKeys = {
   employees: (filter: object) => ['admin', 'employees', filter] as const,
   employee: (id: string) => ['admin', 'employee', id] as const,
   sites: ['admin', 'sites'] as const,
+  settings: ['admin', 'settings'] as const,
   site: (id: string) => ['admin', 'site', id] as const,
   attendance: (params: object) => ['admin', 'attendance', params] as const,
   attendanceDay: (id: string) => ['admin', 'attendanceDay', id] as const,

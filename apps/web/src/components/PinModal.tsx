@@ -1,4 +1,6 @@
-import { Button, CopyButton, Group, Modal, Stack, Text } from '@mantine/core';
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface Props {
   opened: boolean;
@@ -9,26 +11,31 @@ interface Props {
 
 /** The server never returns a PIN again, so this is the only time the admin sees it. */
 export function PinModal({ opened, name, pin, onClose }: Props) {
+  const [copied, setCopied] = useState(false);
   return (
-    <Modal opened={opened} onClose={onClose} title="New PIN" closeOnClickOutside={false}>
-      <Stack>
-        <Text>
-          Give this PIN to <b>{name}</b>. It will not be shown again.
-        </Text>
-        <Text data-testid="pin-value" className="ve-num" fz={40} fw={600} ta="center" style={{ letterSpacing: '0.2em' }}>
+    <Dialog open={opened} onOpenChange={(open) => (open ? undefined : onClose())}>
+      <DialogContent className="sm:max-w-md" onInteractOutside={(event) => event.preventDefault()}>
+        <DialogHeader>
+          <DialogTitle>New PIN</DialogTitle>
+          <DialogDescription>
+            Give this PIN to <b className="text-foreground">{name}</b>. It will not be shown again.
+          </DialogDescription>
+        </DialogHeader>
+        <p data-testid="pin-value" className="ve-num bg-muted rounded-xl py-5 text-center text-4xl font-medium tracking-[0.3em]">
           {pin}
-        </Text>
-        <Group justify="flex-end">
-          <CopyButton value={pin}>
-            {({ copied, copy }) => (
-              <Button variant="default" onClick={copy}>
-                {copied ? 'Copied' : 'Copy PIN'}
-              </Button>
-            )}
-          </CopyButton>
+        </p>
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => {
+              void navigator.clipboard?.writeText(pin).then(() => setCopied(true));
+            }}
+          >
+            {copied ? 'Copied' : 'Copy PIN'}
+          </Button>
           <Button onClick={onClose}>Done</Button>
-        </Group>
-      </Stack>
-    </Modal>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

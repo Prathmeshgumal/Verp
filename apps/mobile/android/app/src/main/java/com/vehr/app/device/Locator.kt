@@ -7,6 +7,7 @@ import android.location.LocationManager
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import androidx.core.content.ContextCompat
 import androidx.core.location.LocationListenerCompat
 import androidx.core.location.LocationManagerCompat
@@ -55,7 +56,7 @@ class Locator(private val context: Context) {
 
             timeout = Runnable { finish() }
             try {
-                stop = if (hasPlayServices()) startFused(timeoutMs, ::offer) else startPlatform(::offer)
+                stop = if (hasPlayServices()) startFused(timeoutMs, ::offer) else startPlatform(1000L, ::offer)
             } catch (e: SecurityException) {
                 finished = true
                 done(null)
@@ -63,6 +64,45 @@ class Locator(private val context: Context) {
             }
             main.postDelayed(timeout, timeoutMs)
         }
+    }
+
+    /** The running watch's stop function. Only touched on the main thread. */
+    private var activeWatch: (() -> Unit)? = null
+
+    /** Streams fixes to [onFix] about every [intervalMs] until [stopWatch]. A new call replaces the running watch. */
+    fun startWatch(intervalMs: Long, onFix: (Location) -> Unit) {
+        Handler(Looper.getMainLooper()).post {
+            activeWatch?.invoke()
+            activeWatch = null
+            try {
+                activeWatch = if (hasPlayServices()) startFusedWatch(intervalMs, onFix) else startPlatform(intervalMs, onFix)
+            } catch (e: SecurityException) {
+                Log.w(TAG, "location watch refused", e)
+            }
+        }
+    }
+
+    fun stopWatch() {
+        Handler(Looper.getMainLooper()).post {
+            activeWatch?.invoke()
+            activeWatch = null
+        }
+    }
+
+    @SuppressLint("MissingPermission") // JS runs ensureLocationReady before watching.
+    private fun startFusedWatch(intervalMs: Long, onFix: (Location) -> Unit): () -> Unit {
+        val client = LocationServices.getFusedLocationProviderClient(context)
+        val request = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, intervalMs)
+            .setMinUpdateIntervalMillis(intervalMs)
+            .setMaxUpdateAgeMillis(0L)
+            .build()
+        val callback = object : LocationCallback() {
+            override fun onLocationResult(result: LocationResult) {
+                result.lastLocation?.let(onFix)
+            }
+        }
+        client.requestLocationUpdates(request, callback, Looper.getMainLooper())
+        return { client.removeLocationUpdates(callback) }
     }
 
     @SuppressLint("MissingPermission")
@@ -83,9 +123,9 @@ class Locator(private val context: Context) {
     }
 
     @SuppressLint("MissingPermission")
-    private fun startPlatform(offer: (Location) -> Unit): () -> Unit {
+    private fun startPlatform(intervalMs: Long, offer: (Location) -> Unit): () -> Unit {
         val listener = LocationListenerCompat { offer(it) }
-        val request = LocationRequestCompat.Builder(1000L)
+        val request = LocationRequestCompat.Builder(intervalMs)
             .setQuality(LocationRequestCompat.QUALITY_HIGH_ACCURACY)
             .build()
         val executor = ContextCompat.getMainExecutor(context)
@@ -99,6 +139,8 @@ class Locator(private val context: Context) {
         GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(context) == ConnectionResult.SUCCESS
 
     companion object {
+        private const val TAG = "VeLocator"
+
         @Suppress("DEPRECATION")
         fun isMock(location: Location): Boolean =
             if (Build.VERSION.SDK_INT >= 31) location.isMock else location.isFromMockProvider

@@ -12,6 +12,8 @@ import type {
   MeResponse,
   MeTodayResponse,
   Paginated,
+  PlaceLinkDto,
+  SettingsDto,
   SiteDto,
 } from '@ve/shared';
 import type { ApiClient, Query } from './client';
@@ -112,6 +114,8 @@ export function createApi(client: ApiClient) {
     getSite: (id: string) => get<SiteDto>(`/admin/sites/${id}`),
     createSite: (body: SiteBody) => client.request<SiteDto>('POST', '/admin/sites', { body }),
     updateSite: (id: string, body: SiteUpdateBody) => client.request<SiteDto>('PATCH', `/admin/sites/${id}`, { body }),
+    getSettings: () => get<SettingsDto>('/admin/settings'),
+    resolvePlaceLink: (text: string) => client.request<PlaceLinkDto>('POST', '/admin/places/resolve-link', { body: { text } }),
 
     listAttendance: (params: AttendanceListParams) =>
       get<Paginated<AdminDayDto>>('/admin/attendance', { ...params }),

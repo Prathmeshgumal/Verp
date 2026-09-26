@@ -12,14 +12,27 @@ export interface MapPin extends LatLng {
   color: string;
 }
 
+export interface MeDot extends LatLng {
+  accuracyM: number;
+}
+
 interface Props {
-  center: LatLng;
+  /** null = no pin yet (a new site); the map shows `overview`, or India. */
+  center: LatLng | null;
   radiusM: number;
   height: number;
   draggable?: boolean;
+  /** A tap on the map moves the pin there (reported through onMove). */
+  tapToPlace?: boolean;
   /** false = a static picture: touches pass through (e.g. inside a ScrollView). */
   interactive?: boolean;
   pins?: MapPin[];
+  /** The phone's own position: a blue dot with its accuracy ring. */
+  me?: MeDot | null;
+  /** Refit the map when the blue dot leaves the view. */
+  follow?: boolean;
+  /** Other places to frame while there is no pin (e.g. existing sites). */
+  overview?: LatLng[];
   /** Change this number to make the map fit the circle and pins again. */
   recenterKey?: number;
   onMove?: (position: LatLng) => void;
@@ -49,7 +62,21 @@ export function parseMapMessage(data: string): MapMessage | null {
   return null;
 }
 
-export function LeafletMap({ center, radiusM, height, draggable = false, interactive = true, pins = [], recenterKey = 0, onMove, testID }: Props) {
+export function LeafletMap({
+  center,
+  radiusM,
+  height,
+  draggable = false,
+  tapToPlace = false,
+  interactive = true,
+  pins = [],
+  me = null,
+  follow = false,
+  overview = [],
+  recenterKey = 0,
+  onMove,
+  testID,
+}: Props) {
   const ref = useRef<WebView<object>>(null);
   const [ready, setReady] = useState(false);
   const [tileUrl, setTileUrl] = useState<string | null>(null);
@@ -60,7 +87,7 @@ export function LeafletMap({ center, radiusM, height, draggable = false, interac
       .catch((err: unknown) => console.warn('map: no tile url', err));
   }, []);
 
-  const state = JSON.stringify({ center, radiusM, draggable, pins, recenterKey, tileUrl });
+  const state = JSON.stringify({ center, radiusM, draggable, tapToPlace, pins, me, follow, overview, recenterKey, tileUrl });
   useEffect(() => {
     if (ready && tileUrl) ref.current?.injectJavaScript(`window.veMap && window.veMap.update(${state}); true;`);
   }, [ready, tileUrl, state]);

@@ -24,6 +24,9 @@ export const ErrorCode = {
   SITE_NOT_FOUND: 'SITE_NOT_FOUND',
   INVALID_CHECKOUT_TIME: 'INVALID_CHECKOUT_TIME',
   INVALID_STATE: 'INVALID_STATE',
+  NOT_A_MAPS_LINK: 'NOT_A_MAPS_LINK',
+  NO_EXACT_PIN: 'NO_EXACT_PIN',
+  LINK_UNREACHABLE: 'LINK_UNREACHABLE',
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];

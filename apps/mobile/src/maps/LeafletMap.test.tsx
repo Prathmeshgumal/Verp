@@ -28,3 +28,24 @@ test('junk from the page is ignored', () => {
   expect(parseMapMessage('{"type":"moved","lat":95,"lng":1}')).toBeNull();
   expect(parseMapMessage('{"type":"ready"}')).toEqual({ type: 'ready' });
 });
+
+test('a map with no pin yet sends a null centre and the overview', async () => {
+  await render(
+    <LeafletMap testID="map" center={null} radiusM={100} height={200} tapToPlace overview={[{ lat: 17.4, lng: 78.4 }]} />,
+  );
+  await fireEvent(screen.getByTestId('map'), 'message', message({ type: 'ready' }));
+  await waitFor(() => expect(injectedScripts).toHaveLength(1));
+  expect(injectedScripts[0]).toContain('"center":null');
+  expect(injectedScripts[0]).toContain('"tapToPlace":true');
+  expect(injectedScripts[0]).toContain('"overview":[{"lat":17.4,"lng":78.4}]');
+});
+
+test('the phone position and follow mode reach the page', async () => {
+  await render(
+    <LeafletMap testID="map" center={{ lat: 18.5, lng: 73.8 }} radiusM={100} height={200} me={{ lat: 18.501, lng: 73.801, accuracyM: 9 }} follow />,
+  );
+  await fireEvent(screen.getByTestId('map'), 'message', message({ type: 'ready' }));
+  await waitFor(() => expect(injectedScripts).toHaveLength(1));
+  expect(injectedScripts[0]).toContain('"me":{"lat":18.501,"lng":73.801,"accuracyM":9}');
+  expect(injectedScripts[0]).toContain('"follow":true');
+});

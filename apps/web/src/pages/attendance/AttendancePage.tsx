@@ -1,11 +1,13 @@
-import { Anchor, Button, Checkbox, Group, NativeSelect, Stack, Text, TextInput, Title } from '@mantine/core';
-import { notifications } from '@mantine/notifications';
-import { IconDownload } from '@tabler/icons-react';
+import { DownloadIcon } from 'lucide-react';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import type { AdminDayDto } from '@ve/shared';
-import { DataTable } from 'mantine-datatable';
 import { useState } from 'react';
 import { useSearchParams } from 'react-router';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { DataTable } from '../../components/DataTable';
+import { CheckboxField, DateField, SelectField } from '../../components/Field';
+import { PageHeader } from '../../components/PageHeader';
 import { FlagBadges } from '../../components/FlagBadges';
 import { PageError } from '../../components/PageState';
 import { StatusBadge } from '../../components/StatusBadge';
@@ -54,7 +56,7 @@ export function AttendancePage() {
       const { blob, filename } = await api.exportAttendanceCsv(query);
       saveBlob(blob, filename);
     } catch (err) {
-      notifications.show({ color: 'red', title: 'Export failed', message: errorMessage(err) });
+      toast.error('Export failed', { description: errorMessage(err) });
     } finally {
       setExporting(false);
     }
@@ -71,95 +73,85 @@ export function AttendancePage() {
   ];
 
   return (
-    <Stack gap="lg">
-      <Group justify="space-between" align="flex-end">
-        <div>
-          <Title order={1}>Attendance</Title>
-          <Text c="dimmed">{list.data ? `${list.data.total} ${list.data.total === 1 ? 'day' : 'days'}` : ' '}</Text>
-        </div>
-        <Button variant="default" leftSection={<IconDownload size={16} />} loading={exporting} onClick={() => void exportCsv()}>
-          Export CSV
-        </Button>
-      </Group>
+    <div className="grid gap-6">
+      <PageHeader
+        title="Attendance"
+        description={list.data ? `${list.data.total} ${list.data.total === 1 ? 'day' : 'days'}` : '\u00a0'}
+        actions={
+          <Button variant="outline" loading={exporting} onClick={() => void exportCsv()}>
+            {exporting ? null : <DownloadIcon />}
+            Export CSV
+          </Button>
+        }
+      />
 
-      <Group align="flex-end" gap="sm">
-        <TextInput type="date" label="From" value={filters.from} onChange={(e) => update({ from: e.currentTarget.value })} />
-        <TextInput type="date" label="To" value={filters.to} onChange={(e) => update({ to: e.currentTarget.value })} />
-        <NativeSelect
+      <div className="flex flex-wrap items-end gap-3">
+        <DateField label="From" className="w-40" value={filters.from} onChange={(from) => update({ from })} />
+        <DateField label="To" className="w-40" value={filters.to} onChange={(to) => update({ to })} />
+        <SelectField
           label="Employee"
+          className="w-48"
           data={employeeOptions}
           value={filters.employeeId ?? ''}
-          onChange={(e) => update({ employeeId: e.currentTarget.value || undefined })}
+          onChange={(v) => update({ employeeId: v || undefined })}
         />
-        <NativeSelect label="Site" data={siteOptions} value={filters.siteId ?? ''} onChange={(e) => update({ siteId: e.currentTarget.value || undefined })} />
-        <NativeSelect
+        <SelectField label="Site" className="w-44" data={siteOptions} value={filters.siteId ?? ''} onChange={(v) => update({ siteId: v || undefined })} />
+        <SelectField
           label="Status"
+          className="w-44"
           data={statusOptions}
           value={filters.status ?? ''}
-          onChange={(e) => update({ status: (e.currentTarget.value || undefined) as AttendanceFilters['status'] })}
+          onChange={(v) => update({ status: (v || undefined) as AttendanceFilters['status'] })}
         />
-        <Checkbox
+        <CheckboxField
           label="Needs review only"
+          className="h-9"
           checked={!!filters.needsReview}
-          onChange={(e) => update({ needsReview: e.currentTarget.checked || undefined })}
-          mb={8}
+          onChange={(checked) => update({ needsReview: checked || undefined })}
         />
-      </Group>
+      </div>
 
       {list.isError && !list.data ? (
         <PageError error={list.error} onRetry={() => void list.refetch()} />
       ) : (
         <DataTable<AdminDayDto>
-          withTableBorder
-          borderRadius="md"
-          minHeight={240}
-          highlightOnHover
           fetching={list.isFetching}
-          records={list.data?.items ?? []}
-          idAccessor="id"
-          totalRecords={list.data?.total ?? 0}
-          recordsPerPage={PAGE_SIZE}
-          page={page}
-          onPageChange={(p) => setParams(filtersToParams({ ...filters, page: p }))}
-          noRecordsText="No attendance for these filters"
-          onRowClick={({ record }) => openDay(record.id)}
+          rows={list.data?.items ?? []}
+          rowKey={(d) => d.id}
+          empty="No attendance for these filters"
+          onRowClick={(d) => openDay(d.id)}
+          paging={{ page, pageSize: PAGE_SIZE, total: list.data?.total ?? 0, onPageChange: (p) => setParams(filtersToParams({ ...filters, page: p })) }}
           columns={[
-            { accessor: 'workDate', title: 'Date', render: (d) => formatWorkDate(d.workDate) },
+            { key: 'date', title: 'Date', render: (d) => <span className="whitespace-nowrap">{formatWorkDate(d.workDate)}</span> },
             {
-              accessor: 'employeeName',
+              key: 'employee',
               title: 'Employee',
               render: (d) => (
-                <Stack gap={0}>
-                  <Anchor
-                    component="button"
+                <div className="grid">
+                  <button
                     type="button"
-                    fw={600}
-                    ta="left"
+                    className="hover:text-brand-ink text-left font-medium transition-colors"
                     onClick={(event) => {
                       event.stopPropagation();
                       openDay(d.id);
                     }}
                   >
                     {d.employeeName}
-                  </Anchor>
-                  {d.employeeCode ? (
-                    <Text size="xs" c="dimmed">
-                      {d.employeeCode}
-                    </Text>
-                  ) : null}
-                </Stack>
+                  </button>
+                  {d.employeeCode ? <span className="text-muted-foreground text-xs">{d.employeeCode}</span> : null}
+                </div>
               ),
             },
-            { accessor: 'siteName', title: 'Site' },
-            { accessor: 'checkInAt', title: 'In', render: (d) => <span className="ve-num">{formatTime(d.checkInAt, tz)}</span> },
-            { accessor: 'checkOutAt', title: 'Out', render: (d) => <span className="ve-num">{d.checkOutAt ? formatTime(d.checkOutAt, tz) : '—'}</span> },
-            { accessor: 'workedMinutes', title: 'Hours', render: (d) => <span className="ve-num">{formatMinutes(d.workedMinutes)}</span> },
-            { accessor: 'status', title: 'Status', render: (d) => <StatusBadge status={d.status} /> },
-            { accessor: 'flags', title: 'Flags', render: (d) => <FlagBadges flags={d.flags} needsReview={d.needsReview} /> },
+            { key: 'site', title: 'Site', render: (d) => d.siteName },
+            { key: 'in', title: 'In', render: (d) => <span className="ve-num">{formatTime(d.checkInAt, tz)}</span> },
+            { key: 'out', title: 'Out', render: (d) => <span className="ve-num">{d.checkOutAt ? formatTime(d.checkOutAt, tz) : '—'}</span> },
+            { key: 'hours', title: 'Hours', render: (d) => <span className="ve-num">{formatMinutes(d.workedMinutes)}</span> },
+            { key: 'status', title: 'Status', render: (d) => <StatusBadge status={d.status} /> },
+            { key: 'flags', title: 'Flags', render: (d) => <FlagBadges flags={d.flags} needsReview={d.needsReview} /> },
           ]}
         />
       )}
       <AttendanceDrawer dayId={openDayId} onClose={() => setParams(filtersToParams(filters))} />
-    </Stack>
+    </div>
   );
 }

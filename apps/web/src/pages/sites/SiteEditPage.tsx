@@ -1,23 +1,26 @@
-import { Alert, Anchor, Button, Group, NumberInput, Paper, SimpleGrid, Slider, Stack, Switch, Text, TextInput, Title } from '@mantine/core';
 import { useForm } from '@mantine/form';
-import { notifications } from '@mantine/notifications';
-import { IconArrowLeft, IconCurrentLocation, IconSearch } from '@tabler/icons-react';
+import { CrosshairIcon, LinkIcon, SearchIcon } from 'lucide-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { parseCoordinates } from '@ve/shared';
 import type { SiteDto } from '@ve/shared';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
-import { useState, type FormEvent } from 'react';
-import { Link, useNavigate, useParams } from 'react-router';
+import { useRef, useState, type FormEvent } from 'react';
+import { useNavigate, useParams } from 'react-router';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { Slider } from '@/components/ui/slider';
+import { NumberField, SwitchField, TextField } from '../../components/Field';
+import { PageHeader } from '../../components/PageHeader';
+import { Panel, PanelHeader } from '../../components/Panel';
 import { z } from 'zod';
-import { PageError, PageLoader } from '../../components/PageState';
+import { Notice, PageError, PageLoader } from '../../components/PageState';
 import { errorMessage } from '../../lib/errors';
+import { locateBest, type Reading } from '../../lib/locate';
 import { queryKeys } from '../../lib/queryKeys';
 import { useCompanySettings } from '../../lib/useCompanySettings';
 import { useServices } from '../../services';
 import type { PlaceResult } from './placeSearch';
 import { SiteMapPicker, type LatLng } from './SiteMapPicker';
-
-/** Pune city centre: only the starting view until the admin moves the pin. */
-const DEFAULT_CENTER: LatLng = { lat: 18.5204, lng: 73.8567 };
 
 const schema = z.object({
   name: z.string().trim().min(1, 'Enter the site name').max(120, 'Name is too long'),
@@ -32,12 +35,15 @@ const schema = z.object({
 type FormValues = {
   name: string;
   address: string;
-  /** NumberInput gives '' while the box is empty. */
+  /** NumberInput gives '' while the box is empty; a new site starts empty (no pin). */
   lat: number | string;
   lng: number | string;
   radiusM: number | string;
   isActive: boolean;
 };
+
+/** The map fills what is left of the window below the location tools: 320–520 px. */
+const MAP_HEIGHT = 'clamp(380px, calc(100vh - 290px), 760px)';
 
 const round6 = (n: number) => Math.round(n * 1e6) / 1e6;
 const num = (v: number | string) => (typeof v === 'number' ? v : null);
@@ -51,32 +57,52 @@ export function SiteEditPage() {
   if (id && !siteQ.data) {
     return siteQ.isError ? <PageError error={siteQ.error} onRetry={() => void siteQ.refetch()} /> : <PageLoader />;
   }
-  return <SiteEditor key={id ?? 'new'} site={siteQ.data ?? null} defaultRadiusM={settings.data?.defaultRadiusM ?? 100} />;
+  return (
+    <SiteEditor
+      key={id ?? 'new'}
+      site={siteQ.data ?? null}
+      defaultRadiusM={settings.data?.defaultRadiusM ?? 100}
+      maxAccuracyM={settings.data?.maxAccuracyM ?? 50}
+    />
+  );
 }
 
-function SiteEditor({ site, defaultRadiusM }: { site: SiteDto | null; defaultRadiusM: number }) {
+function SiteEditor({ site, defaultRadiusM, maxAccuracyM }: { site: SiteDto | null; defaultRadiusM: number; maxAccuracyM: number }) {
   const { api, searchPlaces } = useServices();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [recenterKey, setRecenterKey] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [note, setNote] = useState<string | null>(null);
   const [placeQuery, setPlaceQuery] = useState('');
   const [places, setPlaces] = useState<PlaceResult[] | null>(null);
   const [searching, setSearching] = useState(false);
   const [locating, setLocating] = useState(false);
+  const [progressM, setProgressM] = useState<number | null>(null);
+  const [accuracy, setAccuracy] = useState<Reading | null>(null);
+  const [linkText, setLinkText] = useState('');
+  const [resolving, setResolving] = useState(false);
+  /** Bumped on every pin move; a slow lookup that started before a move must not undo it. */
+  const moveSeq = useRef(0);
+  const others = useQuery({ queryKey: queryKeys.sites, queryFn: () => api.listSites(), enabled: !site });
 
   const form = useForm<FormValues>({
     initialValues: site
       ? { name: site.name, address: site.address ?? '', lat: site.lat, lng: site.lng, radiusM: site.radiusM, isActive: site.isActive }
-      : { name: '', address: '', lat: DEFAULT_CENTER.lat, lng: DEFAULT_CENTER.lng, radiusM: defaultRadiusM, isActive: true },
+      : { name: '', address: '', lat: '', lng: '', radiusM: defaultRadiusM, isActive: true },
     validate: zod4Resolver(schema),
   });
 
-  const center: LatLng = { lat: num(form.values.lat) ?? DEFAULT_CENTER.lat, lng: num(form.values.lng) ?? DEFAULT_CENTER.lng };
+  const lat = num(form.values.lat);
+  const lng = num(form.values.lng);
+  const center: LatLng | null = lat !== null && lng !== null ? { lat, lng } : null;
   const radiusM = Math.min(1000, Math.max(10, num(form.values.radiusM) ?? 10));
 
   function moveTo(p: LatLng, recenter: boolean) {
+    moveSeq.current += 1;
     form.setValues({ lat: round6(p.lat), lng: round6(p.lng) });
+    setAccuracy(null);
+    setNote(null);
     if (recenter) setRecenterKey((k) => k + 1);
   }
 
@@ -96,29 +122,59 @@ function SiteEditor({ site, defaultRadiusM }: { site: SiteDto | null; defaultRad
     }
   }
 
-  function locateMe() {
+  async function locateMe() {
     if (!('geolocation' in navigator)) {
       setError('This browser cannot share its location. Drag the pin instead.');
       return;
     }
     setLocating(true);
     setError(null);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setLocating(false);
-        moveTo({ lat: pos.coords.latitude, lng: pos.coords.longitude }, true);
-      },
-      (err) => {
-        setLocating(false);
-        // 1 = PERMISSION_DENIED
-        setError(
-          err.code === 1
-            ? 'Location permission was refused. Allow it in the browser, or drag the pin.'
-            : 'Could not get your location. Drag the pin instead.',
-        );
-      },
-      { enableHighAccuracy: true, timeout: 15_000, maximumAge: 0 },
-    );
+    setNote(null);
+    setProgressM(null);
+    const seq = moveSeq.current;
+    const result = await locateBest(navigator.geolocation, maxAccuracyM, setProgressM);
+    setLocating(false);
+    setProgressM(null);
+    if (moveSeq.current !== seq) return;
+    if (result.kind === 'ok') {
+      moveTo(result.reading, true);
+      setAccuracy(result.reading);
+      setNote(`Your location · accurate to ±${Math.round(result.reading.accuracyM)} m`);
+    } else if (result.kind === 'imprecise') {
+      setError(
+        `Your location is only accurate to ±${Math.round(result.reading.accuracyM)} m, more than the ±${maxAccuracyM} m allowed. ` +
+          'Laptops usually cannot tell their exact position. Search, paste from Google Maps, or drag the pin.',
+      );
+    } else if (result.kind === 'denied') {
+      setError('Location permission was refused. Allow it in the browser, or drag the pin.');
+    } else {
+      setError('Could not get your location. Drag the pin instead.');
+    }
+  }
+
+  function placeFromGoogle(p: LatLng) {
+    moveTo(p, true);
+    setNote('From Google Maps · check the circle before saving.');
+    setLinkText('');
+  }
+
+  async function pasteFromGoogle(event: FormEvent) {
+    event.preventDefault();
+    const text = linkText.trim();
+    if (!text) return;
+    setError(null);
+    const local = parseCoordinates(text);
+    if (local) return placeFromGoogle(local);
+    setResolving(true);
+    const seq = moveSeq.current;
+    try {
+      const place = await api.resolvePlaceLink(text);
+      if (moveSeq.current === seq) placeFromGoogle(place);
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setResolving(false);
+    }
   }
 
   const save = useMutation({
@@ -128,117 +184,151 @@ function SiteEditor({ site, defaultRadiusM }: { site: SiteDto | null; defaultRad
         : api.createSite({ name: v.name, address: v.address || undefined, lat: v.lat, lng: v.lng, radiusM: v.radiusM }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['sites'] });
-      notifications.show({ color: 'ledgerGreen', message: 'Site saved' });
+      toast.success('Site saved');
       navigate('/sites');
     },
     onError: (err) => setError(errorMessage(err)),
   });
 
   return (
-    <Stack gap="lg">
-      <Anchor component={Link} to="/sites" size="sm">
-        <Group gap={4}>
-          <IconArrowLeft size={16} /> Sites
-        </Group>
-      </Anchor>
-      <Title order={1}>{site ? 'Edit site' : 'New site'}</Title>
+    <div className="grid gap-6">
+      <PageHeader
+        back={{ to: '/sites', label: 'Sites' }}
+        title={site ? 'Edit site' : 'New site'}
+        description="Place the pin where workers stand, then set how far from it they may check in."
+      />
 
-      <SimpleGrid cols={{ base: 1, lg: 2 }}>
-        <Stack>
-          <form onSubmit={(event) => void findPlaces(event)}>
-            <Group align="flex-end" wrap="nowrap">
-              <TextInput
-                label="Search for a place"
-                placeholder="Area, landmark or address"
-                value={placeQuery}
-                onChange={(event) => setPlaceQuery(event.currentTarget.value)}
-                style={{ flex: 1 }}
+      <div className="ve-site-edit">
+        <Panel className="ve-site-edit-map pb-4">
+          <PanelHeader title="Location" />
+          <div className="px-4 pt-2">
+            <div className="overflow-hidden rounded-lg border">
+              <SiteMapPicker
+                center={center}
+                radiusM={radiusM}
+                recenterKey={recenterKey}
+                accuracy={accuracy}
+                overview={(others.data ?? []).map((s) => ({ lat: s.lat, lng: s.lng }))}
+                height={MAP_HEIGHT}
+                onMove={(p) => moveTo(p, false)}
               />
-              <Button type="submit" variant="default" leftSection={<IconSearch size={16} />} loading={searching}>
-                Search
-              </Button>
-            </Group>
-          </form>
-          {places !== null ? (
-            <Paper withBorder p="xs" radius="md">
-              <Stack gap={2}>
-                {places.length === 0 ? (
-                  <Text size="sm" c="dimmed">
-                    No places found. Try a nearby landmark.
-                  </Text>
-                ) : (
-                  places.map((p) => (
-                    <Button
-                      key={`${p.lat},${p.lng}`}
-                      variant="subtle"
-                      justify="flex-start"
-                      h="auto"
-                      py={6}
-                      styles={{ label: { whiteSpace: 'normal', textAlign: 'left' } }}
-                      onClick={() => {
-                        moveTo(p, true);
-                        setPlaces(null);
-                      }}
-                    >
-                      {p.name}
-                    </Button>
-                  ))
-                )}
-                <Text size="xs" c="dimmed">
-                  Search by Nominatim · © OpenStreetMap contributors
-                </Text>
-              </Stack>
-            </Paper>
-          ) : null}
-          <Group>
-            <Button variant="default" leftSection={<IconCurrentLocation size={16} />} loading={locating} onClick={locateMe}>
-              Use my location
-            </Button>
-          </Group>
-          <SiteMapPicker center={center} radiusM={radiusM} recenterKey={recenterKey} onMove={(p) => moveTo(p, false)} />
-          <Text size="sm" c="dimmed">
-            Drag the pin, or click the map, to set the centre of the site.
-          </Text>
-        </Stack>
+            </div>
+            <p className="text-muted-foreground mt-2 text-sm">
+              {center
+                ? 'Drag the pin, or click the map, to set the centre of the site.'
+                : 'Set the location: search, paste from Google Maps, use my location, or tap the map.'}
+            </p>
+          </div>
+        </Panel>
 
-        <form noValidate onSubmit={form.onSubmit((values) => save.mutate(schema.parse(values)))}>
-          <Stack>
-            <TextInput label="Site name" {...form.getInputProps('name')} />
-            <TextInput label="Address (optional)" {...form.getInputProps('address')} />
-            <Group grow>
-              <NumberInput label="Latitude" decimalScale={6} hideControls {...form.getInputProps('lat')} />
-              <NumberInput label="Longitude" decimalScale={6} hideControls {...form.getInputProps('lng')} />
-            </Group>
-            <NumberInput
-              label="Allowed distance (metres)"
-              description="Workers must be this close to the pin to check in."
-              min={10}
-              max={1000}
-              step={10}
-              allowDecimal={false}
-              clampBehavior="none"
-              {...form.getInputProps('radiusM')}
-            />
-            <Slider
-              min={10}
-              max={1000}
-              step={10}
-              value={radiusM}
-              onChange={(value) => form.setFieldValue('radiusM', value)}
-              label={(value) => `${value} m`}
-              thumbLabel="Allowed distance slider"
-              marks={[{ value: 50 }, { value: 100 }, { value: 200 }, { value: 500 }]}
-            />
-            {site ? <Switch label="Site is in use" {...form.getInputProps('isActive', { type: 'checkbox' })} /> : null}
-            {error ? <Alert color="ledgerOrange">{error}</Alert> : null}
-            <Group justify="flex-end">
-              <Button type="submit" loading={save.isPending}>
-                Save site
-              </Button>
-            </Group>
-          </Stack>
-        </form>
-      </SimpleGrid>
-    </Stack>
+        <div className="grid gap-4">
+          <Panel>
+            <PanelHeader title="Find the place" />
+            <div className="grid gap-4 px-4 pt-2 pb-4">
+              <form className="flex items-end gap-2" onSubmit={(event) => void findPlaces(event)}>
+                <TextField
+                  label="Search for a place"
+                  placeholder="Area, landmark or address"
+                  value={placeQuery}
+                  onChange={(event) => setPlaceQuery(event.currentTarget.value)}
+                  className="flex-1"
+                />
+                <Button type="submit" variant="outline" loading={searching}>
+                  {searching ? null : <SearchIcon />}
+                  Search
+                </Button>
+              </form>
+              {places !== null ? (
+                <div className="bg-muted/40 grid gap-0.5 rounded-lg border p-1.5">
+                  {places.length === 0 ? (
+                    <p className="text-muted-foreground px-2 py-1.5 text-sm">No places found. Try a nearby landmark.</p>
+                  ) : (
+                    places.map((p) => (
+                      <Button
+                        key={`${p.lat},${p.lng}`}
+                        variant="ghost"
+                        className="h-auto justify-start py-1.5 text-left font-normal whitespace-normal"
+                        onClick={() => {
+                          moveTo(p, true);
+                          setPlaces(null);
+                        }}
+                      >
+                        {p.name}
+                      </Button>
+                    ))
+                  )}
+                  <p className="text-muted-foreground px-2 pt-1 text-[11px]">Search by Nominatim · © OpenStreetMap contributors</p>
+                </div>
+              ) : null}
+              <form className="flex items-end gap-2" onSubmit={(event) => void pasteFromGoogle(event)}>
+                <TextField
+                  label="Paste from Google Maps"
+                  description="In Google Maps, tap Share → Copy link, or long-press the spot to copy its coordinates."
+                  placeholder="https://maps.app.goo.gl/… or 17.4167, 78.3664"
+                  value={linkText}
+                  onChange={(event) => setLinkText(event.currentTarget.value)}
+                  className="flex-1"
+                />
+                <Button type="submit" variant="outline" loading={resolving}>
+                  {resolving ? null : <LinkIcon />}
+                  Go
+                </Button>
+              </form>
+              <div className="flex flex-wrap items-center gap-3">
+                <Button variant="outline" loading={locating} onClick={() => void locateMe()}>
+                  {locating ? null : <CrosshairIcon />}
+                  Use my location
+                </Button>
+                {locating && progressM !== null ? (
+                  <span className="text-muted-foreground ve-num text-sm">{`Getting your location… ±${Math.round(progressM)} m`}</span>
+                ) : null}
+              </div>
+              {note ? <p className="text-success text-sm font-medium">{note}</p> : null}
+            </div>
+          </Panel>
+
+          <Panel>
+            <PanelHeader title="Details" />
+            <form noValidate className="grid gap-4 px-4 pt-2 pb-4" onSubmit={form.onSubmit((values) => save.mutate(schema.parse(values)))}>
+              <TextField label="Site name" {...form.getInputProps('name')} />
+              <TextField label="Address (optional)" {...form.getInputProps('address')} />
+              <div className="grid grid-cols-2 gap-3">
+                <NumberField label="Latitude" decimalScale={6} {...form.getInputProps('lat')} />
+                <NumberField label="Longitude" decimalScale={6} {...form.getInputProps('lng')} />
+              </div>
+              <NumberField
+                label="Allowed distance (metres)"
+                description="Workers must be this close to the pin to check in."
+                {...form.getInputProps('radiusM')}
+              />
+              <div className="grid gap-2 pb-1">
+                <Slider
+                  min={10}
+                  max={1000}
+                  step={10}
+                  value={[radiusM]}
+                  onValueChange={([value]) => form.setFieldValue('radiusM', value ?? radiusM)}
+                  aria-label="Allowed distance slider"
+                />
+                <div className="text-muted-foreground ve-num flex justify-between text-[11px]">
+                  <span>10 m</span>
+                  <span>500 m</span>
+                  <span>1000 m</span>
+                </div>
+              </div>
+              {site ? (
+                <SwitchField label="Site is in use" checked={form.values.isActive} onChange={(checked) => form.setFieldValue('isActive', checked)} />
+              ) : null}
+              {error ? <Notice>{error}</Notice> : null}
+              <div className="flex justify-end">
+                <Button type="submit" loading={save.isPending} disabled={!center}>
+                  Save site
+                </Button>
+              </div>
+            </form>
+          </Panel>
+        </div>
+      </div>
+    </div>
   );
 }

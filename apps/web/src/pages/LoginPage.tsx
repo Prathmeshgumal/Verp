@@ -1,11 +1,12 @@
-import { Alert, Button, Center, Paper, PasswordInput, Stack, Text, TextInput, Title } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { useState } from 'react';
 import { Navigate, useLocation } from 'react-router';
 import { z } from 'zod';
 import { useAuth } from '../auth/AuthContext';
-import { PageLoader } from '../components/PageState';
+import { Button } from '@/components/ui/button';
+import { TextField } from '../components/Field';
+import { Notice, PageLoader } from '../components/PageState';
 import { errorMessage } from '../lib/errors';
 
 const schema = z.object({
@@ -39,24 +40,27 @@ export function LoginPage() {
   });
 
   return (
-    <Center mih="100vh" p="md">
-      <Paper withBorder radius="lg" p="xl" w={380} maw="100%">
-        <form onSubmit={submit} noValidate>
-          <Stack>
-            <div>
-              <Title order={1}>VE HR</Title>
-              <Text c="dimmed">Admin login</Text>
-            </div>
-            {state.notice ? <Alert color="ledgerBlue">{state.notice}</Alert> : null}
-            {error ? <Alert color="ledgerOrange">{error}</Alert> : null}
-            <TextInput label="Email" type="email" autoComplete="username" {...form.getInputProps('email')} />
-            <PasswordInput label="Password" autoComplete="current-password" {...form.getInputProps('password')} />
-            <Button type="submit" size="md" loading={busy}>
-              Log in
-            </Button>
-          </Stack>
+    <div className="grid min-h-screen place-items-center p-4">
+      <div className="w-[380px] max-w-full">
+        <div className="mb-8 flex items-center gap-2.5">
+          <span aria-hidden className="bg-brand grid size-9 place-items-center rounded-xl text-sm font-bold text-white">
+            VE
+          </span>
+          <div>
+            <h1 className="text-xl leading-tight font-bold">VE HR</h1>
+            <p className="text-muted-foreground text-sm">Admin login</p>
+          </div>
+        </div>
+        <form onSubmit={submit} noValidate className="bg-card grid gap-4 rounded-2xl border p-6 shadow-xs">
+          {state.notice ? <Notice tone="info">{state.notice}</Notice> : null}
+          {error ? <Notice>{error}</Notice> : null}
+          <TextField label="Email" type="email" autoComplete="username" {...form.getInputProps('email')} />
+          <TextField label="Password" type="password" autoComplete="current-password" {...form.getInputProps('password')} />
+          <Button type="submit" size="lg" className="mt-1" loading={busy}>
+            Log in
+          </Button>
         </form>
-      </Paper>
-    </Center>
+      </div>
+    </div>
   );
 }

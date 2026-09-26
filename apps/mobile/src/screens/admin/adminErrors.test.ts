@@ -13,3 +13,10 @@ test.each([
   expect(adminErrorKey(err)).toBe(key);
   expect(i18n.exists(key)).toBe(true);
 });
+
+test('google maps link problems have their own messages', () => {
+  const err = (code: string) => new ApiError(422, code, code, { code });
+  expect(adminErrorKey(err('NOT_A_MAPS_LINK'))).toBe('admin.sites.link.notMapsLink');
+  expect(adminErrorKey(err('NO_EXACT_PIN'))).toBe('admin.sites.link.noExactPin');
+  expect(adminErrorKey(err('LINK_UNREACHABLE'))).toBe('admin.sites.link.unreachable');
+});

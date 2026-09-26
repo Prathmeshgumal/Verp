@@ -18,16 +18,19 @@ export interface AppDeps {
   config: Config;
   db: Db;
   clock?: Clock;
+  /** Outbound HTTP; tests pass a stub. */
+  fetch?: typeof fetch;
 }
 
 export interface ResolvedDeps {
   config: Config;
   db: Db;
   clock: Clock;
+  fetch: typeof fetch;
 }
 
 export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
-  const resolved: ResolvedDeps = { ...deps, clock: deps.clock ?? systemClock };
+  const resolved: ResolvedDeps = { ...deps, clock: deps.clock ?? systemClock, fetch: deps.fetch ?? globalThis.fetch.bind(globalThis) };
   const app = Fastify({
     logger: {
       level: deps.config.LOG_LEVEL,

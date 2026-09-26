@@ -33,10 +33,10 @@ export class FakeClock {
 }
 
 export async function createTestApp(
-  opts: { clock?: FakeClock; beforeReady?: (app: FastifyInstance) => void } = {},
+  opts: { clock?: FakeClock; fetch?: typeof fetch; beforeReady?: (app: FastifyInstance) => void } = {},
 ): Promise<{ app: FastifyInstance; clock: FakeClock }> {
   const clock = opts.clock ?? new FakeClock();
-  const app = await buildApp({ config: testConfig, db: testDb.db, clock: clock.fn });
+  const app = await buildApp({ config: testConfig, db: testDb.db, clock: clock.fn, fetch: opts.fetch });
   opts.beforeReady?.(app);
   await app.ready();
   return { app, clock };

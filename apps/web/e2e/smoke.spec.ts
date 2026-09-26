@@ -21,9 +21,9 @@ test('log in, add a site and a worker, see their check-in, export CSV', async ({
   await page.getByLabel('Email').fill(E2E.adminEmail);
   await page.getByLabel('Password', { exact: true }).fill(E2E.adminPassword);
   await page.getByRole('button', { name: 'Log in' }).click();
-  await expect(page.getByRole('heading', { name: 'Today' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Today', exact: true })).toBeVisible();
   await page.reload();
-  await expect(page.getByRole('heading', { name: 'Today' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Today', exact: true })).toBeVisible();
 
   // Site.
   await page.getByRole('link', { name: 'Sites' }).click();
@@ -40,7 +40,8 @@ test('log in, add a site and a worker, see their check-in, export CSV', async ({
   const dialog = page.getByRole('dialog');
   await dialog.getByLabel('Name', { exact: true }).fill(workerName);
   await dialog.getByLabel('Mobile number').fill(mobile);
-  await dialog.getByLabel('Site').selectOption({ label: siteName });
+  await dialog.getByLabel('Site').click();
+  await page.getByRole('option', { name: siteName }).click();
   await dialog.getByRole('button', { name: 'Create employee' }).click();
   const pin = (await page.getByTestId('pin-value').textContent())?.trim() ?? '';
   expect(pin).toMatch(/^\d{6}$/);
@@ -62,6 +63,7 @@ test('log in, add a site and a worker, see their check-in, export CSV', async ({
   const drawer = page.getByRole('dialog', { name: 'Attendance day' });
   await expect(drawer.getByText('Check-in · Saved')).toBeVisible();
   await drawer.getByRole('button', { name: 'Close' }).click();
+  await expect(drawer).toBeHidden();
 
   // CSV export of the current filter.
   const download = page.waitForEvent('download');

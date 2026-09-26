@@ -11,6 +11,7 @@ const base: MeTodayResponse = {
   maxAccuracyM: 50,
   reminderTime: '19:00',
   timezone: 'Asia/Kolkata',
+  joinedOn: '2026-09-01',
 };
 const day = (status: DayDto['status'], extra: Partial<DayDto> = {}): DayDto => ({
   id: 'd1',

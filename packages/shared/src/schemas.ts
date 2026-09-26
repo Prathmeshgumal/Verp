@@ -148,3 +148,7 @@ export type AttendanceListQuery = z.output<typeof attendanceListQuerySchema>;
 export type MyAttendanceQuery = z.output<typeof myAttendanceQuerySchema>;
 export type FixCheckout = z.output<typeof fixCheckoutSchema>;
 export type SettingsUpdate = z.output<typeof settingsUpdateSchema>;
+
+export const placeLinkSchema = z.strictObject({
+  text: z.string().trim().min(1).max(2000),
+});

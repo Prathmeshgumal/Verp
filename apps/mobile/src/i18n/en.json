@@ -1,5 +1,7 @@
 {
-  "app": { "name": "VE HR" },
+  "app": {
+    "name": "VE HR"
+  },
   "common": {
     "tryAgain": "Try again",
     "ok": "OK",
@@ -30,7 +32,8 @@
     "today": "Today",
     "employees": "Employees",
     "sites": "Sites",
-    "attendance": "Attendance"
+    "attendance": "Attendance",
+    "profile": "Profile"
   },
   "login": {
     "title": "Log in",
@@ -89,7 +92,6 @@
   },
   "home": {
     "greeting": "Namaste, {{name}}",
-    "menu": "Menu",
     "yourSite": "Your site",
     "checkIn": "CHECK IN",
     "checkOut": "CHECK OUT",
@@ -103,7 +105,19 @@
     "missedTitle": "You did not check out yesterday",
     "missedBody": "Tell your supervisor",
     "noSiteTitle": "No site assigned",
-    "noSiteBody": "Please contact your supervisor"
+    "noSiteBody": "Please contact your supervisor",
+    "preview": {
+      "finding": "Looking for your location…",
+      "inside": "Inside the site · {{distance}} m from the centre · ±{{accuracy}} m",
+      "outside": "Outside the site · {{distance}} m away",
+      "imprecise": "Getting a precise location… ±{{accuracy}} m",
+      "mock": "A fake-location app is on. Check-ins will be flagged.",
+      "centre": "Centre the map",
+      "locationOff": "Location is off. Turn it on to see where you are.",
+      "permission": "Allow precise location to see where you are.",
+      "locationSettings": "Location settings",
+      "appSettings": "App settings"
+    }
   },
   "busy": {
     "locating": "Finding your location…",
@@ -113,11 +127,20 @@
   },
   "history": {
     "title": "My attendance",
-    "subtitle": "Last 30 days",
-    "today": "Today, {{day}}",
+    "previousMonth": "Previous month",
+    "nextMonth": "Next month",
+    "present": "Present",
+    "absent": "Absent",
+    "missed": "No check-out",
+    "hours": "Hours",
+    "completed": "Done",
+    "working": "Working · since {{time}}",
     "notPresent": "Not present",
     "noCheckout": "No check-out · {{time}} – ?",
-    "working": "Working · since {{time}}"
+    "beforeJoining": "Before you joined",
+    "notYet": "Nothing yet",
+    "today": "Today, {{day}}",
+    "tapDay": "Tap a day to see its times"
   },
   "menu": {
     "appVersion": "App version {{version}}",
@@ -211,9 +234,22 @@
       "allowedDistance": "Allowed distance",
       "smaller": "Smaller",
       "larger": "Larger",
-      "dragHint": "Drag the pin to the site gate or centre.",
+      "dragHint": "Drag the pin, or tap the map, to set the site gate or centre.",
       "useMyLocation": "Use my location",
       "locating": "Finding your location…",
+      "noPinHint": "Set the location: paste from Google Maps, use my location, or tap the map.",
+      "located": "Your location · accurate to ±{{accuracy}} m",
+      "tooImprecise": "Your location is only accurate to ±{{accuracy}} m, more than the ±{{max}} m allowed. Paste from Google Maps, or tap the map.",
+      "noFix": "Could not get your location. Paste from Google Maps, or tap the map.",
+      "paste": "Paste from Google Maps",
+      "pasteHelp": "In Google Maps, tap Share → Copy link, or long-press the spot to copy its coordinates.",
+      "pasteGo": "Go",
+      "fromGoogle": "From Google Maps · check the circle before saving.",
+      "link": {
+        "notMapsLink": "That doesn't look like a Google Maps link or coordinates.",
+        "noExactPin": "This link shows an area, not a pin. In Google Maps, tap the exact spot, then Share → Copy link.",
+        "unreachable": "Couldn't open that link. Check it, or copy the coordinates instead."
+      },
       "active": "Site is active",
       "save": "Save site",
       "saving": "Saving…"
@@ -232,5 +268,12 @@
       "IN": "Check-in",
       "OUT": "Check-out"
     }
+  },
+  "profile": {
+    "role": "Site worker",
+    "phone": "Phone",
+    "site": "Site",
+    "noSite": "Not assigned",
+    "joined": "Joined"
   }
 }

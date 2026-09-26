@@ -1,7 +1,7 @@
-import { NativeSelect, TextInput } from '@mantine/core';
 import type { UseFormReturnType } from '@mantine/form';
 import { normalizePhone, type EmployeeCreate, type EmployeeDto, type EmployeeUpdate, type SiteDto } from '@ve/shared';
 import { z } from 'zod';
+import { SelectField, TextField } from '../../components/Field';
 
 // A type, not an interface: the zod form resolver needs values assignable to Record<string, unknown>.
 export type EmployeeFormValues = {
@@ -44,10 +44,10 @@ export function EmployeeFields({ form, sites }: { form: UseFormReturnType<Employ
   ];
   return (
     <>
-      <TextInput label="Name" {...form.getInputProps('name')} />
-      <TextInput label="Mobile number" description="10 digits. The worker logs in with this." type="tel" {...form.getInputProps('phone')} />
-      <TextInput label="Employee code (optional)" {...form.getInputProps('employeeCode')} />
-      <NativeSelect label="Site" data={siteOptions} {...form.getInputProps('siteId')} />
+      <TextField label="Name" {...form.getInputProps('name')} />
+      <TextField label="Mobile number" description="10 digits. The worker logs in with this." type="tel" inputClassName="ve-num" {...form.getInputProps('phone')} />
+      <TextField label="Employee code (optional)" {...form.getInputProps('employeeCode')} />
+      <SelectField label="Site" data={siteOptions} {...form.getInputProps('siteId')} />
     </>
   );
 }

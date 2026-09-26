@@ -1,7 +1,7 @@
-import { and, asc, count, eq } from 'drizzle-orm';
+import { and, asc, count, desc, eq, inArray } from 'drizzle-orm';
 import type { DashboardTodayDto } from '@ve/shared';
 import type { ResolvedDeps } from '../../app';
-import { attendanceDays, sites, users } from '../../db/schema';
+import { attendanceDays, attendanceEvents, sites, users } from '../../db/schema';
 import { workDateOf } from '../../lib/workdate';
 import { getSettings } from '../settings/repo';
 
@@ -10,7 +10,7 @@ export async function getDashboardToday(deps: ResolvedDeps): Promise<DashboardTo
   const { timezone } = await getSettings(db);
   const workDate = workDateOf(deps.clock(), timezone);
 
-  const [activeRows, statusRows, missedRows, reviewRows, working] = await Promise.all([
+  const [activeRows, statusRows, missedRows, reviewRows, working, mapRows, refusedRows] = await Promise.all([
     db.select({ n: count() }).from(users).where(and(eq(users.role, 'employee'), eq(users.isActive, true))),
     db
       .select({ status: attendanceDays.status, n: count() })
@@ -26,6 +26,44 @@ export async function getDashboardToday(deps: ResolvedDeps): Promise<DashboardTo
       .innerJoin(sites, eq(sites.id, attendanceDays.siteId))
       .where(and(eq(attendanceDays.workDate, workDate), eq(attendanceDays.status, 'CHECKED_IN')))
       .orderBy(asc(attendanceDays.checkInAt)),
+    db
+      .select({
+        dayId: attendanceDays.id,
+        employeeId: users.id,
+        name: users.name,
+        siteId: sites.id,
+        siteName: sites.name,
+        status: attendanceDays.status,
+        checkInAt: attendanceDays.checkInAt,
+        checkOutAt: attendanceDays.checkOutAt,
+        checkInLat: attendanceDays.checkInLat,
+        checkInLng: attendanceDays.checkInLng,
+        needsReview: attendanceDays.needsReview,
+      })
+      .from(attendanceDays)
+      .innerJoin(users, eq(users.id, attendanceDays.employeeId))
+      .innerJoin(sites, eq(sites.id, attendanceDays.siteId))
+      .where(and(eq(attendanceDays.workDate, workDate), inArray(attendanceDays.status, ['CHECKED_IN', 'COMPLETED'])))
+      .orderBy(asc(attendanceDays.checkInAt)),
+    db
+      .select({
+        id: attendanceEvents.id,
+        employeeId: users.id,
+        name: users.name,
+        siteName: sites.name,
+        type: attendanceEvents.type,
+        result: attendanceEvents.result,
+        serverTime: attendanceEvents.serverTime,
+        lat: attendanceEvents.lat,
+        lng: attendanceEvents.lng,
+        accuracyM: attendanceEvents.accuracyM,
+        distanceM: attendanceEvents.distanceM,
+      })
+      .from(attendanceEvents)
+      .innerJoin(users, eq(users.id, attendanceEvents.employeeId))
+      .leftJoin(sites, eq(sites.id, users.siteId))
+      .where(and(eq(attendanceEvents.workDate, workDate), inArray(attendanceEvents.result, ['OUTSIDE_SITE', 'LOW_ACCURACY'])))
+      .orderBy(desc(attendanceEvents.serverTime)),
   ]);
 
   const byStatus = new Map(statusRows.map((r) => [r.status, r.n]));
@@ -42,5 +80,16 @@ export async function getDashboardToday(deps: ResolvedDeps): Promise<DashboardTo
     missedCheckouts: missedRows[0]?.n ?? 0,
     needsReview: reviewRows[0]?.n ?? 0,
     working: working.map((w) => ({ ...w, checkInAt: w.checkInAt.toISOString() })),
+    mapDays: mapRows.map((d) => ({
+      ...d,
+      status: d.status as 'CHECKED_IN' | 'COMPLETED',
+      checkInAt: d.checkInAt.toISOString(),
+      checkOutAt: d.checkOutAt ? d.checkOutAt.toISOString() : null,
+    })),
+    refused: refusedRows.map((r) => ({
+      ...r,
+      result: r.result as 'OUTSIDE_SITE' | 'LOW_ACCURACY',
+      serverTime: r.serverTime.toISOString(),
+    })),
   };
 }

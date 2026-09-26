@@ -1,12 +1,15 @@
-import { Alert, Button, Group, NativeSelect, NumberInput, Paper, Stack, TextInput, Title } from '@mantine/core';
 import { useForm } from '@mantine/form';
-import { notifications } from '@mantine/notifications';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { isValidTimeZone, type SettingsDto } from '@ve/shared';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { z } from 'zod';
-import { PageLoader } from '../components/PageState';
+import { Button } from '@/components/ui/button';
+import { NumberField, SelectField } from '../components/Field';
+import { PageHeader } from '../components/PageHeader';
+import { Panel } from '../components/Panel';
+import { Notice, PageLoader } from '../components/PageState';
 import { errorMessage } from '../lib/errors';
 import { queryKeys } from '../lib/queryKeys';
 import { useCompanySettings } from '../lib/useCompanySettings';
@@ -30,6 +33,16 @@ type FormValues = {
   clockMismatchMinutes: number | string;
 };
 
+/** Every 15 minutes, labelled "7:00 PM"; a saved time off the grid stays in the list. */
+function reminderOptions(current: string): { value: string; label: string }[] {
+  const times = Array.from({ length: 96 }, (_, i) => `${String(Math.floor(i / 4)).padStart(2, '0')}:${String((i % 4) * 15).padStart(2, '0')}`);
+  if (current && !times.includes(current)) times.push(current);
+  return times.sort().map((value) => {
+    const [h = 0, m = 0] = value.split(':').map(Number);
+    return { value, label: `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h >= 12 ? 'PM' : 'AM'}` };
+  });
+}
+
 export function SettingsPage() {
   const settings = useCompanySettings();
   if (!settings.data) return <PageLoader />;
@@ -49,59 +62,70 @@ function SettingsForm({ settings }: { settings: SettingsDto }) {
     onSuccess: (updated) => {
       queryClient.setQueryData(queryKeys.settings, updated);
       void queryClient.invalidateQueries({ queryKey: queryKeys.dashboard });
-      notifications.show({ color: 'ledgerGreen', message: 'Settings saved' });
+      toast.success('Settings saved');
     },
     onError: (err) => setError(errorMessage(err)),
   });
 
   return (
-    <Stack gap="lg" maw={560}>
-      <Title order={1}>Settings</Title>
-      <Paper withBorder p="md" radius="md">
+    <div className="grid gap-6">
+      <PageHeader title="Settings" description="Rules that apply to every site and every worker." />
+      <Panel className="max-w-2xl">
         <form
           noValidate
+          className="divide-y"
           onSubmit={form.onSubmit((values) => {
             setError(null);
             save.mutate(schema.parse(values));
           })}
         >
-          <Stack>
-            <NativeSelect label="Time zone" description="Work days and every time shown use this zone." data={zoneOptions} {...form.getInputProps('timezone')} />
-            <NumberInput
-              label="Required GPS accuracy (metres)"
-              description="A check-in with a less accurate location is refused. Lower is stricter."
-              allowDecimal={false}
-              clampBehavior="none"
-              {...form.getInputProps('maxAccuracyM')}
-            />
-            <NumberInput
-              label="Default allowed distance for new sites (metres)"
-              allowDecimal={false}
-              clampBehavior="none"
-              {...form.getInputProps('defaultRadiusM')}
-            />
-            <TextInput
-              type="time"
+          <Section title="Time" hint="How days are split and when reminders go out.">
+            <SelectField label="Time zone" description="Work days and every time shown use this zone." data={zoneOptions} {...form.getInputProps('timezone')} />
+            <SelectField
               label="Check-out reminder time"
               description="Workers still checked in get a reminder on their phone at this time."
+              className="max-w-56"
+              data={reminderOptions(form.values.reminderTime)}
               {...form.getInputProps('reminderTime')}
             />
-            <NumberInput
+          </Section>
+          <Section title="Location checks" hint="How strict check-ins are about where the phone is.">
+            <NumberField
+              label="Required GPS accuracy (metres)"
+              description="A check-in with a less accurate location is refused. Lower is stricter."
+              {...form.getInputProps('maxAccuracyM')}
+            />
+            <NumberField label="Default allowed distance for new sites (metres)" {...form.getInputProps('defaultRadiusM')} />
+            <NumberField
               label="Phone clock warning (minutes)"
               description="Flag a day when the phone's clock is off by more than this."
-              allowDecimal={false}
-              clampBehavior="none"
               {...form.getInputProps('clockMismatchMinutes')}
             />
-            {error ? <Alert color="ledgerOrange">{error}</Alert> : null}
-            <Group justify="flex-end">
-              <Button type="submit" loading={save.isPending}>
-                Save settings
-              </Button>
-            </Group>
-          </Stack>
+          </Section>
+          <div className="flex items-center justify-end gap-3 px-5 py-4">
+            {error ? (
+              <div className="mr-auto">
+                <Notice>{error}</Notice>
+              </div>
+            ) : null}
+            <Button type="submit" loading={save.isPending}>
+              Save settings
+            </Button>
+          </div>
         </form>
-      </Paper>
-    </Stack>
+      </Panel>
+    </div>
+  );
+}
+
+function Section({ title, hint, children }: { title: string; hint: string; children: React.ReactNode }) {
+  return (
+    <div className="grid gap-5 px-5 py-5 md:grid-cols-[200px_minmax(0,1fr)] md:gap-8">
+      <div>
+        <h2 className="text-[15px] font-semibold">{title}</h2>
+        <p className="text-muted-foreground mt-1 text-xs leading-snug">{hint}</p>
+      </div>
+      <div className="grid gap-4">{children}</div>
+    </div>
   );
 }

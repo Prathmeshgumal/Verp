@@ -1,4 +1,5 @@
-import { fireEvent, screen, waitFor, within } from '@testing-library/react';
+import dayjs from 'dayjs';
+import { screen, waitFor, within } from '@testing-library/react';
 import type { AdminDayDetailDto } from '@ve/shared';
 import { expect, test, vi } from 'vitest';
 import type { Api } from '../../api/endpoints';
@@ -7,6 +8,7 @@ import { saveBlob } from '../../lib/download';
 import { todayIn } from '../../lib/time';
 import { adminDay, employee, site } from '../../testing/fakes';
 import { renderWithProviders } from '../../testing/render';
+import { pickOption } from '../../testing/select';
 import { AttendancePage } from './AttendancePage';
 
 vi.mock('../../lib/download', () => ({ saveBlob: vi.fn() }));
@@ -35,24 +37,25 @@ test('defaults to today in company time and shows each day', async () => {
   }
   const today = todayIn('Asia/Kolkata');
   expect(listAttendance).toHaveBeenCalledWith({ from: today, to: today, page: 1, pageSize: 50 });
-  expect(screen.getByLabelText('From')).toHaveValue(today);
+  expect(screen.getByLabelText('From')).toHaveTextContent(dayjs(today).format('D MMM YYYY'));
 });
 
 test('filters in the URL are used, as linked from the dashboard and employee pages', async () => {
   const { listAttendance } = renderPage('/attendance?from=2026-09-01&to=2026-09-25&employeeId=e1&needsReview=true');
   await screen.findByRole('button', { name: 'Ravi Kumar' });
   expect(listAttendance).toHaveBeenCalledWith({ from: '2026-09-01', to: '2026-09-25', employeeId: 'e1', needsReview: true, page: 1, pageSize: 50 });
-  await waitFor(() => expect(screen.getByLabelText('Employee')).toHaveValue('e1'));
+  await waitFor(() => expect(screen.getByLabelText('Employee')).toHaveTextContent('Ravi Kumar'));
   expect(screen.getByLabelText('Needs review only')).toBeChecked();
 });
 
 test('changing a filter updates the URL and the query', async () => {
   const { user, listAttendance } = renderPage('/attendance?from=2026-09-01&to=2026-09-25');
   await screen.findByRole('button', { name: 'Ravi Kumar' });
-  await user.selectOptions(screen.getByLabelText('Status'), 'Missed check-out');
+  await pickOption(user, screen.getByLabelText('Status'), 'Missed check-out');
   await waitFor(() => expect(listAttendance).toHaveBeenLastCalledWith(expect.objectContaining({ status: 'MISSED_CHECKOUT', page: 1 })));
   expect(screen.getByTestId('location')).toHaveTextContent('status=MISSED_CHECKOUT');
-  fireEvent.change(screen.getByLabelText('From'), { target: { value: '2026-09-20' } });
+  await user.click(screen.getByLabelText('From'));
+  await user.click(screen.getByRole('button', { name: /September 20th, 2026/ }));
   await waitFor(() => expect(listAttendance).toHaveBeenLastCalledWith(expect.objectContaining({ from: '2026-09-20', to: '2026-09-25' })));
 });
 

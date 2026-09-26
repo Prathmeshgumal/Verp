@@ -1,20 +1,16 @@
-import { Badge, Group } from '@mantine/core';
 import { flagLabel } from '../lib/labels';
+import { Pill } from './Pill';
 
 export function FlagBadges({ flags, needsReview }: { flags: string[]; needsReview: boolean }) {
   if (!needsReview && flags.length === 0) return null;
   return (
-    <Group gap={4}>
-      {needsReview ? (
-        <Badge color="red" variant="filled">
-          Needs review
-        </Badge>
-      ) : null}
+    <div className="flex flex-wrap gap-1">
+      {needsReview ? <Pill tone="danger">Needs review</Pill> : null}
       {flags.map((flag) => (
-        <Badge key={flag} color="gray" variant="outline">
+        <Pill key={flag} tone="neutral" dot={false}>
           {flagLabel(flag)}
-        </Badge>
+        </Pill>
       ))}
-    </Group>
+    </div>
   );
 }

@@ -8,6 +8,7 @@ export type AuthStackParamList = {
 export type WorkerTabParamList = {
   Home: undefined;
   History: undefined;
+  Profile: undefined;
 };
 
 export type AttendanceStackParamList = {

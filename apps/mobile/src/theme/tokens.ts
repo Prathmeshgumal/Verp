@@ -1,24 +1,24 @@
-/** Site Ledger theme (docs/design/README.md). */
+/** Neutral page, near-black text, green for check-in and safety orange for check-out; matches the web dashboard. */
 export const colors = {
-  bg: '#F4F1EA',
+  bg: '#F6F6F4',
   surface: '#FFFFFF',
-  text: '#1B1D1F',
-  muted: '#4A4944',
-  line: '#DDD6C8',
-  lineSoft: '#EDE7DA',
-  inputBorder: '#CFC7B6',
-  dark: '#1B1D1F',
-  onDark: '#F4F1EA',
+  text: '#17171A',
+  muted: '#5B5B61',
+  line: '#E2E2DE',
+  lineSoft: '#EFEFEC',
+  inputBorder: '#CFCFCA',
+  dark: '#17171A',
+  onDark: '#F6F6F4',
   white: '#FFFFFF',
 
-  checkIn: '#1E6B45',
-  checkInShadow: '#144A30',
-  checkOut: '#B8480F',
-  checkOutShadow: '#7E300A',
+  checkIn: '#15803D',
+  checkInShadow: '#0E5A2B',
+  checkOut: '#E0500F',
+  checkOutShadow: '#9C370A',
   workingSub: '#D5EEDF',
   workingDot: '#8FE0B1',
 
-  successBg: '#E3F0E8',
+  successBg: '#E3F3E8',
   successText: '#123D28',
   successMuted: '#2E5140',
 
@@ -31,6 +31,9 @@ export const colors = {
   warnText: '#5A2E00',
   warnMuted: '#7A3E00',
   warnIconBg: '#F6D39B',
+
+  danger: '#C8321F',
+  dangerBg: '#FBE9E6',
 
   info: '#1F4E8C',
   infoBg: '#E1EAF6',
