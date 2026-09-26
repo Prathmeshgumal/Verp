@@ -4,6 +4,7 @@ import { AppError } from '../../lib/errors';
 import { addDays, workDateOf } from '../../lib/workdate';
 import { toDayDto } from '../attendance/dto';
 import { findAssignedActiveSite, findDay, listDays } from '../attendance/repo';
+import { findUserById } from '../auth/repo';
 import { getSettings } from '../settings/repo';
 import { toSiteSummary } from '../sites/dto';
 
@@ -14,11 +15,13 @@ export async function getToday(deps: ResolvedDeps, employeeId: string): Promise<
   const now = deps.clock();
   const settings = await getSettings(deps.db);
   const workDate = workDateOf(now, settings.timezone);
-  const [day, yesterday, site] = await Promise.all([
+  const [day, yesterday, site, user] = await Promise.all([
     findDay(deps.db, employeeId, workDate),
     findDay(deps.db, employeeId, addDays(workDate, -1)),
     findAssignedActiveSite(deps.db, employeeId),
+    findUserById(deps.db, employeeId),
   ]);
+  if (!user) throw new AppError('UNAUTHORIZED', 401, 'Login required');
   return {
     serverTime: now.toISOString(),
     workDate,
@@ -28,6 +31,7 @@ export async function getToday(deps: ResolvedDeps, employeeId: string): Promise<
     maxAccuracyM: settings.maxAccuracyM,
     reminderTime: settings.reminderTime,
     timezone: settings.timezone,
+    joinedOn: workDateOf(user.createdAt, settings.timezone),
   };
 }
 

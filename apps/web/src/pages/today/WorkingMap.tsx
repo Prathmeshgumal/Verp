@@ -1,13 +1,16 @@
-import type { DashboardMapDay, SiteDto } from '@ve/shared';
+import type { DashboardMapDay, DashboardRefusedAttempt, SiteDto } from '@ve/shared';
 import L from 'leaflet';
 import { useState } from 'react';
-import { Circle, MapContainer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
+import { Circle, CircleMarker, MapContainer, Marker, Popup, Tooltip, useMap, useMapEvents } from 'react-leaflet';
+import { formatTime } from '../../lib/time';
 import { MAP_LIMITS, OsmTiles } from '../../maps/OsmTiles';
 import { INDIA_BOUNDS } from '../sites/SiteMapPicker';
 import { bubbleHtml, GROUP_BELOW_ZOOM, siteBubbles, stackDays, stackHtml, tagLabel, tagTone } from './workingMap';
 
 interface Props {
   days: DashboardMapDay[];
+  /** Refused attempts, drawn as red dots where the phone was. */
+  refused: DashboardRefusedAttempt[];
   sites: SiteDto[];
   tz: string;
   onOpen: (dayId: string) => void;
@@ -25,7 +28,7 @@ function startBounds(days: DashboardMapDay[], sites: SiteDto[]): L.LatLngBounds 
   return points.length > 0 ? L.latLngBounds(points).pad(0.2) : INDIA_BOUNDS;
 }
 
-function Tags({ days, sites, tz, onOpen }: Omit<Props, 'height'>) {
+function Tags({ days, sites, tz, onOpen }: Omit<Props, 'height' | 'refused'>) {
   const map = useMap();
   const [zoom, setZoom] = useState(() => map.getZoom());
   useMapEvents({ zoomend: () => setZoom(map.getZoom()) });
@@ -75,7 +78,7 @@ function Tags({ days, sites, tz, onOpen }: Omit<Props, 'height'>) {
 }
 
 /** Where each worker checked in today. Positions come from check-in only; nothing is tracked afterwards. */
-export function WorkingMap({ days, sites, tz, onOpen, height }: Props) {
+export function WorkingMap({ days, refused, sites, tz, onOpen, height }: Props) {
   return (
     <MapContainer {...MAP_LIMITS} bounds={startBounds(days, sites)} style={{ height, borderRadius: 12 }} scrollWheelZoom>
       <OsmTiles />
@@ -90,6 +93,13 @@ export function WorkingMap({ days, sites, tz, onOpen, height }: Props) {
             pathOptions={{ color: '#FF5B14', weight: 1.5, opacity: 0.5, fillOpacity: 0.06 }}
           />
         ))}
+      {refused.map((a) => (
+        <CircleMarker key={a.id} center={[a.lat, a.lng]} radius={7} pathOptions={{ color: '#fff', weight: 2, fillColor: '#D92D20', fillOpacity: 1 }}>
+          <Tooltip direction="top" offset={[0, -6]}>
+            {`${a.name} · ${a.type === 'IN' ? 'check-in' : 'check-out'} refused · ${formatTime(a.serverTime, tz)}`}
+          </Tooltip>
+        </CircleMarker>
+      ))}
       <Tags days={days} sites={sites} tz={tz} onOpen={onOpen} />
     </MapContainer>
   );

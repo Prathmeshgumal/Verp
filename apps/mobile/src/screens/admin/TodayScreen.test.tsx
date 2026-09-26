@@ -17,6 +17,7 @@ const dashboard: DashboardTodayDto = {
   needsReview: 3,
   working: [{ employeeId: 'e1', name: 'Ramesh Kale', siteName: 'Plot 7', checkInAt: '2026-09-25T03:32:00Z' }],
   mapDays: [],
+  refused: [],
 };
 
 test('shows the day counts and who is working', async () => {

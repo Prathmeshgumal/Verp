@@ -2,6 +2,9 @@ import type { FastifyInstance } from 'fastify';
 import { afterEach, describe, expect, it } from 'vitest';
 import { createTestApp, type FakeClock } from './helpers/app';
 import { insertDay, submit, submitBody } from './helpers/attendance';
+import { eq } from 'drizzle-orm';
+import { users } from '../src/db/schema';
+import { testDb } from './helpers/db';
 import { adminToken, bearer, employeeToken, makeAdmin, makeEmployee, makeSite } from './helpers/factories';
 
 let app: FastifyInstance;
@@ -26,7 +29,17 @@ describe('GET /me/today', () => {
       maxAccuracyM: 50,
       reminderTime: '19:00',
       timezone: 'Asia/Kolkata',
+      joinedOn: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
     });
+  });
+
+  it('says which work day the account was created on, in company time', async () => {
+    ({ app, clock } = await createTestApp());
+    const emp = await makeEmployee();
+    // 20:00 UTC on the 10th is already the 11th in India.
+    await testDb.db.update(users).set({ createdAt: new Date('2026-09-10T20:00:00Z') }).where(eq(users.id, emp.user.id));
+    const token = await employeeToken(app, emp);
+    expect((await get('/me/today', token)).json().joinedOn).toBe('2026-09-11');
   });
 
   it("returns the day after check-in and flags yesterday's missed checkout", async () => {

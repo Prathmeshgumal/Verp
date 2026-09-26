@@ -247,9 +247,10 @@
   align-items: start;
 }
 
-.ve-today-list {
+.ve-today-side {
   max-height: calc(100vh - 250px);
   overflow-y: auto;
+  align-content: start;
 }
 
 /* Site editor: a tall map on the left; finding the place and the details form on the right. */

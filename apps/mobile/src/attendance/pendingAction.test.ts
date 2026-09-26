@@ -12,6 +12,7 @@ const today = (extra: Partial<MeTodayResponse> = {}): MeTodayResponse => ({
   maxAccuracyM: 50,
   reminderTime: '19:00',
   timezone: 'Asia/Kolkata',
+  joinedOn: '2026-09-01',
   ...extra,
 });
 

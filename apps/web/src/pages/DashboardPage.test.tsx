@@ -7,9 +7,10 @@ import { DashboardPage } from './DashboardPage';
 
 // Leaflet needs a real browser; the page only relies on the days it passes and onOpen.
 vi.mock('./today/WorkingMap', () => ({
-  WorkingMap: (props: { days: { dayId: string }[]; onOpen: (id: string) => void }) => (
+  WorkingMap: (props: { days: { dayId: string }[]; refused: { id: string }[]; onOpen: (id: string) => void }) => (
     <div>
       <output data-testid="map-days">{props.days.map((d) => d.dayId).join(',') || 'none'}</output>
+      <output data-testid="map-refused">{props.refused.map((r) => r.id).join(',') || 'none'}</output>
       <button type="button" onClick={() => props.onOpen('d1')}>
         fake tag click
       </button>
@@ -80,4 +81,20 @@ test('clicking a tag opens that day', async () => {
 test('an empty day says no one has checked in', async () => {
   renderWithProviders(<DashboardPage />, { api: { dashboard: vi.fn(async () => dashboardToday({ working: [], mapDays: [] })) } });
   expect(await screen.findByText('No one has checked in yet today.')).toBeInTheDocument();
+});
+
+test('refused check-ins are counted, listed and put on the map', async () => {
+  renderWithProviders(<DashboardPage />, { api: { dashboard: vi.fn(async () => dashboardToday()) } });
+  await screen.findByText('Fri 25 Sep 2026');
+  expect(within(screen.getByText('Refused today').parentElement!).getByText('1')).toBeInTheDocument();
+  const row = screen.getByRole('listitem', { name: /Amol Patil/ });
+  expect(within(row).getByText('Check-in refused · outside the site')).toBeInTheDocument();
+  expect(within(row).getByText('1.5 km from Plot 7 · 09:40')).toBeInTheDocument();
+  expect(screen.getByTestId('map-refused')).toHaveTextContent('ev9');
+});
+
+test('no refused attempts shows no list', async () => {
+  renderWithProviders(<DashboardPage />, { api: { dashboard: vi.fn(async () => dashboardToday({ refused: [] })) } });
+  await screen.findByText('Fri 25 Sep 2026');
+  expect(screen.queryByRole('heading', { name: 'Refused attempts' })).toBeNull();
 });

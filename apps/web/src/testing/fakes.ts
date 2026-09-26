@@ -133,6 +133,21 @@ export function dashboardToday(overrides: Partial<DashboardTodayDto> = {}): Dash
         needsReview: false,
       },
     ],
+    refused: [
+      {
+        id: 'ev9',
+        employeeId: 'e3',
+        name: 'Amol Patil',
+        siteName: 'Plot 7',
+        type: 'IN',
+        result: 'OUTSIDE_SITE',
+        serverTime: '2026-09-25T04:10:00.000Z',
+        lat: 18.6,
+        lng: 73.75,
+        accuracyM: 12,
+        distanceM: 1480.4,
+      },
+    ],
     ...overrides,
   };
 }

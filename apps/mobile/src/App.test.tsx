@@ -31,7 +31,7 @@ test('no session → worker login', async () => {
 test('a stored employee session opens the worker home', async () => {
   storeSession(employeeUser);
   server({
-    '/me/today': { workDate: '2026-09-25', day: null, site: null, missedYesterday: false, maxAccuracyM: 50, reminderTime: '19:00', timezone: 'Asia/Kolkata', serverTime: '2026-09-25T03:00:00Z' } satisfies MeTodayResponse,
+    '/me/today': { workDate: '2026-09-25', day: null, site: null, missedYesterday: false, maxAccuracyM: 50, reminderTime: '19:00', timezone: 'Asia/Kolkata', joinedOn: '2026-09-01', serverTime: '2026-09-25T03:00:00Z' } satisfies MeTodayResponse,
   });
   await render(<App />);
   expect(await screen.findByText('No site assigned')).toBeOnTheScreen();
@@ -41,7 +41,7 @@ test('a stored employee session opens the worker home', async () => {
 test('a stored admin session opens the admin Today screen, never worker screens', async () => {
   storeSession(adminUser);
   server({
-    '/admin/dashboard/today': { workDate: '2026-09-25', activeEmployees: 1, checkedInToday: 0, workingNow: 0, completedToday: 0, notYetIn: 1, missedCheckouts: 0, needsReview: 0, working: [], mapDays: [] } satisfies DashboardTodayDto,
+    '/admin/dashboard/today': { workDate: '2026-09-25', activeEmployees: 1, checkedInToday: 0, workingNow: 0, completedToday: 0, notYetIn: 1, missedCheckouts: 0, needsReview: 0, working: [], mapDays: [], refused: [] } satisfies DashboardTodayDto,
   });
   await render(<App />);
   expect(await screen.findByText('Nobody is working right now')).toBeOnTheScreen();
