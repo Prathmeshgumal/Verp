@@ -164,3 +164,9 @@ export interface SettingsDto {
   reminderTime: string;
   clockMismatchMinutes: number;
 }
+
+/** A site pin read from a Google Maps link or pasted coordinates. */
+export interface PlaceLinkDto {
+  lat: number;
+  lng: number;
+}
