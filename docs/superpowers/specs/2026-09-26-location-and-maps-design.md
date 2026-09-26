@@ -54,7 +54,7 @@ A reading is `{ lat, lng, accuracyM }`. A reading is **precise enough for a site
 
 - Use `navigator.geolocation.watchPosition` with `enableHighAccuracy: true, maximumAge: 0` for up to **20 s**, keeping the most accurate reading. Stop as soon as a reading meets the gate, or at the deadline.
 - While waiting: button shows a loader and the text *"Getting your location… ±N m"* (live best accuracy).
-- **Gate met:** move the pin, draw an accuracy ring (a light circle of radius `accuracyM`) for 10 s or until the pin moves, and show *"Your location · accurate to ±N m"*.
+- **Gate met:** move the pin, draw an accuracy ring (a light circle of radius `accuracyM`) until the pin moves, and show *"Your location · accurate to ±N m"*.
 - **Gate not met at the deadline:** the pin does **not** move. Show: *"Your location is only accurate to ±N m, more than the ±M m allowed. Search, paste from Google Maps, or drag the pin."* On a laptop this is the expected outcome and the message says so: *"Laptops usually cannot tell their exact position."*
 - Errors (permission refused, unavailable) keep the current messages.
 
@@ -82,7 +82,7 @@ A **"Paste from Google Maps"** field sits under the place search, with a help li
 
 ### 5.2 API: `POST /admin/places/resolve-link`
 
-- **Auth:** admin only (same guard as other `/admin` routes). **Rate limit:** 30/min per admin.
+- **Auth:** admin only (same guard as other `/admin` routes). **Rate limit:** 30/min per IP address.
 - **Body:** `{ text: string }` (1–2000 chars, strict schema).
 - **Success 200:** `{ lat: number, lng: number, precision: 'pin' }`.
 - **Failure 422:** `{ code, message }`, where `code` is one of:
@@ -95,7 +95,7 @@ A **"Paste from Google Maps"** field sits under the place search, with a help li
   3. **Short links:** follow redirects manually (`redirect: 'manual'`), at most **5 hops**, each hop re-checked against the allowlist, **5 s** total timeout, no cookies, and the response body is never read. The final URL is what gets parsed.
   4. **Parse, in order of precision** (the first match wins):
      - `!3d<lat>!4d<lng>` in the `data=` part: the place's own pin.
-     - `?q=<lat>,<lng>`, `query=<lat>,<lng>`, `ll=<lat>,<lng>`, `/search/<lat>,<lng>`, `/place/<lat>,<lng>`: a dropped pin or coordinates search.
+     - `?q=<lat>,<lng>`, `query=<lat>,<lng>`, `/search/<lat>,<lng>`, `/place/<lat>,<lng>`: a dropped pin or coordinates search.
      - `@<lat>,<lng>,<zoom>` **alone** is the map's viewport centre, not a pin → `NO_EXACT_PIN`.
   5. Validate the range (lat −90..90, lng −180..180, not both 0).
 - The endpoint logs the resolved host and outcome, never the full link (links can carry personal search text).
@@ -125,19 +125,19 @@ Returns `LatLng | null`. The same function runs in the web app, the phone app an
 
 ### 8.1 Live position (native)
 
-- New native methods on `NativeVeDevice`: `startLocationWatch(intervalMs)` and `stopLocationWatch()`, plus a `VeLocationUpdate` event carrying `{ lat, lng, accuracyM, isMock }`.
+- New native methods on `NativeVeDevice`: `startLocationWatch(intervalMs)` and `stopLocationWatch()`, plus an `onLocationUpdate` event (a codegen `EventEmitter`) carrying `{ lat, lng, accuracyM, isMock }`.
 - Implementation: the fused provider with `PRIORITY_HIGH_ACCURACY`, interval 1 s, min interval 1 s; the same `LocationManager` fallback as `Locator.bestFix`.
 - **Lifecycle:** watch only while the home screen is focused **and** the app is in the foreground. Stop on blur, background, or logout. Nothing is sent to the server by the watch.
 - If location is off or permission is missing, the existing `ensureLocationReady` flow shows its messages instead of the map.
 
 ### 8.2 Screen
 
-- The **map** takes the top portion of the home screen. It shows the site circle, the worker's position as a blue dot, and an accuracy ring. It follows the worker unless they pan; a "centre" button re-centres.
+- The **map** takes the top portion of the home screen. It shows the site circle, the worker's position as a blue dot, and an accuracy ring. When the blue dot leaves the visible area, the map refits to show it; a "centre" button fits the circle and the dot again.
 - The **status line** is computed with `evaluateGeofence(point, accuracyM, site, maxAccuracyM)` (D5):
   - `ok` → 🟢 *"Inside the site · 23 m from the centre · ±8 m"*
   - `OUTSIDE_SITE` → 🟠 *"Outside the site · 140 m away"*
   - `LOW_ACCURACY` → ⏳ *"Getting a precise location… ±85 m"*
-  - No reading yet → ⏳ *"Finding your location…"*
+  - No reading yet → ⏳ *"Looking for your location…"* (different from the busy screen's "Finding your location…")
   - `isMock` → a warning line: *"A fake-location app is on. Check-ins will be flagged."*
 - The **CHECK IN / CHECK OUT button** and the existing states (checked in, done, missed check-out, no site) are unchanged and **always enabled** (D3). Tapping runs the existing submit flow (fresh `getBestFix`, idempotency key, server decision). The watch pauses during a submit and resumes after.
 - **No internet:** tiles fail silently; the circle, dot and status still render on a plain background.
@@ -181,14 +181,14 @@ It covers today's work date in the company time zone: every day with status `CHE
 ## 10. Carry-overs
 
 - **"Set by an admin":** when a day has the `ADMIN_CORRECTED` flag, the day panel's check-out card shows *"Set by an admin"* instead of the phone's distance and accuracy, and the map draws no check-out dot. The attempt list still shows every phone attempt.
-- **Favicon:** an SVG icon in the brand colours, plus a PNG fallback.
+- **Favicon:** an SVG icon in the brand colours (all current browsers support SVG favicons).
 - **Code splitting:** route-level `React.lazy` for every page, with the map pages in their own chunks, so the first load does not download Leaflet. The build must have no chunk warning.
 
 ## 11. Error handling
 
 - Every location message names the accuracy in metres and offers a next step (search, paste, drag, or move to open sky).
 - `resolve-link` failures never throw to the UI; they map to the three messages in 5.2. Network errors use the existing "Cannot reach the server" message.
-- A watch error on the phone shows *"Finding your location…"* and retries; it never blocks the button.
+- A watch error on the phone shows *"Looking for your location…"* and retries; it never blocks the button.
 
 ## 12. Testing
 
