@@ -67,11 +67,15 @@ test('not checked in: CHECK IN saves, shows the time and sets the reminder', asy
 });
 
 test('a double tap sends only one request', async () => {
-  const checkIn = jest.fn(() => new Promise<AttendanceResult>((resolve) => setTimeout(() => resolve(okIn), 20)));
+  // The server answers only after both taps, so the second tap always lands while the first is in flight.
+  let answer: (result: AttendanceResult) => void = () => {};
+  const checkIn = jest.fn(() => new Promise<AttendanceResult>((resolve) => (answer = resolve)));
   await renderWithAuth(<HomeScreen />, { api: fakeApi({ today: jest.fn(async () => today()), checkIn }) });
   const button = await screen.findByRole('button', { name: 'CHECK IN' });
   await fireEvent.press(button);
   await fireEvent.press(button);
+  await waitFor(() => expect(checkIn).toHaveBeenCalled());
+  answer(okIn);
   expect(await screen.findByText('Attendance saved')).toBeOnTheScreen();
   expect(checkIn).toHaveBeenCalledTimes(1);
 });

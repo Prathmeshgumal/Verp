@@ -8,7 +8,8 @@ export default tseslint.config(
       '**/dist/**',
       '**/drizzle/**',
       '**/node_modules/**',
-      'apps/web/**',
+      'apps/web/playwright-report/**',
+      'apps/web/test-results/**',
       'apps/mobile/android/**',
       'apps/mobile/*.js',
       'apps/mobile/scripts/**',
@@ -23,7 +24,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['apps/mobile/**/*.{ts,tsx}'],
+    files: ['apps/mobile/**/*.{ts,tsx}', 'apps/web/**/*.{ts,tsx}'],
     plugins: { 'react-hooks': reactHooks },
     rules: {
       'react-hooks/rules-of-hooks': 'error',

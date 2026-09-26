@@ -46,7 +46,11 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   app.decorate('authenticate', makeAuthenticate(resolved));
 
   await app.register(helmet);
-  await app.register(cors, { origin: [deps.config.WEB_ORIGIN], credentials: true });
+  await app.register(cors, {
+    origin: [deps.config.WEB_ORIGIN],
+    credentials: true,
+    methods: ['GET', 'HEAD', 'POST', 'PATCH'],
+  });
   await app.register(cookie);
   await app.register(rateLimit, { global: false });
 

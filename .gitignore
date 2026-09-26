@@ -5,3 +5,5 @@ dist/
 coverage/
 .DS_Store
 .superpowers/
+apps/web/playwright-report/
+apps/web/test-results/
