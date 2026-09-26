@@ -21,23 +21,37 @@ body {
   background: #8a8578;
 }
 
-/* Sites tab: the map on the left, the list on the right; stacked on narrow screens. */
+/* Browsers that scale tiles by a fractional pixel ratio leave hairline gaps between them. */
+.leaflet-container img.leaflet-tile {
+  mix-blend-mode: plus-lighter;
+}
+
+/* Sites tab: the map on the left, a fixed-width list on the right; stacked on narrow screens. */
 .ve-split {
   display: grid;
-  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  grid-template-columns: minmax(0, 1fr) 380px;
   gap: 16px;
-  height: calc(100vh - 180px);
-  min-height: 480px;
+  height: clamp(420px, calc(100vh - 200px), 620px);
 }
 
 .ve-split-map,
-.ve-split-list {
+.ve-split-panel {
   min-height: 0;
 }
 
+.ve-split-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.ve-split-head {
+  border-bottom: 1px solid var(--mantine-color-default-border);
+}
+
 .ve-split-list {
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
-  padding-right: 4px;
 }
 
 .ve-site-row {
@@ -47,6 +61,43 @@ body {
 .ve-site-row[aria-current="true"] {
   border-color: #b8480f;
   box-shadow: 0 0 0 1px #b8480f;
+}
+
+/* Today: the check-in map beside the list of who is working. */
+.ve-today {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.ve-today-list {
+  max-height: 460px;
+  overflow-y: auto;
+}
+
+/* Site editor: location tools and map on the left, the details form on the right. */
+.ve-site-edit {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 400px;
+  gap: 16px;
+  align-items: start;
+}
+
+.ve-site-edit-details {
+  position: sticky;
+  top: 76px;
+}
+
+@media (max-width: 1100px) {
+  .ve-today,
+  .ve-site-edit {
+    grid-template-columns: 1fr;
+  }
+
+  .ve-site-edit-details {
+    position: static;
+  }
 }
 
 @media (max-width: 900px) {
@@ -61,6 +112,10 @@ body {
 
   .ve-split-list {
     overflow: visible;
+  }
+
+  .ve-split-panel {
+    display: block;
   }
 }
 

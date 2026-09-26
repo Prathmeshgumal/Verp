@@ -24,20 +24,20 @@ interface Stat {
 function StatCard({ label, value, href, tone }: Stat) {
   const body: ReactNode = (
     <>
-      <Text size="sm" c="dimmed">
+      <Text size="xs" c="dimmed" lh={1.3}>
         {label}
       </Text>
-      <Text className="ve-num" fz={32} fw={600} c={tone}>
+      <Text className="ve-num" fz={26} fw={600} lh={1.2} mt={4} c={tone}>
         {value}
       </Text>
     </>
   );
   return href ? (
-    <Paper component={Link} to={href} withBorder p="md" radius="md" style={{ textDecoration: 'none', color: 'inherit' }}>
+    <Paper component={Link} to={href} withBorder px="md" py="sm" radius="md" style={{ textDecoration: 'none', color: 'inherit' }}>
       {body}
     </Paper>
   ) : (
-    <Paper withBorder p="md" radius="md">
+    <Paper withBorder px="md" py="sm" radius="md">
       {body}
     </Paper>
   );
@@ -79,56 +79,56 @@ export function DashboardPage() {
         </Text>
       </Group>
 
-      <Paper withBorder p="md" radius="md">
-        <Group justify="space-between" mb="sm">
-          <Title order={3}>On site today</Title>
-          <Switch
-            label="Also show finished today"
-            checked={showFinished}
-            onChange={(event) => setShowFinished(event.currentTarget.checked)}
-          />
-        </Group>
-        {d.mapDays.length === 0 ? (
-          <Text c="dimmed" mb="sm">
-            No one has checked in yet today.
-          </Text>
-        ) : null}
-        <WorkingMap days={visibleDays(d.mapDays, showFinished)} sites={sites.data ?? []} tz={tz} onOpen={setOpenDayId} height="55vh" />
-      </Paper>
-
-      <SimpleGrid cols={{ base: 2, sm: 3, lg: 4 }}>
+      <SimpleGrid cols={{ base: 2, sm: 4, xl: 7 }} spacing="sm">
         {stats.map((stat) => (
           <StatCard key={stat.label} {...stat} />
         ))}
       </SimpleGrid>
 
-      <Paper withBorder p="md" radius="md">
-        <Title order={3} mb="sm">
-          Working now
-        </Title>
-        {d.working.length === 0 ? (
-          <Text c="dimmed">Nobody is checked in right now.</Text>
-        ) : (
-          <Table>
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th>Name</Table.Th>
-                <Table.Th>Site</Table.Th>
-                <Table.Th>Checked in</Table.Th>
-              </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>
-              {d.working.map((w) => (
-                <Table.Tr key={w.employeeId}>
-                  <Table.Td>{w.name}</Table.Td>
-                  <Table.Td>{w.siteName}</Table.Td>
-                  <Table.Td className="ve-num">{formatTime(w.checkInAt, tz)}</Table.Td>
+      <div className="ve-today">
+        <Paper withBorder p="md" radius="md">
+          <Group justify="space-between" mb="sm" wrap="nowrap">
+            <Title order={3}>On site today</Title>
+            <Switch size="xs" label="Also show finished today" checked={showFinished} onChange={(event) => setShowFinished(event.currentTarget.checked)} />
+          </Group>
+          {d.mapDays.length === 0 ? (
+            <Text size="sm" c="dimmed" mb="sm">
+              No one has checked in yet today.
+            </Text>
+          ) : null}
+          <WorkingMap days={visibleDays(d.mapDays, showFinished)} sites={sites.data ?? []} tz={tz} onOpen={setOpenDayId} height={380} />
+        </Paper>
+
+        <Paper withBorder p="md" radius="md" className="ve-today-list">
+          <Title order={3} mb="sm">
+            Working now
+          </Title>
+          {d.working.length === 0 ? (
+            <Text size="sm" c="dimmed">
+              Nobody is checked in right now.
+            </Text>
+          ) : (
+            <Table>
+              <Table.Thead>
+                <Table.Tr>
+                  <Table.Th>Name</Table.Th>
+                  <Table.Th>Site</Table.Th>
+                  <Table.Th>Checked in</Table.Th>
                 </Table.Tr>
-              ))}
-            </Table.Tbody>
-          </Table>
-        )}
-      </Paper>
+              </Table.Thead>
+              <Table.Tbody>
+                {d.working.map((w) => (
+                  <Table.Tr key={w.employeeId}>
+                    <Table.Td>{w.name}</Table.Td>
+                    <Table.Td>{w.siteName}</Table.Td>
+                    <Table.Td className="ve-num">{formatTime(w.checkInAt, tz)}</Table.Td>
+                  </Table.Tr>
+                ))}
+              </Table.Tbody>
+            </Table>
+          )}
+        </Paper>
+      </div>
       {openDayId ? <AttendanceDrawer dayId={openDayId} onClose={() => setOpenDayId(null)} /> : null}
     </Stack>
   );

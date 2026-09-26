@@ -2,7 +2,7 @@ import L from 'leaflet';
 import { useEffect, useRef } from 'react';
 import { Circle, MapContainer, Marker, useMap, useMapEvents } from 'react-leaflet';
 import type { Reading } from '../../lib/locate';
-import { OsmTiles } from '../../maps/OsmTiles';
+import { MAP_LIMITS, OsmTiles } from '../../maps/OsmTiles';
 
 export interface LatLng {
   lat: number;
@@ -63,7 +63,7 @@ function ClickToMove({ onMove }: Pick<Props, 'onMove'>) {
 
 export function SiteMapPicker({ center, radiusM, onMove, recenterKey, accuracy = null, overview = [], height = 420 }: Props) {
   return (
-    <MapContainer bounds={startBounds(center, radiusM, overview)} style={{ height, borderRadius: 12 }} scrollWheelZoom>
+    <MapContainer {...MAP_LIMITS} bounds={startBounds(center, radiusM, overview)} style={{ height, borderRadius: 12 }} scrollWheelZoom>
       <OsmTiles />
       {center ? (
         <>

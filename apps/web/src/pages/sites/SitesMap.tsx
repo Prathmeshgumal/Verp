@@ -2,7 +2,7 @@ import type { SiteDto } from '@ve/shared';
 import L from 'leaflet';
 import { Fragment, useEffect, useRef } from 'react';
 import { Circle, MapContainer, Marker, Tooltip, useMap } from 'react-leaflet';
-import { OsmTiles } from '../../maps/OsmTiles';
+import { MAP_LIMITS, OsmTiles } from '../../maps/OsmTiles';
 import { INDIA_BOUNDS } from './SiteMapPicker';
 
 interface Props {
@@ -32,14 +32,14 @@ function FlyToSelected({ sites, selectedId }: { sites: SiteDto[]; selectedId: st
   latest.current = sites;
   useEffect(() => {
     const site = latest.current.find((s) => s.id === selectedId);
-    if (site) map.flyToBounds(L.latLng(site.lat, site.lng).toBounds(site.radiusM * 3), { maxZoom: 18, duration: 0.6 });
+    if (site) map.flyToBounds(L.latLng(site.lat, site.lng).toBounds(site.radiusM * 3), { maxZoom: 17, duration: 0.6 });
   }, [map, selectedId]);
   return null;
 }
 
 export function SitesMap({ sites, selectedId, hoveredId, onSelect }: Props) {
   return (
-    <MapContainer bounds={boundsOf(sites)} style={{ height: '100%', minHeight: 320, borderRadius: 12 }} scrollWheelZoom>
+    <MapContainer {...MAP_LIMITS} bounds={boundsOf(sites)} boundsOptions={{ maxZoom: 16 }} style={{ height: '100%', minHeight: 320, borderRadius: 12 }} scrollWheelZoom>
       <OsmTiles />
       {sites.map((s) => {
         const lit = s.id === selectedId || s.id === hoveredId;

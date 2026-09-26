@@ -2,7 +2,7 @@ import type { DashboardMapDay, SiteDto } from '@ve/shared';
 import L from 'leaflet';
 import { useState } from 'react';
 import { Circle, MapContainer, Marker, useMap, useMapEvents } from 'react-leaflet';
-import { OsmTiles } from '../../maps/OsmTiles';
+import { MAP_LIMITS, OsmTiles } from '../../maps/OsmTiles';
 import { INDIA_BOUNDS } from '../sites/SiteMapPicker';
 import { bubbleHtml, GROUP_BELOW_ZOOM, siteBubbles, tagHtml } from './workingMap';
 
@@ -53,7 +53,7 @@ function Tags({ days, sites, tz, onOpen }: Omit<Props, 'height'>) {
 /** Where each worker checked in today. Positions come from check-in only; nothing is tracked afterwards. */
 export function WorkingMap({ days, sites, tz, onOpen, height }: Props) {
   return (
-    <MapContainer bounds={startBounds(days, sites)} style={{ height, borderRadius: 12 }} scrollWheelZoom>
+    <MapContainer {...MAP_LIMITS} bounds={startBounds(days, sites)} style={{ height, borderRadius: 12 }} scrollWheelZoom>
       <OsmTiles />
       {sites
         .filter((s) => s.isActive)
