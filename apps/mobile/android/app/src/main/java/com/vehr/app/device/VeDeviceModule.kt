@@ -1,9 +1,11 @@
 package com.vehr.app.device
 
+import android.location.Location
 import android.os.Build
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
+import com.facebook.react.bridge.WritableMap
 import com.vehr.app.BuildConfig
 import com.vehr.app.specs.NativeVeDeviceSpec
 import java.util.UUID
@@ -56,20 +58,30 @@ class VeDeviceModule(private val reactContext: ReactApplicationContext) : Native
 
     override fun getCurrentPosition(timeoutMs: Double, targetAccuracyM: Double, promise: Promise) {
         locator.bestFix(timeoutMs.toLong(), targetAccuracyM.toFloat()) { location ->
-            if (location == null) {
-                promise.reject("NO_FIX", "No location fix")
-            } else {
-                promise.resolve(
-                    Arguments.createMap().apply {
-                        putDouble("lat", location.latitude)
-                        putDouble("lng", location.longitude)
-                        putDouble("accuracyM", location.accuracy.toDouble())
-                        putBoolean("isMock", Locator.isMock(location))
-                    },
-                )
-            }
+            if (location == null) promise.reject("NO_FIX", "No location fix") else promise.resolve(fixMap(location))
         }
     }
+
+    override fun startLocationWatch(intervalMs: Double) {
+        locator.startWatch(intervalMs.toLong()) { location ->
+            if (location.hasAccuracy()) emitOnLocationUpdate(fixMap(location))
+        }
+    }
+
+    override fun stopLocationWatch() = locator.stopWatch()
+
+    override fun invalidate() {
+        locator.stopWatch()
+        super.invalidate()
+    }
+
+    private fun fixMap(location: Location): WritableMap =
+        Arguments.createMap().apply {
+            putDouble("lat", location.latitude)
+            putDouble("lng", location.longitude)
+            putDouble("accuracyM", location.accuracy.toDouble())
+            putBoolean("isMock", Locator.isMock(location))
+        }
 
     override fun scheduleReminder(
         workDate: String,

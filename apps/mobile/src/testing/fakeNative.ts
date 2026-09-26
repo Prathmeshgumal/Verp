@@ -11,6 +11,7 @@ export interface FakeNativeState {
   fix: FakeFix | null;
   reminders: FakeReminder[];
   uuidSeq: number;
+  watchIntervalMs: number | null;
 }
 
 function initialState(): FakeNativeState {
@@ -29,13 +30,23 @@ function initialState(): FakeNativeState {
     fix: { lat: 18.5912, lng: 73.7389, accuracyM: 12, isMock: false },
     reminders: [],
     uuidSeq: 0,
+    watchIntervalMs: null,
   };
 }
 
 export const fakeState: FakeNativeState = initialState();
 
+type FixListener = (fix: FakeFix) => void;
+const fixListeners = new Set<FixListener>();
+
+/** Plays one reading to whoever listens to onLocationUpdate, as the native watch would. */
+export function emitFakeLocation(fix: FakeFix): void {
+  for (const listener of [...fixListeners]) listener({ ...fix });
+}
+
 export function resetFakeNative(): void {
   Object.assign(fakeState, initialState());
+  fixListeners.clear();
 }
 
 /** In-memory stand-in for the Kotlin module. Methods added by later tasks live here too. */
@@ -67,5 +78,15 @@ export const fakeNative = {
   },
   cancelReminder: async () => {
     fakeState.reminders = [];
+  },
+  startLocationWatch: (intervalMs: number) => {
+    fakeState.watchIntervalMs = intervalMs;
+  },
+  stopLocationWatch: () => {
+    fakeState.watchIntervalMs = null;
+  },
+  onLocationUpdate: (listener: FixListener) => {
+    fixListeners.add(listener);
+    return { remove: () => void fixListeners.delete(listener) };
   },
 } satisfies Spec;
