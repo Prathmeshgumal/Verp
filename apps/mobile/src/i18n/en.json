@@ -31,5 +31,33 @@
     "employees": "Employees",
     "sites": "Sites",
     "attendance": "Attendance"
+  },
+  "login": {
+    "title": "Log in",
+    "subtitle": "Your phone number and PIN",
+    "phone": "Phone number",
+    "pin": "PIN",
+    "pinEntered": "{{n}} of 6 digits entered",
+    "deleteDigit": "Delete",
+    "adminLink": "Admin login",
+    "busy": "Logging in…",
+    "adminTitle": "Admin login",
+    "adminSubtitle": "Email and password",
+    "email": "Email",
+    "password": "Password",
+    "submit": "Log in",
+    "workerLink": "Worker login",
+    "errors": {
+      "wrong": "Wrong phone or PIN",
+      "wrongAdmin": "Wrong email or password",
+      "locked": "Too many tries. Wait 15 minutes",
+      "inactive": "Please contact your supervisor",
+      "tooMany": "Too many tries. Wait a minute",
+      "invalidPhone": "Enter a valid phone number",
+      "invalid": "Check what you typed",
+      "network": "No internet. Try again",
+      "generic": "Something went wrong. Try again",
+      "sessionExpired": "Please log in again"
+    }
   }
 }
