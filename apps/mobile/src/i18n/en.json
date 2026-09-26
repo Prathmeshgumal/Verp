@@ -123,5 +123,53 @@
     "appVersion": "App version {{version}}",
     "logoutTitle": "Log out?",
     "logoutBody": "You will need your phone number and PIN to log in again."
+  },
+  "admin": {
+    "tag": "ADMIN",
+    "today": {
+      "title": "Today",
+      "updated": "{{date}} · updated {{time}}",
+      "workingNow": "Working now",
+      "notYetIn": "Not yet in",
+      "completed": "Completed",
+      "needsReview": "Needs review",
+      "summary": "Checked in {{checkedIn}} · Missed check-outs {{missed}} · Active {{active}}",
+      "byCheckIn": "by check-in time",
+      "nobodyWorking": "Nobody is working right now",
+      "since": "{{site}} · since {{time}}"
+    },
+    "attendance": {
+      "title": "Attendance",
+      "prevDay": "Previous day",
+      "nextDay": "Next day",
+      "employeeFilter": "Employee: {{name}}",
+      "clearFilter": "Clear filter",
+      "last30": "Last 30 days",
+      "empty": "No attendance for this day",
+      "review": "Review",
+      "checkIn": "Check-in",
+      "checkOut": "Check-out",
+      "notYet": "Not yet",
+      "distance": "{{m}} m from site, ±{{acc}} m",
+      "worked": "{{duration}} worked",
+      "flags": "Flags",
+      "attempts": "All attempts",
+      "mock": "Fake GPS",
+      "fixOnWeb": "Fix the check-out and mark reviewed on the web dashboard"
+    },
+    "status": {
+      "CHECKED_IN": "Working",
+      "COMPLETED": "Done",
+      "MISSED_CHECKOUT": "No check-out"
+    },
+    "flags": {
+      "MOCK_LOCATION": "Fake GPS suspected",
+      "CLOCK_MISMATCH": "Phone clock was wrong",
+      "ADMIN_CORRECTED": "Fixed by admin"
+    },
+    "events": {
+      "IN": "Check-in",
+      "OUT": "Check-out"
+    }
   }
 }
