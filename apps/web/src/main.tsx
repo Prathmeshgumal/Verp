@@ -8,17 +8,25 @@ import '@mantine/notifications/styles.css';
 import 'mantine-datatable/styles.css';
 import 'leaflet/dist/leaflet.css';
 import './styles.css';
-import { Center, MantineProvider, Title } from '@mantine/core';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { theme } from './theme';
+import { BrowserRouter } from 'react-router';
+import { App } from './App';
+import { AuthProvider } from './auth/AuthContext';
+import { AppProviders, createQueryClient } from './providers';
+import { createServices } from './services';
+
+const services = createServices();
+const queryClient = createQueryClient();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <MantineProvider theme={theme} defaultColorScheme="light">
-      <Center h="100vh">
-        <Title>VE HR</Title>
-      </Center>
-    </MantineProvider>
+    <AppProviders services={services} queryClient={queryClient}>
+      <BrowserRouter>
+        <AuthProvider>
+          <App />
+        </AuthProvider>
+      </BrowserRouter>
+    </AppProviders>
   </StrictMode>,
 );
