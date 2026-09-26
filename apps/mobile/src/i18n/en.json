@@ -1,5 +1,7 @@
 {
-  "app": { "name": "VE HR" },
+  "app": {
+    "name": "VE HR"
+  },
   "common": {
     "tryAgain": "Try again",
     "ok": "OK",
@@ -211,9 +213,22 @@
       "allowedDistance": "Allowed distance",
       "smaller": "Smaller",
       "larger": "Larger",
-      "dragHint": "Drag the pin to the site gate or centre.",
+      "dragHint": "Drag the pin, or tap the map, to set the site gate or centre.",
       "useMyLocation": "Use my location",
       "locating": "Finding your location…",
+      "noPinHint": "Set the location: paste from Google Maps, use my location, or tap the map.",
+      "located": "Your location · accurate to ±{{accuracy}} m",
+      "tooImprecise": "Your location is only accurate to ±{{accuracy}} m, more than the ±{{max}} m allowed. Paste from Google Maps, or tap the map.",
+      "noFix": "Could not get your location. Paste from Google Maps, or tap the map.",
+      "paste": "Paste from Google Maps",
+      "pasteHelp": "In Google Maps, tap Share → Copy link, or long-press the spot to copy its coordinates.",
+      "pasteGo": "Go",
+      "fromGoogle": "From Google Maps · check the circle before saving.",
+      "link": {
+        "notMapsLink": "That doesn't look like a Google Maps link or coordinates.",
+        "noExactPin": "This link shows an area, not a pin. In Google Maps, tap the exact spot, then Share → Copy link.",
+        "unreachable": "Couldn't open that link. Check it, or copy the coordinates instead."
+      },
       "active": "Site is active",
       "save": "Save site",
       "saving": "Saving…"

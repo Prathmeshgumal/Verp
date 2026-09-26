@@ -10,6 +10,12 @@ export function adminErrorKey(err: unknown): string {
         return 'admin.errors.codeTaken';
       case 'VALIDATION_ERROR':
         return 'admin.errors.invalid';
+      case 'NOT_A_MAPS_LINK':
+        return 'admin.sites.link.notMapsLink';
+      case 'NO_EXACT_PIN':
+        return 'admin.sites.link.noExactPin';
+      case 'LINK_UNREACHABLE':
+        return 'admin.sites.link.unreachable';
       case 'NOT_FOUND':
       case 'SITE_NOT_FOUND':
         return 'admin.errors.notFound';
