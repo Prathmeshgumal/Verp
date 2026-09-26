@@ -1,6 +1,7 @@
 import { screen, waitFor } from '@testing-library/react';
 import { afterEach, expect, test, vi } from 'vitest';
 import type { Api } from '../../api/endpoints';
+import { ApiError } from '../../api/errors';
 import { site } from '../../testing/fakes';
 import { renderWithProviders } from '../../testing/render';
 import type { PlaceSearch } from './placeSearch';
@@ -158,4 +159,37 @@ test('refused location permission explains what to do', async () => {
   const { user } = renderNew();
   await user.click(screen.getByRole('button', { name: 'Use my location' }));
   expect(await screen.findByText('Location permission was refused. Allow it in the browser, or drag the pin.')).toBeInTheDocument();
+});
+
+test('pasted coordinates move the pin without asking the server', async () => {
+  const resolvePlaceLink = vi.fn();
+  const { user } = renderNew({ resolvePlaceLink });
+  await user.type(screen.getByLabelText('Paste from Google Maps'), '17.416682, 78.366365');
+  await user.click(screen.getByRole('button', { name: 'Go' }));
+  expect(screen.getByTestId('map-state')).toHaveTextContent('17.416682,78.366365,100');
+  expect(screen.getByText('From Google Maps · check the circle before saving.')).toBeInTheDocument();
+  expect(screen.getByLabelText('Paste from Google Maps')).toHaveValue('');
+  expect(resolvePlaceLink).not.toHaveBeenCalled();
+});
+
+test('a pasted link is read by the server', async () => {
+  const resolvePlaceLink = vi.fn(async () => ({ lat: 17.3615636, lng: 78.4746832 }));
+  const { user } = renderNew({ resolvePlaceLink });
+  await user.type(screen.getByLabelText('Paste from Google Maps'), 'https://maps.app.goo.gl/Xk3vQh2bMzN8pT7a9');
+  await user.click(screen.getByRole('button', { name: 'Go' }));
+  expect(await screen.findByText('From Google Maps · check the circle before saving.')).toBeInTheDocument();
+  expect(resolvePlaceLink).toHaveBeenCalledWith('https://maps.app.goo.gl/Xk3vQh2bMzN8pT7a9');
+  expect(screen.getByTestId('map-state')).toHaveTextContent('17.361564,78.474683,100');
+});
+
+test('a link without a pin says why and leaves the pin alone', async () => {
+  const message = 'This link shows an area, not a pin. In Google Maps, tap the exact spot, then Share → Copy link.';
+  const resolvePlaceLink = vi.fn(async () => {
+    throw new ApiError(422, 'NO_EXACT_PIN', message);
+  });
+  const { user } = renderNew({ resolvePlaceLink });
+  await user.type(screen.getByLabelText('Paste from Google Maps'), 'https://www.google.com/maps/@17.4167,78.3664,15z');
+  await user.click(screen.getByRole('button', { name: 'Go' }));
+  expect(await screen.findByText(message)).toBeInTheDocument();
+  expect(screen.getByTestId('map-state')).toHaveTextContent('none');
 });

@@ -1,8 +1,9 @@
 import { Alert, Anchor, Button, Group, NumberInput, Paper, SimpleGrid, Slider, Stack, Switch, Text, TextInput, Title } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
-import { IconArrowLeft, IconCurrentLocation, IconSearch } from '@tabler/icons-react';
+import { IconArrowLeft, IconCurrentLocation, IconLink, IconSearch } from '@tabler/icons-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { parseCoordinates } from '@ve/shared';
 import type { SiteDto } from '@ve/shared';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { useState, type FormEvent } from 'react';
@@ -75,6 +76,8 @@ function SiteEditor({ site, defaultRadiusM, maxAccuracyM }: { site: SiteDto | nu
   const [locating, setLocating] = useState(false);
   const [progressM, setProgressM] = useState<number | null>(null);
   const [accuracy, setAccuracy] = useState<Reading | null>(null);
+  const [linkText, setLinkText] = useState('');
+  const [resolving, setResolving] = useState(false);
   const others = useQuery({ queryKey: queryKeys.sites, queryFn: () => api.listSites(), enabled: !site });
 
   const form = useForm<FormValues>({
@@ -137,6 +140,29 @@ function SiteEditor({ site, defaultRadiusM, maxAccuracyM }: { site: SiteDto | nu
       setError('Location permission was refused. Allow it in the browser, or drag the pin.');
     } else {
       setError('Could not get your location. Drag the pin instead.');
+    }
+  }
+
+  function placeFromGoogle(p: LatLng) {
+    moveTo(p, true);
+    setNote('From Google Maps · check the circle before saving.');
+    setLinkText('');
+  }
+
+  async function pasteFromGoogle(event: FormEvent) {
+    event.preventDefault();
+    const text = linkText.trim();
+    if (!text) return;
+    setError(null);
+    const local = parseCoordinates(text);
+    if (local) return placeFromGoogle(local);
+    setResolving(true);
+    try {
+      placeFromGoogle(await api.resolvePlaceLink(text));
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setResolving(false);
     }
   }
 
@@ -209,6 +235,21 @@ function SiteEditor({ site, defaultRadiusM, maxAccuracyM }: { site: SiteDto | nu
               </Stack>
             </Paper>
           ) : null}
+          <form onSubmit={(event) => void pasteFromGoogle(event)}>
+            <Group align="flex-end" wrap="nowrap">
+              <TextInput
+                label="Paste from Google Maps"
+                description="In Google Maps, tap Share → Copy link, or long-press the spot to copy its coordinates."
+                placeholder="https://maps.app.goo.gl/… or 17.4167, 78.3664"
+                value={linkText}
+                onChange={(event) => setLinkText(event.currentTarget.value)}
+                style={{ flex: 1 }}
+              />
+              <Button type="submit" variant="default" leftSection={<IconLink size={16} />} loading={resolving}>
+                Go
+              </Button>
+            </Group>
+          </form>
           <Group>
             <Button variant="default" leftSection={<IconCurrentLocation size={16} />} loading={locating} onClick={() => void locateMe()}>
               Use my location
