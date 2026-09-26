@@ -25,6 +25,7 @@ describe('GET /me/today', () => {
       site: { id: site.id, name: 'Plot 7', lat: site.lat, lng: site.lng, radiusM: 60 },
       maxAccuracyM: 50,
       reminderTime: '19:00',
+      timezone: 'Asia/Kolkata',
     });
   });
 

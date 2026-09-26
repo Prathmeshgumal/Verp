@@ -27,6 +27,7 @@ export async function getToday(deps: ResolvedDeps, employeeId: string): Promise<
     site: site ? toSiteSummary(site) : null,
     maxAccuracyM: settings.maxAccuracyM,
     reminderTime: settings.reminderTime,
+    timezone: settings.timezone,
   };
 }
 
