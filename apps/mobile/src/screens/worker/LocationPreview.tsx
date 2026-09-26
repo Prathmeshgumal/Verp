@@ -18,9 +18,9 @@ interface Props {
   active: boolean;
 }
 
-/** 200 px, but at most 22% of the window, so the CHECK IN button still fits on small phones. */
+/** The map is the main thing on Home: 40% of the window, between 200 and 420 px. */
 export function previewMapHeight(windowHeight: number): number {
-  return Math.min(200, Math.round(windowHeight * 0.22));
+  return Math.max(200, Math.min(420, Math.round(windowHeight * 0.4)));
 }
 
 const DOT: Record<PreviewStatus['kind'], string> = {
@@ -89,7 +89,7 @@ export function LocationPreview({ site, maxAccuracyM, active }: Props) {
           : t('home.preview.finding');
 
   return (
-    <Card style={{ padding: 0, overflow: 'hidden' }}>
+    <Card style={{ padding: 0, overflow: 'hidden', borderWidth: 1, borderColor: colors.line }}>
       <View>
         <LeafletMap
           testID="preview-map"
@@ -109,10 +109,10 @@ export function LocationPreview({ site, maxAccuracyM, active }: Props) {
           <Icon name="locate" size={22} />
         </Pressable>
       </View>
-      <View style={{ padding: 14, gap: 6 }}>
+      <View style={{ paddingVertical: 10, paddingHorizontal: 14, gap: 4 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: DOT[status.kind] }} />
-          <Text variant="bodyStrong" style={{ flex: 1 }}>
+          <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: DOT[status.kind] }} />
+          <Text variant="label" style={{ flex: 1 }}>
             {line}
           </Text>
         </View>

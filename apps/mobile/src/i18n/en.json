@@ -32,7 +32,8 @@
     "today": "Today",
     "employees": "Employees",
     "sites": "Sites",
-    "attendance": "Attendance"
+    "attendance": "Attendance",
+    "profile": "Profile"
   },
   "login": {
     "title": "Log in",
@@ -91,7 +92,6 @@
   },
   "home": {
     "greeting": "Namaste, {{name}}",
-    "menu": "Menu",
     "yourSite": "Your site",
     "checkIn": "CHECK IN",
     "checkOut": "CHECK OUT",
@@ -127,11 +127,20 @@
   },
   "history": {
     "title": "My attendance",
-    "subtitle": "Last 30 days",
-    "today": "Today, {{day}}",
+    "previousMonth": "Previous month",
+    "nextMonth": "Next month",
+    "present": "Present",
+    "absent": "Absent",
+    "missed": "No check-out",
+    "hours": "Hours",
+    "completed": "Done",
+    "working": "Working · since {{time}}",
     "notPresent": "Not present",
     "noCheckout": "No check-out · {{time}} – ?",
-    "working": "Working · since {{time}}"
+    "beforeJoining": "Before you joined",
+    "notYet": "Nothing yet",
+    "today": "Today, {{day}}",
+    "tapDay": "Tap a day to see its times"
   },
   "menu": {
     "appVersion": "App version {{version}}",
@@ -259,5 +268,12 @@
       "IN": "Check-in",
       "OUT": "Check-out"
     }
+  },
+  "profile": {
+    "role": "Site worker",
+    "phone": "Phone",
+    "site": "Site",
+    "noSite": "Not assigned",
+    "joined": "Joined"
   }
 }

@@ -30,6 +30,7 @@ export function TabBar({ state, navigation, items, height }: Props) {
         if (!item) return null;
         const focused = state.index === index;
         const color = focused ? colors.text : colors.muted;
+        const marker = focused ? colors.checkOut : 'transparent';
         return (
           <Pressable
             key={route.key}
@@ -40,12 +41,13 @@ export function TabBar({ state, navigation, items, height }: Props) {
               const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
               if (!focused && !event.defaultPrevented) navigation.navigate(route.name);
             }}
-            style={{ flex: 1, height, alignItems: 'center', justifyContent: 'center', gap: 4 }}
+            style={{ flex: 1, height, alignItems: 'center', justifyContent: 'center', gap: 3 }}
           >
-            <Icon name={item.icon} size={26} color={color} />
+            <View style={{ position: 'absolute', top: 0, width: 28, height: 3, borderBottomLeftRadius: 3, borderBottomRightRadius: 3, backgroundColor: marker }} />
+            <Icon name={item.icon} size={22} color={color} strokeWidth={focused ? 2.3 : 1.8} />
             <Text
               color={color}
-              style={{ fontFamily: focused ? fonts.bodyBold : fonts.bodyMedium, fontSize: height >= 76 ? 15 : 13 }}
+              style={{ fontFamily: focused ? fonts.bodyBold : fonts.bodyMedium, fontSize: 12 }}
             >
               {t(item.labelKey)}
             </Text>

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Modal, Pressable, ScrollView, View } from 'react-native';
+import { Modal, ScrollView, View } from 'react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useAuth, useUser } from '../../auth/AuthContext';
@@ -22,7 +22,6 @@ import { Screen } from '../../ui/Screen';
 import { Text } from '../../ui/Text';
 import { BusyView } from './BusyView';
 import { LocationPreview } from './LocationPreview';
-import { MenuSheet } from './MenuSheet';
 import { ResultView } from './ResultView';
 
 type Phase =
@@ -39,7 +38,6 @@ export function HomeScreen() {
   const deps = useMemo(() => createSubmitDeps(api, t), [api, t]);
   const todayQuery = useQuery({ queryKey: queryKeys.today, queryFn: () => api.today() });
   const [phase, setPhase] = useState<Phase>({ kind: 'idle' });
-  const [menuOpen, setMenuOpen] = useState(false);
   const inFlight = useRef(false);
   const screenActive = useScreenActive();
   const resumed = useRef(false);
@@ -101,28 +99,18 @@ export function HomeScreen() {
 
   return (
     <Screen>
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 24 }}>
-        <View style={{ flex: 1, gap: 2 }}>
-          <Text color={colors.muted} style={{ fontSize: 15 }}>
-            {formatLongDate(now, t)}
-          </Text>
-          <Text variant="h1" style={{ fontSize: 26 }}>
-            {t('home.greeting', { name: firstName })}
-          </Text>
-        </View>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={t('home.menu')}
-          onPress={() => setMenuOpen(true)}
-          style={{ width: 56, height: 56, borderRadius: 14, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}
-        >
-          <Icon name="menu" size={26} />
-        </Pressable>
+      <View style={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 4, gap: 0 }}>
+        <Text color={colors.muted} style={{ fontSize: 14 }}>
+          {formatLongDate(now, t)}
+        </Text>
+        <Text variant="h1" style={{ fontSize: 24, lineHeight: 30 }}>
+          {t('home.greeting', { name: firstName })}
+        </Text>
       </View>
 
-      <ScrollView testID="home-scroll" contentContainerStyle={{ flexGrow: 1, paddingBottom: 20 }}>
+      <ScrollView testID="home-scroll" contentContainerStyle={{ flexGrow: 1, paddingBottom: 16 }}>
         {missedYesterday ? (
-          <View style={{ marginHorizontal: 20, marginTop: 20 }}>
+          <View style={{ marginHorizontal: 16, marginTop: 12 }}>
             <Banner tone="warn" icon="alert" title={t('home.missedTitle')} body={t('home.missedBody')} />
           </View>
         ) : null}
@@ -130,31 +118,12 @@ export function HomeScreen() {
         <StatusCard view={view} now={now} />
 
         {(view.kind === 'checkIn' || view.kind === 'working') && today.site ? (
-          <View style={{ marginHorizontal: 20, marginTop: 16 }}>
+          <View style={{ marginHorizontal: 16, marginTop: 12 }}>
             <LocationPreview site={today.site} maxAccuracyM={today.maxAccuracyM} active={screenActive && phase.kind === 'idle'} />
           </View>
         ) : null}
 
-        <View style={{ flex: 1, justifyContent: 'center', paddingHorizontal: 20, gap: 16 }}>
-          {view.kind === 'checkIn' ? (
-            <>
-              <Button label={t('home.checkIn')} variant="checkIn" size="big" icon="checkIn" onPress={() => void run('checkIn')} />
-              <Text color={colors.muted} style={{ textAlign: 'center', fontSize: 17 }}>
-                {t('home.checkInHint')}
-              </Text>
-            </>
-          ) : null}
-          {view.kind === 'working' ? (
-            <>
-              <Button label={t('home.checkOut')} variant="checkOut" size="big" icon="checkOut" onPress={() => void run('checkOut')} />
-              <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8 }}>
-                <Icon name="bell" size={20} color={colors.muted} />
-                <Text color={colors.muted} style={{ fontSize: 16 }}>
-                  {t('home.reminderAt', { time: formatHhMm(today.reminderTime, t) })}
-                </Text>
-              </View>
-            </>
-          ) : null}
+        <View style={{ flex: 1, justifyContent: 'center', paddingHorizontal: 16, paddingTop: 12, gap: 16 }}>
           {view.kind === 'done' ? (
             <Card style={{ borderRadius: 28, paddingVertical: 32, paddingHorizontal: 24, alignItems: 'center', gap: 16 }}>
               <View style={{ width: 96, height: 96, borderRadius: 48, backgroundColor: colors.successBg, alignItems: 'center', justifyContent: 'center' }}>
@@ -183,6 +152,30 @@ export function HomeScreen() {
         </View>
       </ScrollView>
 
+      {view.kind === 'checkIn' || view.kind === 'working' ? (
+        <View testID="home-action" style={{ paddingHorizontal: 16, paddingTop: 10, paddingBottom: 12, gap: 8, borderTopWidth: 1, borderTopColor: colors.line, backgroundColor: colors.bg }}>
+          {view.kind === 'checkIn' ? (
+            <>
+              <Button label={t('home.checkIn')} variant="checkIn" size="large" icon="checkIn" onPress={() => void run('checkIn')} />
+              <Text color={colors.muted} style={{ textAlign: 'center', fontSize: 14 }}>
+                {t('home.checkInHint')}
+              </Text>
+            </>
+          ) : null}
+          {view.kind === 'working' ? (
+            <>
+              <Button label={t('home.checkOut')} variant="checkOut" size="large" icon="checkOut" onPress={() => void run('checkOut')} />
+              <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6 }}>
+                <Icon name="bell" size={16} color={colors.muted} />
+                <Text color={colors.muted} style={{ fontSize: 14 }}>
+                  {t('home.reminderAt', { time: formatHhMm(today.reminderTime, t) })}
+                </Text>
+              </View>
+            </>
+          ) : null}
+        </View>
+      ) : null}
+
       <Modal
         visible={phase.kind !== 'idle'}
         animationType="fade"
@@ -194,7 +187,6 @@ export function HomeScreen() {
         {phase.kind === 'busy' ? <BusyView step={phase.step} /> : null}
         {result ? <ResultView view={result} onAction={onResultAction} /> : null}
       </Modal>
-      <MenuSheet visible={menuOpen} onClose={() => setMenuOpen(false)} />
     </Screen>
   );
 }
@@ -203,15 +195,15 @@ function StatusCard({ view, now }: { view: HomeView; now: Date }) {
   const { t } = useTranslation();
   if (view.kind === 'checkIn') {
     return (
-      <Card style={{ marginHorizontal: 20, marginTop: 20, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-        <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: colors.lineSoft, alignItems: 'center', justifyContent: 'center' }}>
+      <Card style={{ marginHorizontal: 16, marginTop: 12, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 1, borderColor: colors.line }}>
+        <View style={{ width: 40, height: 40, borderRadius: 10, backgroundColor: colors.lineSoft, alignItems: 'center', justifyContent: 'center' }}>
           <Icon name="pin" />
         </View>
         <View style={{ flex: 1, gap: 2 }}>
           <Text variant="small" color={colors.muted}>
             {t('home.yourSite')}
           </Text>
-          <Text variant="bodyStrong" style={{ fontSize: 18 }}>
+          <Text variant="bodyStrong" numberOfLines={1}>
             {view.siteName}
           </Text>
         </View>
@@ -220,17 +212,17 @@ function StatusCard({ view, now }: { view: HomeView; now: Date }) {
   }
   if (view.kind === 'working') {
     return (
-      <View style={{ marginHorizontal: 20, marginTop: 20, padding: 20, borderRadius: 20, backgroundColor: colors.checkIn, gap: 6 }}>
+      <View style={{ marginHorizontal: 16, marginTop: 12, paddingVertical: 14, paddingHorizontal: 16, borderRadius: 16, backgroundColor: colors.checkIn, gap: 2 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
           <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: colors.workingDot }} />
-          <Text variant="label" color={colors.white} style={{ fontSize: 16 }}>
+          <Text variant="label" color={colors.white} style={{ fontSize: 14 }}>
             {t('home.working')}
           </Text>
         </View>
-        <Text variant="h1" color={colors.white} style={{ fontSize: 30 }}>
+        <Text variant="h1" color={colors.white} style={{ fontSize: 24, lineHeight: 30 }}>
           {t('home.since', { time: formatTime(view.since, t) })}
         </Text>
-        <Text color={colors.workingSub} style={{ fontSize: 16 }}>
+        <Text color={colors.workingSub} style={{ fontSize: 15 }}>
           {t('home.soFar', { site: view.siteName, duration: formatDuration(minutesSince(view.since, now), t) })}
         </Text>
       </View>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Alert, AppState, Linking, PermissionsAndroid } from 'react-native';
+import { AppState, Linking, PermissionsAndroid } from 'react-native';
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react-native';
 import type { AttendanceResult, DayDto, MeTodayResponse } from '@ve/shared';
 import { NetworkError } from '../../api/errors';
@@ -158,17 +158,6 @@ test('a check-in that landed before a force-close is settled on launch', async (
   expect(fakeState.reminders).toHaveLength(1);
 });
 
-test('menu → Log out asks first, then logs out', async () => {
-  const alert = jest.spyOn(Alert, 'alert');
-  const { auth } = await renderWithAuth(<HomeScreen />, { api: fakeApi({ today: jest.fn(async () => today()) }) });
-  await fireEvent.press(await screen.findByRole('button', { name: 'Menu' }));
-  await fireEvent.press(screen.getByRole('button', { name: 'Log out' }));
-  const buttons = alert.mock.calls[0]?.[2] ?? [];
-  expect(auth.logout).not.toHaveBeenCalled();
-  await act(async () => buttons[1]?.onPress?.());
-  expect(auth.logout).toHaveBeenCalled();
-});
-
 async function renderHome(api = fakeApi({ today: jest.fn(async () => today()), checkIn: jest.fn(async () => okIn) })) {
   await renderWithAuth(<HomeScreen />, { api });
   await screen.findByText('Plot 7, Hinjewadi');
@@ -244,14 +233,21 @@ test('no site: no preview and no watch', async () => {
   expect(fakeState.watchIntervalMs).toBeNull();
 });
 
-test('the CHECK IN button sits in a scroll view, so small screens can still reach it', async () => {
+test('the CHECK IN button is docked below the scrolling map, so it is always in reach', async () => {
   await renderHome();
-  expect(within(screen.getByTestId('home-scroll')).getByRole('button', { name: 'CHECK IN' })).toBeOnTheScreen();
+  expect(within(screen.getByTestId('home-action')).getByRole('button', { name: 'CHECK IN' })).toBeOnTheScreen();
+  expect(within(screen.getByTestId('home-scroll')).queryByRole('button', { name: 'CHECK IN' })).toBeNull();
 });
 
-test('the preview map gets shorter on short screens', () => {
-  expect(previewMapHeight(1000)).toBe(200);
-  expect(previewMapHeight(640)).toBe(141);
+test('there is no menu button on Home any more', async () => {
+  await renderHome();
+  expect(screen.queryByRole('button', { name: 'Menu' })).toBeNull();
+});
+
+test('the preview map takes 40% of the screen, within limits', () => {
+  expect(previewMapHeight(800)).toBe(320);
+  expect(previewMapHeight(1400)).toBe(420);
+  expect(previewMapHeight(400)).toBe(200);
 });
 
 test('coming back to the app checks location without asking for permission again', async () => {
