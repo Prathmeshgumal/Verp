@@ -6,7 +6,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { parseCoordinates } from '@ve/shared';
 import type { SiteDto } from '@ve/shared';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
-import { useState, type FormEvent } from 'react';
+import { useRef, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { z } from 'zod';
 import { PageError, PageLoader } from '../../components/PageState';
@@ -78,6 +78,8 @@ function SiteEditor({ site, defaultRadiusM, maxAccuracyM }: { site: SiteDto | nu
   const [accuracy, setAccuracy] = useState<Reading | null>(null);
   const [linkText, setLinkText] = useState('');
   const [resolving, setResolving] = useState(false);
+  /** Bumped on every pin move; a slow lookup that started before a move must not undo it. */
+  const moveSeq = useRef(0);
   const others = useQuery({ queryKey: queryKeys.sites, queryFn: () => api.listSites(), enabled: !site });
 
   const form = useForm<FormValues>({
@@ -93,6 +95,7 @@ function SiteEditor({ site, defaultRadiusM, maxAccuracyM }: { site: SiteDto | nu
   const radiusM = Math.min(1000, Math.max(10, num(form.values.radiusM) ?? 10));
 
   function moveTo(p: LatLng, recenter: boolean) {
+    moveSeq.current += 1;
     form.setValues({ lat: round6(p.lat), lng: round6(p.lng) });
     setAccuracy(null);
     setNote(null);
@@ -124,9 +127,11 @@ function SiteEditor({ site, defaultRadiusM, maxAccuracyM }: { site: SiteDto | nu
     setError(null);
     setNote(null);
     setProgressM(null);
+    const seq = moveSeq.current;
     const result = await locateBest(navigator.geolocation, maxAccuracyM, setProgressM);
     setLocating(false);
     setProgressM(null);
+    if (moveSeq.current !== seq) return;
     if (result.kind === 'ok') {
       moveTo(result.reading, true);
       setAccuracy(result.reading);
@@ -157,8 +162,10 @@ function SiteEditor({ site, defaultRadiusM, maxAccuracyM }: { site: SiteDto | nu
     const local = parseCoordinates(text);
     if (local) return placeFromGoogle(local);
     setResolving(true);
+    const seq = moveSeq.current;
     try {
-      placeFromGoogle(await api.resolvePlaceLink(text));
+      const place = await api.resolvePlaceLink(text);
+      if (moveSeq.current === seq) placeFromGoogle(place);
     } catch (err) {
       setError(errorMessage(err));
     } finally {

@@ -1,10 +1,10 @@
 import React from 'react';
 import { PermissionsAndroid } from 'react-native';
-import { fireEvent, screen, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
 import type { SettingsDto, SiteDto } from '@ve/shared';
 import { ApiError } from '../../api/errors';
 import { fakeApi } from '../../testing/fakeApi';
-import { fakeState } from '../../testing/fakeNative';
+import { fakeNative, fakeState } from '../../testing/fakeNative';
 import { adminUser, fakeNavigation, loggedIn, renderWithAuth } from '../../testing/render';
 import { injectedScripts } from '../../testing/webView';
 import { SiteEditScreen } from './SiteEditScreen';
@@ -145,4 +145,27 @@ test('a site needs a name', async () => {
   await fireEvent.press(screen.getByRole('button', { name: 'Save site' }));
   expect(await screen.findByText('Enter the name')).toBeOnTheScreen();
   expect(createSite).not.toHaveBeenCalled();
+});
+
+test('a late location reading does not undo a pin placed meanwhile', async () => {
+  let answer: (fix: { lat: number; lng: number; accuracyM: number; isMock: boolean }) => void = () => {};
+  jest.spyOn(fakeNative, 'getCurrentPosition').mockImplementation(() => new Promise((resolve) => (answer = resolve)));
+  await renderEdit({});
+  await fireEvent.press(screen.getByRole('button', { name: 'Use my location' }));
+  await waitFor(() => expect(fakeNative.getCurrentPosition).toHaveBeenCalled());
+  await fireEvent(screen.getByTestId('site-map'), 'message', moved(18.6, 73.7));
+  await act(async () => answer({ lat: 18.7, lng: 73.9, accuracyM: 8, isMock: false }));
+  expect(screen.getByText('18.60000, 73.70000')).toBeOnTheScreen();
+  expect(screen.queryByText('Your location · accurate to ±8 m')).toBeNull();
+});
+
+test('a slow link lookup does not undo a pin placed meanwhile', async () => {
+  let answer: (p: { lat: number; lng: number }) => void = () => {};
+  const resolvePlaceLink = jest.fn(() => new Promise<{ lat: number; lng: number }>((resolve) => (answer = resolve)));
+  await renderEdit({}, { resolvePlaceLink });
+  await fireEvent.changeText(screen.getByLabelText('Paste from Google Maps'), 'https://maps.app.goo.gl/Xk3vQh2bMzN8pT7a9');
+  await fireEvent.press(screen.getByRole('button', { name: 'Go' }));
+  await fireEvent(screen.getByTestId('site-map'), 'message', moved(18.6, 73.7));
+  await act(async () => answer({ lat: 17.3615636, lng: 78.4746832 }));
+  expect(screen.getByText('18.60000, 73.70000')).toBeOnTheScreen();
 });

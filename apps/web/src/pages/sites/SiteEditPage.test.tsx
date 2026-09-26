@@ -1,4 +1,4 @@
-import { screen, waitFor } from '@testing-library/react';
+import { act, screen, waitFor } from '@testing-library/react';
 import { afterEach, expect, test, vi } from 'vitest';
 import type { Api } from '../../api/endpoints';
 import { ApiError } from '../../api/errors';
@@ -192,4 +192,28 @@ test('a link without a pin says why and leaves the pin alone', async () => {
   await user.click(screen.getByRole('button', { name: 'Go' }));
   expect(await screen.findByText(message)).toBeInTheDocument();
   expect(screen.getByTestId('map-state')).toHaveTextContent('none');
+});
+
+test('a late location reading does not undo a pin placed meanwhile', async () => {
+  let send: PositionCallback = () => {};
+  mockGeolocation((success) => {
+    send = success;
+  });
+  const { user } = renderNew();
+  await user.click(screen.getByRole('button', { name: 'Use my location' }));
+  await user.click(screen.getByRole('button', { name: 'fake map drag' }));
+  await act(async () => send(position(18.7, 73.9, 12)));
+  expect(screen.getByTestId('map-state')).toHaveTextContent('18.6,73.7,100');
+  expect(screen.queryByText('Your location · accurate to ±12 m')).toBeNull();
+});
+
+test('a slow link lookup does not undo a pin placed meanwhile', async () => {
+  let answer: (p: { lat: number; lng: number }) => void = () => {};
+  const resolvePlaceLink = vi.fn(() => new Promise<{ lat: number; lng: number }>((resolve) => (answer = resolve)));
+  const { user } = renderNew({ resolvePlaceLink });
+  await user.type(screen.getByLabelText('Paste from Google Maps'), 'https://maps.app.goo.gl/Xk3vQh2bMzN8pT7a9');
+  await user.click(screen.getByRole('button', { name: 'Go' }));
+  await user.click(screen.getByRole('button', { name: 'fake map drag' }));
+  await act(async () => answer({ lat: 17.3615636, lng: 78.4746832 }));
+  expect(screen.getByTestId('map-state')).toHaveTextContent('18.6,73.7,100');
 });

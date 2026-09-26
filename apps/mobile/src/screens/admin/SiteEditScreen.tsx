@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, Switch, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -48,6 +48,8 @@ export function SiteEditScreen({ navigation, route }: Props) {
   const sitesQuery = useQuery({ queryKey: queryKeys.sites, queryFn: () => api.listSites(), enabled: !id });
   const maxAccuracyM = settingsQuery.data?.maxAccuracyM ?? FALLBACK_MAX_ACCURACY_M;
 
+  /** Bumped on every pin move; a slow lookup that started before a move must not undo it. */
+  const moveSeq = useRef(0);
   const [loaded, setLoaded] = useState(!id);
   const [name, setName] = useState('');
   const [address, setAddress] = useState('');
@@ -80,6 +82,7 @@ export function SiteEditScreen({ navigation, route }: Props) {
   }, [siteQuery.data, loaded]);
 
   function moveTo(p: LatLng, recenter: boolean, accuracy: number | null = null) {
+    moveSeq.current += 1;
     setCenter(p);
     setAccuracyM(accuracy);
     setNote(null);
@@ -91,10 +94,12 @@ export function SiteEditScreen({ navigation, route }: Props) {
     setError(null);
     setNote(null);
     setLocating(true);
+    const seq = moveSeq.current;
     try {
       const problem = await ensureLocationReady();
       if (problem) return setError({ key: LOCATION_PROBLEM_KEY[problem] });
       const fix = await getBestFix(maxAccuracyM, FIX_TIMEOUT_MS);
+      if (moveSeq.current !== seq) return;
       if (!fix) return setError({ key: 'admin.sites.noFix' });
       const accuracy = Math.round(fix.accuracyM);
       if (fix.accuracyM > maxAccuracyM) return setError({ key: 'admin.sites.tooImprecise', values: { accuracy, max: maxAccuracyM } });
@@ -113,8 +118,10 @@ export function SiteEditScreen({ navigation, route }: Props) {
     let place: LatLng | null = local;
     if (!place) {
       setResolving(true);
+      const seq = moveSeq.current;
       try {
         place = await api.resolvePlaceLink(text);
+        if (moveSeq.current !== seq) place = null;
       } catch (err) {
         setError({ key: adminErrorKey(err) });
       } finally {
