@@ -1,0 +1,12 @@
+{
+  "extends": "@react-native/typescript-config",
+  "compilerOptions": {
+    "strict": true,
+    "resolveJsonModule": true,
+    "noUncheckedIndexedAccess": true,
+    "lib": ["es2022"],
+    "types": ["jest"]
+  },
+  "include": ["src", "specs"],
+  "exclude": ["node_modules", "android"]
+}

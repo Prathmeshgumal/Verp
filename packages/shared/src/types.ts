@@ -66,6 +66,8 @@ export interface MeTodayResponse {
   site: SiteSummary | null;
   maxAccuracyM: number;
   reminderTime: string;
+  /** IANA zone of the company; work dates and reminder time are in this zone. */
+  timezone: string;
 }
 
 export interface EmployeeDto {
