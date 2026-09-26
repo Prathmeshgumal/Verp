@@ -90,9 +90,9 @@ function DayDetail({ dayId }: { dayId: string }) {
           value={day.checkOutAt ? formatTime(day.checkOutAt, tz) : '—'}
           detail={
             day.checkOutAt
-              ? day.checkOutLat != null
-                ? `${metres(day.checkOutDistanceM)} from the centre · accuracy ${metres(day.checkOutAccuracyM)}`
-                : 'Set by an admin'
+              ? day.flags.includes('ADMIN_CORRECTED') || day.checkOutLat == null
+                ? 'Set by an admin'
+                : `${metres(day.checkOutDistanceM)} from the centre · accuracy ${metres(day.checkOutAccuracyM)}`
               : day.status === 'MISSED_CHECKOUT'
                 ? 'No check-out recorded'
                 : 'Still working'

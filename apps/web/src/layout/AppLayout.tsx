@@ -1,6 +1,7 @@
 import { AppShell, Burger, Button, Group, NavLink, Text, Title } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { IconCalendarCheck, IconLayoutDashboard, IconLogout, IconMapPin, IconSettings, IconUsers, type TablerIcon } from '@tabler/icons-react';
+import { Suspense } from 'react';
 import { Link, Outlet, useLocation } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
 import { PageError, PageLoader } from '../components/PageState';
@@ -56,7 +57,9 @@ export function AppLayout() {
 
       <AppShell.Main>
         {settings.data ? (
-          <Outlet />
+          <Suspense fallback={<PageLoader />}>
+            <Outlet />
+          </Suspense>
         ) : settings.isError ? (
           <PageError error={settings.error} onRetry={() => void settings.refetch()} />
         ) : (

@@ -116,3 +116,9 @@ test('a day still in progress cannot be fixed yet', async () => {
   expect(await screen.findByText('Still checked in. The check-out can be fixed once the day is closed.')).toBeInTheDocument();
   expect(screen.queryByRole('button', { name: 'Fix check-out' })).not.toBeInTheDocument();
 });
+
+test('a check-out fixed by an admin says so instead of the phone distance', async () => {
+  renderDrawer({ getAttendance: vi.fn(async () => detail(adminDay({ flags: ['ADMIN_CORRECTED'] }))) });
+  expect(await screen.findByText('Set by an admin')).toBeInTheDocument();
+  expect(screen.queryByText('11 m from the centre · accuracy 9 m')).not.toBeInTheDocument();
+});

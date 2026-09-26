@@ -14,13 +14,17 @@ function FixSizeAfterOpen() {
   return null;
 }
 
+/** An admin-set check-out has no real position, and the phone's earlier reading would mislead. */
+export function dayPins(day: AdminDayDto) {
+  const pins = [{ key: 'in', label: 'Check-in', lat: day.checkInLat, lng: day.checkInLng, color: '#1E6B45' }];
+  if (day.checkOutLat != null && day.checkOutLng != null && !day.flags.includes('ADMIN_CORRECTED')) {
+    pins.push({ key: 'out', label: 'Check-out', lat: day.checkOutLat, lng: day.checkOutLng, color: '#B8480F' });
+  }
+  return pins;
+}
+
 export function DayMap({ day, site }: { day: AdminDayDto; site: SiteSummary }) {
-  const pins = [
-    { key: 'in', label: 'Check-in', lat: day.checkInLat, lng: day.checkInLng, color: '#1E6B45' },
-    ...(day.checkOutLat != null && day.checkOutLng != null
-      ? [{ key: 'out', label: 'Check-out', lat: day.checkOutLat, lng: day.checkOutLng, color: '#B8480F' }]
-      : []),
-  ];
+  const pins = dayPins(day);
   const bounds = L.latLng(site.lat, site.lng).toBounds(site.radiusM * 2);
   for (const p of pins) bounds.extend([p.lat, p.lng]);
 
