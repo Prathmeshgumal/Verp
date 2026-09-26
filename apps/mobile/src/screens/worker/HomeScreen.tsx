@@ -11,6 +11,7 @@ import { queryKeys } from '../../attendance/queryKeys';
 import { resumePendingOnLaunch, submitAttendance, type SubmitOutcome, type SubmitStep } from '../../attendance/submitFlow';
 import { useNow } from '../../attendance/useNow';
 import { openAppSettings, openLocationSettings } from '../../native/location';
+import { useScreenActive } from '../../native/useScreenActive';
 import { colors } from '../../theme/tokens';
 import { Banner } from '../../ui/Banner';
 import { Button } from '../../ui/Button';
@@ -20,6 +21,7 @@ import { Icon } from '../../ui/Icon';
 import { Screen } from '../../ui/Screen';
 import { Text } from '../../ui/Text';
 import { BusyView } from './BusyView';
+import { LocationPreview } from './LocationPreview';
 import { MenuSheet } from './MenuSheet';
 import { ResultView } from './ResultView';
 
@@ -39,6 +41,7 @@ export function HomeScreen() {
   const [phase, setPhase] = useState<Phase>({ kind: 'idle' });
   const [menuOpen, setMenuOpen] = useState(false);
   const inFlight = useRef(false);
+  const screenActive = useScreenActive();
   const resumed = useRef(false);
   const today = todayQuery.data;
 
@@ -124,6 +127,12 @@ export function HomeScreen() {
       ) : null}
 
       <StatusCard view={view} now={now} />
+
+      {(view.kind === 'checkIn' || view.kind === 'working') && today.site ? (
+        <View style={{ marginHorizontal: 20, marginTop: 16 }}>
+          <LocationPreview site={today.site} maxAccuracyM={today.maxAccuracyM} active={screenActive && phase.kind === 'idle'} />
+        </View>
+      ) : null}
 
       <View style={{ flex: 1, justifyContent: 'center', paddingHorizontal: 20, gap: 16 }}>
         {view.kind === 'checkIn' ? (

@@ -105,7 +105,19 @@
     "missedTitle": "You did not check out yesterday",
     "missedBody": "Tell your supervisor",
     "noSiteTitle": "No site assigned",
-    "noSiteBody": "Please contact your supervisor"
+    "noSiteBody": "Please contact your supervisor",
+    "preview": {
+      "finding": "Looking for your location…",
+      "inside": "Inside the site · {{distance}} m from the centre · ±{{accuracy}} m",
+      "outside": "Outside the site · {{distance}} m away",
+      "imprecise": "Getting a precise location… ±{{accuracy}} m",
+      "mock": "A fake-location app is on. Check-ins will be flagged.",
+      "centre": "Centre the map",
+      "locationOff": "Location is off. Turn it on to see where you are.",
+      "permission": "Allow precise location to see where you are.",
+      "locationSettings": "Location settings",
+      "appSettings": "App settings"
+    }
   },
   "busy": {
     "locating": "Finding your location…",
