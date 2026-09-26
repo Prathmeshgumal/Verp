@@ -32,3 +32,28 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm --filter @ve/api build
+
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: gradle
+      - uses: android-actions/setup-android@v3
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @ve/mobile test
+      - name: Release APK
+        working-directory: apps/mobile/android
+        env:
+          VE_API_URL: https://api.example.invalid
+        run: ./gradlew assembleRelease --no-daemon
+      - name: APK size (≤ 20 MB per ABI)
+        run: apps/mobile/scripts/check-apk-size.sh apps/mobile/android/app/build/outputs/apk/release 20

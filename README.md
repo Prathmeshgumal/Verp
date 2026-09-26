@@ -4,6 +4,7 @@ Construction workforce attendance: geofenced check-in/check-out for workers, adm
 
 - `packages/shared`: schemas, error codes, DTO types, geo maths (used by API, web, mobile)
 - `apps/api`: Fastify + Postgres REST API
+- `apps/mobile`: React Native Android app (Android 10+) for workers and admins
 - Design spec: `docs/superpowers/specs/2026-09-25-ve-hr-phase1-design.md`
 
 ## Local setup
@@ -18,6 +19,21 @@ pnpm --filter @ve/api db:migrate
 ADMIN_PASSWORD='choose-a-long-password' pnpm --filter @ve/api seed:admin --email you@example.com --name "Your Name"
 pnpm --filter @ve/api dev                 # http://localhost:3000/health
 ```
+
+## Android app
+
+One-time: JDK 17 and the Android SDK (see `docs/superpowers/plans/2026-09-25-ve-hr-mobile.md`, Task 2), then `pnpm --filter @ve/mobile fonts && pnpm --filter @ve/mobile leaflet`.
+
+```bash
+adb reverse tcp:3000 tcp:3000              # phone/emulator reaches the local API as localhost:3000
+pnpm --filter @ve/mobile start             # Metro
+pnpm --filter @ve/mobile android           # build + install the debug app
+```
+
+- `VE_API_URL` (default `http://localhost:3000`) and `VE_TILE_URL` (default OSM tiles) are read at build time.
+- Release: `VE_API_URL=https://… ./gradlew assembleRelease` in `apps/mobile/android`. The build fails on a non-https URL. Set `VE_KEYSTORE_FILE`, `VE_KEYSTORE_PASSWORD`, `VE_KEY_ALIAS` and `VE_KEY_PASSWORD` to sign with the real key. Without them the APK is debug-signed.
+- APKs are split per ABI. Most phones need `app-arm64-v8a-release.apk`.
+- Before each release, run `docs/testing/mobile-manual-checklist.md`.
 
 ## Checks
 

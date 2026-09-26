@@ -8,3 +8,7 @@
 #   http://developer.android.com/guide/developing/tools/proguard.html
 
 # Add any project specific keep options here:
+
+# Our TurboModule is looked up by name from JS; keep it and its codegen spec.
+-keep class com.vehr.app.device.** { *; }
+-keep class com.vehr.app.specs.** { *; }
