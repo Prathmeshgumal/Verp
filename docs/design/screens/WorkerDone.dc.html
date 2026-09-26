@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Worker home, done for today</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&amp;family=Public+Sans:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Public Sans',sans-serif;color:#1B1D1F;background:#F4F1EA}
+a{color:#9A3412}a:hover{color:#7C2D12}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F4F1EA; display: flex; flex-direction: column">
+<div style="display: flex; align-items: center; justify-content: space-between; padding: 24px 20px 0">
+<div style="display: flex; flex-direction: column; gap: 2px">
+<div style="font-size: 15px; color: #4A4944">Friday, 25 September</div>
+<div style="font-family: Archivo, sans-serif; font-weight: 800; font-size: 26px">Namaste, Anil</div>
+</div>
+<button aria-label="Menu" style="width: 56px; height: 56px; border: 0; border-radius: 14px; background: #FFFFFF; color: #1B1D1F; display: flex; align-items: center; justify-content: center"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+</div>
+<div style="margin: 20px 20px 0; padding: 16px; background: #FCEBD0; border: 2px solid #E3A64B; border-radius: 16px; display: flex; gap: 12px; align-items: flex-start">
+<div style="color: #7A3E00; flex-shrink: 0"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2 20h20L12 3z"/><path d="M12 10v4"/><path d="M12 17h.01"/></svg></div>
+<div style="display: flex; flex-direction: column; gap: 2px">
+<div style="font-size: 17px; font-weight: 700; color: #5A2E00">You did not check out yesterday</div>
+<div style="font-size: 16px; color: #7A3E00">Tell your supervisor</div>
+</div>
+</div>
+<div style="flex-grow: 1; display: flex; flex-direction: column; justify-content: center; padding: 0 20px">
+<div style="background: #FFFFFF; border-radius: 28px; padding: 32px 24px; display: flex; flex-direction: column; align-items: center; gap: 16px; text-align: center">
+<div style="width: 96px; height: 96px; border-radius: 48px; background: #E3F0E8; color: #1E6B45; display: flex; align-items: center; justify-content: center"><svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
+<h1 style="margin: 0; font-family: Archivo, sans-serif; font-weight: 800; font-size: 32px">Done for today</h1>
+<div style="font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: 26px">9:02 – 6:15</div>
+<div style="font-size: 18px; color: #4A4944">9 h 13 min worked</div>
+</div>
+</div>
+<nav style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border-top: 1px solid #DDD6C8; background: #FFFFFF">
+<a href="#home" style="height: 76px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: #1B1D1F; text-decoration: none; font-weight: 700; font-size: 15px"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11 12 4l9 7"/><path d="M5 10v10h14V10"/></svg>Home</a>
+<a href="#history" style="height: 76px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: #4A4944; text-decoration: none; font-weight: 500; font-size: 15px"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>My attendance</a>
+</nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

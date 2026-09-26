@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Attendance saved</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&amp;family=Public+Sans:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Public Sans',sans-serif;color:#1B1D1F;background:#F4F1EA}
+a{color:#9A3412}a:hover{color:#7C2D12}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #E3F0E8; display: flex; flex-direction: column; padding: 32px 20px 28px">
+<div style="flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px; text-align: center">
+<div style="width: 168px; height: 168px; border-radius: 84px; background: #1E6B45; color: #FFFFFF; display: flex; align-items: center; justify-content: center"><svg width="96" height="96" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
+<h1 style="margin: 0; font-family: Archivo, sans-serif; font-weight: 800; font-size: 36px; color: #123D28">Attendance saved</h1>
+<div style="display: flex; flex-direction: column; gap: 4px">
+<div style="font-size: 17px; color: #2E5140">Checked in at</div>
+<div style="font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: 44px; color: #123D28">9:02 AM</div>
+</div>
+</div>
+<button style="height: 72px; border: 0; border-radius: 18px; background: #123D28; color: #FFFFFF; font-family: Archivo, sans-serif; font-weight: 800; font-size: 24px">OK</button>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

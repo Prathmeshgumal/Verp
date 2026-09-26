@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Admin edit site</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&amp;family=Public+Sans:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Public Sans',sans-serif;color:#1B1D1F;background:#F4F1EA}
+a{color:#9A3412}a:hover{color:#7C2D12}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F4F1EA; display: flex; flex-direction: column">
+<div style="padding: 16px 12px 12px; display: flex; align-items: center; gap: 8px">
+<button aria-label="Back" style="width: 48px; height: 48px; border: 0; border-radius: 12px; background: transparent; color: #1B1D1F; display: flex; align-items: center; justify-content: center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button>
+<h1 style="margin: 0; font-family: Archivo, sans-serif; font-weight: 800; font-size: 24px">Edit site</h1>
+</div>
+<div style="position: relative; height: 340px; background: #E9E4D8; overflow: hidden">
+<svg width="390" height="340" viewBox="0 0 390 340" style="position: absolute; left: 0; top: 0">
+<rect x="0" y="0" width="390" height="340" fill="#E9E4D8"/>
+<rect x="20" y="24" width="120" height="90" rx="4" fill="#DDD5C3"/>
+<rect x="250" y="30" width="120" height="70" rx="4" fill="#DDD5C3"/>
+<rect x="24" y="220" width="110" height="100" rx="4" fill="#CFE0C4"/>
+<rect x="262" y="228" width="110" height="90" rx="4" fill="#DDD5C3"/>
+<path d="M0 150 L390 170" stroke="#FFFFFF" stroke-width="18"/>
+<path d="M190 0 L175 340" stroke="#FFFFFF" stroke-width="14"/>
+<path d="M0 60 L160 70" stroke="#FFFFFF" stroke-width="8"/>
+<path d="M230 200 L390 210" stroke="#FFFFFF" stroke-width="8"/>
+<circle cx="200" cy="175" r="96" fill="#B8480F" fill-opacity="0.14" stroke="#B8480F" stroke-width="2.5"/>
+<path d="M200 178 C200 178 216 162 216 150 A16 16 0 0 0 184 150 C184 162 200 178 200 178Z" fill="#B8480F" stroke="#7E300A" stroke-width="1.5"/>
+<circle cx="200" cy="150" r="5" fill="#FFFFFF"/>
+</svg>
+<div style="position: absolute; right: 8px; bottom: 6px; font-size: 11px; background: rgba(255,255,255,0.85); padding: 2px 6px; border-radius: 4px; color: #3A3934">© OpenStreetMap contributors</div>
+<button style="position: absolute; left: 12px; bottom: 12px; height: 48px; border: 0; border-radius: 24px; padding: 0 16px; background: #FFFFFF; color: #1B1D1F; font-family: inherit; font-weight: 600; font-size: 15px; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.15)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="7"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="2"/></svg>Use my location</button>
+</div>
+<div style="flex-grow: 1; padding: 16px 20px; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="sname" style="font-size: 14px; font-weight: 600">Site name</label>
+<input id="sname" value="Plot 7, Hinjewadi" style="height: 52px; box-sizing: border-box; border: 1px solid #CFC7B6; border-radius: 12px; padding: 0 14px; font-family: inherit; font-size: 16px; background: #FFFFFF">
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; justify-content: space-between"><label for="radius" style="font-size: 14px; font-weight: 600">Allowed distance</label><div style="font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: 15px">100 m</div></div>
+<div style="position: relative; height: 32px; display: flex; align-items: center">
+<div style="height: 6px; width: 100%; border-radius: 3px; background: #DDD6C8"></div>
+<div style="position: absolute; left: 0; height: 6px; width: 9%; border-radius: 3px; background: #B8480F"></div>
+<div style="position: absolute; left: 9%; margin-left: -14px; width: 28px; height: 28px; border-radius: 14px; background: #FFFFFF; border: 3px solid #B8480F; box-sizing: border-box"></div>
+</div>
+<div style="display: flex; justify-content: space-between; font-size: 13px; color: #4A4944"><span>10 m</span><span>1000 m</span></div>
+</div>
+<div style="font-size: 14px; color: #4A4944">Drag the pin to the site gate or centre.</div>
+</div>
+<div style="padding: 0 20px 24px">
+<button style="width: 100%; height: 60px; border: 0; border-radius: 16px; background: #1B1D1F; color: #FFFFFF; font-family: Archivo, sans-serif; font-weight: 800; font-size: 20px">Save site</button>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

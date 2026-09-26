@@ -1,0 +1,47 @@
+{
+  "v": 3,
+  "createdOnFiles": { "v": 1, "at": "2026-09-25T12:00:00Z" },
+  "title": "VE HR Phase 1 Screens",
+  "launch": { "view": "canvas" },
+  "pages": [],
+  "boards": {
+    "Main.dc.html": { "x": 0, "y": 0, "w": 390, "h": 844, "title": "Worker · Login" },
+    "WorkerHome.dc.html": { "x": 470, "y": 0, "w": 390, "h": 844, "title": "Worker · Home, ready" },
+    "WorkerLocating.dc.html": { "x": 940, "y": 0, "w": 390, "h": 844, "title": "Worker · Finding location" },
+    "WorkerSaved.dc.html": { "x": 1410, "y": 0, "w": 390, "h": 844, "title": "Worker · Saved" },
+    "WorkerOutside.dc.html": { "x": 1880, "y": 0, "w": 390, "h": 844, "title": "Worker · Outside site" },
+    "WorkerWorking.dc.html": { "x": 2350, "y": 0, "w": 390, "h": 844, "title": "Worker · Working" },
+    "WorkerDone.dc.html": { "x": 2820, "y": 0, "w": 390, "h": 844, "title": "Worker · Done + missed yesterday" },
+    "WorkerHistory.dc.html": { "x": 3290, "y": 0, "w": 390, "h": 844, "title": "Worker · My attendance" },
+    "AdminToday.dc.html": { "x": 0, "y": 1400, "w": 390, "h": 844, "title": "Admin mobile · Today" },
+    "AdminEmployees.dc.html": { "x": 470, "y": 1400, "w": 390, "h": 844, "title": "Admin mobile · Employees" },
+    "AdminSite.dc.html": { "x": 940, "y": 1400, "w": 390, "h": 844, "title": "Admin mobile · Edit site" },
+    "WebDashboard.dc.html": { "x": 0, "y": 2700, "w": 1440, "h": 900, "title": "Web · Dashboard" },
+    "WebAttendance.dc.html": { "x": 1520, "y": 2700, "w": 1440, "h": 900, "title": "Web · Attendance + detail" },
+    "WebEmployees.dc.html": { "x": 3040, "y": 2700, "w": 1440, "h": 900, "title": "Web · Employees, PIN shown once" },
+    "WebSite.dc.html": { "x": 4560, "y": 2700, "w": 1440, "h": 900, "title": "Web · Site editor" }
+  },
+  "order": [
+    "Main.dc.html",
+    "WorkerHome.dc.html",
+    "WorkerLocating.dc.html",
+    "WorkerSaved.dc.html",
+    "WorkerOutside.dc.html",
+    "WorkerWorking.dc.html",
+    "WorkerDone.dc.html",
+    "WorkerHistory.dc.html",
+    "AdminToday.dc.html",
+    "AdminEmployees.dc.html",
+    "AdminSite.dc.html",
+    "WebDashboard.dc.html",
+    "WebAttendance.dc.html",
+    "WebEmployees.dc.html",
+    "WebSite.dc.html"
+  ],
+  "notes": {
+    "rowWorker": { "x": 0, "y": -300, "text": "Worker app (Android)", "kind": "title1", "maxW": 3680 },
+    "rowAdmin": { "x": 0, "y": 1100, "text": "Admin on the phone", "kind": "title1", "maxW": 1330 },
+    "rowWeb": { "x": 0, "y": 2400, "text": "Admin web dashboard", "kind": "title1", "maxW": 5960 }
+  },
+  "designSystems": []
+}
