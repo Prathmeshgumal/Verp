@@ -21,9 +21,9 @@ test('log in, add a site and a worker, see their check-in, export CSV', async ({
   await page.getByLabel('Email').fill(E2E.adminEmail);
   await page.getByLabel('Password', { exact: true }).fill(E2E.adminPassword);
   await page.getByRole('button', { name: 'Log in' }).click();
-  await expect(page.getByRole('heading', { name: 'Today' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Today', exact: true })).toBeVisible();
   await page.reload();
-  await expect(page.getByRole('heading', { name: 'Today' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Today', exact: true })).toBeVisible();
 
   // Site.
   await page.getByRole('link', { name: 'Sites' }).click();
