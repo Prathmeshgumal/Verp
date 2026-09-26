@@ -63,6 +63,16 @@ describe('app skeleton', () => {
     expect(bad.headers['access-control-allow-origin']).toBeUndefined();
   });
 
+  it('allows PATCH from the web origin', async () => {
+    ({ app } = await createTestApp());
+    const res = await app.inject({
+      method: 'OPTIONS',
+      url: '/admin/sites/x',
+      headers: { origin: 'http://localhost:5173', 'access-control-request-method': 'PATCH' },
+    });
+    expect(res.headers['access-control-allow-methods']).toContain('PATCH');
+  });
+
   it('sets security headers', async () => {
     ({ app } = await createTestApp());
     const res = await app.inject({ method: 'GET', url: '/health' });
