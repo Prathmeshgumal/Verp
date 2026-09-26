@@ -8,11 +8,12 @@ import { EmployeeCreateScreen } from '../screens/admin/EmployeeCreateScreen';
 import { EmployeeDetailScreen } from '../screens/admin/EmployeeDetailScreen';
 import { EmployeesScreen } from '../screens/admin/EmployeesScreen';
 import { SiteEditScreen } from '../screens/admin/SiteEditScreen';
+import { SettingsScreen } from '../screens/admin/SettingsScreen';
 import { SitesScreen } from '../screens/admin/SitesScreen';
 import { TodayScreen } from '../screens/admin/TodayScreen';
 import { colors, fonts } from '../theme/tokens';
 import { TabBar } from '../ui/TabBar';
-import type { AdminTabParamList, AttendanceStackParamList, EmployeesStackParamList, SitesStackParamList } from './types';
+import type { AdminTabParamList, AttendanceStackParamList, EmployeesStackParamList, SitesStackParamList, TodayStackParamList } from './types';
 
 const Tab = createBottomTabNavigator<AdminTabParamList>();
 const AttendanceStack = createNativeStackNavigator<AttendanceStackParamList>();
@@ -31,7 +32,20 @@ const ITEMS = {
   EmployeesTab: { icon: 'users', labelKey: 'tabs.employees' },
   SitesTab: { icon: 'map', labelKey: 'tabs.sites' },
   AttendanceTab: { icon: 'list', labelKey: 'tabs.attendance' },
+  SettingsTab: { icon: 'settings', labelKey: 'tabs.settings' },
 } as const;
+
+const TodayStack = createNativeStackNavigator<TodayStackParamList>();
+
+function TodayNavigator() {
+  const { t } = useTranslation();
+  return (
+    <TodayStack.Navigator screenOptions={stackScreenOptions}>
+      <TodayStack.Screen name="Today" component={TodayScreen} options={{ headerShown: false }} />
+      <TodayStack.Screen name="AttendanceDetail" component={AttendanceDetailScreen} options={{ title: t('admin.attendance.title') }} />
+    </TodayStack.Navigator>
+  );
+}
 
 function AttendanceNavigator() {
   const { t } = useTranslation();
@@ -51,6 +65,7 @@ function EmployeesNavigator() {
       <EmployeesStack.Screen name="Employees" component={EmployeesScreen} options={{ headerShown: false }} />
       <EmployeesStack.Screen name="EmployeeCreate" component={EmployeeCreateScreen} options={{ title: t('admin.employees.createTitle') }} />
       <EmployeesStack.Screen name="EmployeeDetail" component={EmployeeDetailScreen} options={{ title: t('admin.employees.detailTitle') }} />
+      <EmployeesStack.Screen name="AttendanceDetail" component={AttendanceDetailScreen} options={{ title: t('admin.attendance.title') }} />
     </EmployeesStack.Navigator>
   );
 }
@@ -67,11 +82,12 @@ function SitesNavigator() {
 
 export function AdminNavigator() {
   return (
-    <Tab.Navigator screenOptions={{ headerShown: false }} tabBar={(props) => <TabBar {...props} items={ITEMS} height={68} />}>
-      <Tab.Screen name="TodayTab" component={TodayScreen} />
+    <Tab.Navigator screenOptions={{ headerShown: false }} tabBar={(props) => <TabBar {...props} items={ITEMS} height={60} />}>
+      <Tab.Screen name="TodayTab" component={TodayNavigator} />
       <Tab.Screen name="EmployeesTab" component={EmployeesNavigator} />
       <Tab.Screen name="SitesTab" component={SitesNavigator} />
       <Tab.Screen name="AttendanceTab" component={AttendanceNavigator} />
+      <Tab.Screen name="SettingsTab" component={SettingsScreen} />
     </Tab.Navigator>
   );
 }

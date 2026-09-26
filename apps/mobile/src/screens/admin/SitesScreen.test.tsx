@@ -21,3 +21,13 @@ test('lists sites and opens create and edit', async () => {
   await fireEvent.press(screen.getByRole('button', { name: 'Add site' }));
   expect(navigation.navigate).toHaveBeenCalledWith('SiteEdit', {});
 });
+
+test('the map shows every site; tapping a site tag opens it', async () => {
+  const navigation = fakeNavigation();
+  await renderWithAuth(<SitesScreen navigation={navigation as never} route={{} as never} />, {
+    api: fakeApi({ listSites: jest.fn(async () => [site]) }),
+    state: loggedIn(adminUser),
+  });
+  await fireEvent(await screen.findByTestId('sites-map'), 'message', { nativeEvent: { data: JSON.stringify({ type: 'tag', key: 's1' }) } });
+  expect(navigation.navigate).toHaveBeenCalledWith('SiteEdit', { id: 's1' });
+});

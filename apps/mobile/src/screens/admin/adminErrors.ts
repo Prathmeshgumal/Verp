@@ -16,6 +16,10 @@ export function adminErrorKey(err: unknown): string {
         return 'admin.sites.link.noExactPin';
       case 'LINK_UNREACHABLE':
         return 'admin.sites.link.unreachable';
+      case 'INVALID_CHECKOUT_TIME':
+        return 'admin.errors.badCheckoutTime';
+      case 'INVALID_STATE':
+        return 'admin.errors.stillCheckedIn';
       case 'NOT_FOUND':
       case 'SITE_NOT_FOUND':
         return 'admin.errors.notFound';

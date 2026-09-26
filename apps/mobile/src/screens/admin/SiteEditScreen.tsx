@@ -6,6 +6,7 @@ import { parseCoordinates } from '@ve/shared';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../auth/AuthContext';
 import { queryKeys } from '../../attendance/queryKeys';
+import { searchPlaces, type PlaceResult } from '../../maps/placeSearch';
 import { LeafletMap, type LatLng } from '../../maps/LeafletMap';
 import { ensureLocationReady, getBestFix, type LocationProblem } from '../../native/location';
 import type { SitesStackParamList } from '../../navigation/types';
@@ -60,6 +61,9 @@ export function SiteEditScreen({ navigation, route }: Props) {
   const [recenterKey, setRecenterKey] = useState(0);
   const [locating, setLocating] = useState(false);
   const [linkText, setLinkText] = useState('');
+  const [placeText, setPlaceText] = useState('');
+  const [places, setPlaces] = useState<PlaceResult[] | null>(null);
+  const [searching, setSearching] = useState(false);
   const [resolving, setResolving] = useState(false);
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<Note | null>(null);
@@ -108,6 +112,27 @@ export function SiteEditScreen({ navigation, route }: Props) {
     } finally {
       setLocating(false);
     }
+  }
+
+  async function findPlace() {
+    if (!placeText.trim()) return;
+    setError(null);
+    setSearching(true);
+    try {
+      setPlaces(await searchPlaces(placeText));
+    } catch (err) {
+      console.warn('site: place search failed', err);
+      setError({ key: 'admin.sites.searchFailed' });
+    } finally {
+      setSearching(false);
+    }
+  }
+
+  function pickPlace(p: PlaceResult) {
+    moveTo({ lat: p.lat, lng: p.lng }, true);
+    setNote({ key: 'admin.sites.fromSearch' });
+    setPlaces(null);
+    if (!address.trim()) setAddress(p.name.split(',').slice(0, 3).join(',').trim());
   }
 
   async function pasteFromGoogle() {
@@ -207,6 +232,41 @@ export function SiteEditScreen({ navigation, route }: Props) {
             {t(note.key, note.values)}
           </Text>
         ) : null}
+
+        <View style={{ gap: 6 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 8 }}>
+            <View style={{ flex: 1 }}>
+              <TextField
+                label={t('admin.sites.search')}
+                placeholder={t('admin.sites.searchHint')}
+                value={placeText}
+                onChangeText={setPlaceText}
+                returnKeyType="search"
+                onSubmitEditing={() => void findPlace()}
+              />
+            </View>
+            <Button label={t('admin.sites.searchGo')} variant="secondary" onPress={() => void findPlace()} disabled={searching} />
+          </View>
+          {places && places.length === 0 ? (
+            <Text variant="small" color={colors.muted}>
+              {t('admin.sites.noPlaces')}
+            </Text>
+          ) : null}
+          {(places ?? []).map((p) => (
+            <Pressable
+              key={`${p.lat},${p.lng}`}
+              accessibilityRole="button"
+              accessibilityLabel={p.name}
+              onPress={() => pickPlace(p)}
+              style={{ flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 48, paddingHorizontal: 12, paddingVertical: 8, borderRadius: radius.md, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line }}
+            >
+              <Icon name="pin" size={18} color={colors.muted} />
+              <Text variant="small" style={{ flex: 1 }} numberOfLines={2}>
+                {p.name}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
 
         <View style={{ gap: 6 }}>
           <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 8 }}>

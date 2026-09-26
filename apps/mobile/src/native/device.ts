@@ -48,3 +48,7 @@ export const prefs = {
   },
   setJson: (key: string, value: unknown) => NativeVeDevice.prefSet(key, JSON.stringify(value)),
 };
+
+/** Saves text as a file and opens the phone's share menu for it. */
+export const shareFile = (fileName: string, content: string, mimeType: string, title: string): Promise<void> =>
+  NativeVeDevice.shareFile(fileName, content, mimeType, title);

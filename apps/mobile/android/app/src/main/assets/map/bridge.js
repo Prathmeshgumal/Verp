@@ -7,6 +7,8 @@
   var centre = null;
   var circle = null;
   var pins = [];
+  var siteLayers = [];
+  var tagLayers = [];
   var meDot = null;
   var meRing = null;
   var tapToPlace = false;
@@ -70,6 +72,47 @@
     }
   }
 
+  var TONES = { green: '#15803D', orange: '#E0500F', grey: '#6B6B70' };
+
+  function el(tag, style, text) {
+    var e = document.createElement(tag);
+    e.setAttribute('style', style);
+    if (text != null) e.textContent = text;
+    return e;
+  }
+
+  /** Every site as a circle; inactive sites are grey. */
+  function setSites(list) {
+    for (var i = 0; i < siteLayers.length; i++) map.removeLayer(siteLayers[i]);
+    siteLayers = [];
+    for (var j = 0; j < (list || []).length; j++) {
+      var s = list[j];
+      var color = s.active === false ? '#8A8A90' : '#E0500F';
+      siteLayers.push(L.circle([s.lat, s.lng], { radius: s.radiusM, color: color, weight: 2, fillOpacity: 0.1, interactive: false }).addTo(map));
+      siteLayers.push(L.circleMarker([s.lat, s.lng], { radius: 5, color: '#fff', weight: 2, fillColor: color, fillOpacity: 1, interactive: false }).addTo(map));
+    }
+  }
+
+  /** Name tags above a point; a tap posts the tag's key. Labels are set as text, never as HTML. */
+  function setTags(list) {
+    for (var i = 0; i < tagLayers.length; i++) map.removeLayer(tagLayers[i]);
+    tagLayers = [];
+    for (var j = 0; j < (list || []).length; j++) {
+      var t = list[j];
+      var bg = TONES[t.tone] || TONES.grey;
+      var box = el('div', 'position:absolute;left:0;top:0;transform:translate(-50%,calc(-100% - 8px));white-space:nowrap;padding:4px 9px;border-radius:999px;background:' + bg + ';color:#fff;font:600 12px/1.4 sans-serif;box-shadow:0 1px 4px rgba(0,0,0,.35)');
+      if (t.count > 1) box.appendChild(el('span', 'display:inline-block;min-width:16px;margin-right:6px;padding:0 4px;border-radius:999px;background:rgba(255,255,255,.25);text-align:center;font-size:11px', String(t.count)));
+      box.appendChild(document.createTextNode(t.label));
+      box.appendChild(el('div', 'position:absolute;left:50%;bottom:-5px;margin-left:-5px;border:5px solid transparent;border-bottom:0;border-top-color:' + bg));
+      var wrap = el('div', 'position:relative;width:0;height:0');
+      wrap.appendChild(box);
+      var m = L.marker([t.lat, t.lng], { icon: L.divIcon({ className: '', html: wrap, iconSize: [0, 0], iconAnchor: [0, 0] }) }).addTo(map);
+      (function (key) { m.on('click', function () { post({ type: 'tag', key: key }); }); })(t.key);
+      tagLayers.push(m);
+      tagLayers.push(L.circleMarker([t.lat, t.lng], { radius: 5, color: '#fff', weight: 2, fillColor: bg, fillOpacity: 1, interactive: false }).addTo(map));
+    }
+  }
+
   function setMe(me) {
     if (!me) {
       if (meDot) {
@@ -95,6 +138,8 @@
     var b = L.latLngBounds([]);
     if (s.center) b.extend(L.latLng(s.center.lat, s.center.lng).toBounds(s.radiusM * 2));
     for (var i = 0; i < pins.length; i++) b.extend(pins[i].getLatLng());
+    for (var j = 0; j < (s.sites || []).length; j++) b.extend(L.latLng(s.sites[j].lat, s.sites[j].lng).toBounds(s.sites[j].radiusM * 2));
+    for (var k = 0; k < (s.tags || []).length; k++) b.extend([s.tags[k].lat, s.tags[k].lng]);
     if (s.me) b.extend(L.latLng(s.me.lat, s.me.lng));
     return b.isValid() ? b : null;
   }
@@ -108,7 +153,9 @@
     setTiles(s.tileUrl);
     tapToPlace = !!s.tapToPlace;
     setCentre(s);
+    setSites(s.sites);
     setPins(s.pins);
+    setTags(s.tags);
     setMe(s.me);
 
     if (!s.center && !overviewShown && s.overview && s.overview.length > 0) {

@@ -69,8 +69,29 @@ export interface AttendanceListParams {
   from: string;
   to: string;
   employeeId?: string;
+  siteId?: string;
+  status?: 'CHECKED_IN' | 'COMPLETED' | 'MISSED_CHECKOUT';
+  needsReview?: boolean;
   page?: number;
   pageSize?: number;
+}
+
+export interface EmployeeUpdateBody {
+  name?: string;
+  phone?: string;
+  employeeCode?: string | null;
+  siteId?: string | null;
+  isActive?: boolean;
+}
+
+export interface FixCheckoutBody {
+  checkOutAt: string;
+  reason: string;
+}
+
+/** The API reads needsReview as the string "true"; false means no filter. */
+function attendanceQuery(p: AttendanceListParams): Query {
+  return { ...p, needsReview: p.needsReview ? 'true' : undefined };
 }
 
 export function createApi(client: ApiClient) {
@@ -109,17 +130,24 @@ export function createApi(client: ApiClient) {
     createEmployee: (body: EmployeeCreateBody) =>
       client.request<CreatedEmployeeDto>('POST', '/admin/employees', { body }),
     resetPin: (id: string) => client.request<{ pin: string }>('POST', `/admin/employees/${id}/reset-pin`),
+    updateEmployee: (id: string, body: EmployeeUpdateBody) => client.request<EmployeeDto>('PATCH', `/admin/employees/${id}`, { body }),
+    revokeSessions: (id: string) => client.request<void>('POST', `/admin/employees/${id}/revoke-sessions`),
+    unlockEmployee: (id: string) => client.request<void>('POST', `/admin/employees/${id}/unlock`),
 
     listSites: () => get<SiteDto[]>('/admin/sites'),
     getSite: (id: string) => get<SiteDto>(`/admin/sites/${id}`),
     createSite: (body: SiteBody) => client.request<SiteDto>('POST', '/admin/sites', { body }),
     updateSite: (id: string, body: SiteUpdateBody) => client.request<SiteDto>('PATCH', `/admin/sites/${id}`, { body }),
     getSettings: () => get<SettingsDto>('/admin/settings'),
+    updateSettings: (body: SettingsDto) => client.request<SettingsDto>('PATCH', '/admin/settings', { body }),
     resolvePlaceLink: (text: string) => client.request<PlaceLinkDto>('POST', '/admin/places/resolve-link', { body: { text } }),
 
-    listAttendance: (params: AttendanceListParams) =>
-      get<Paginated<AdminDayDto>>('/admin/attendance', { ...params }),
+    listAttendance: (params: AttendanceListParams) => get<Paginated<AdminDayDto>>('/admin/attendance', attendanceQuery(params)),
     getAttendance: (id: string) => get<AdminDayDetailDto>(`/admin/attendance/${id}`),
+    fixCheckout: (id: string, body: FixCheckoutBody) => client.request<AdminDayDto>('PATCH', `/admin/attendance/${id}/checkout`, { body }),
+    markReviewed: (id: string) => client.request<AdminDayDto>('POST', `/admin/attendance/${id}/review`),
+    exportAttendanceCsv: (params: Omit<AttendanceListParams, 'page' | 'pageSize'>) =>
+      client.request<string>('GET', '/admin/attendance/export.csv', { query: attendanceQuery(params), text: true }),
   };
 }
 

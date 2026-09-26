@@ -10,6 +10,7 @@ import { colors, fonts, radius } from '../../theme/tokens';
 import { Avatar } from '../../ui/Avatar';
 import { ErrorState, Loading } from '../../ui/Centered';
 import { Icon } from '../../ui/Icon';
+import { PickerField } from '../../ui/PickerField';
 import { Screen } from '../../ui/Screen';
 import { Text } from '../../ui/Text';
 import { useDebounced } from '../../ui/useDebounced';
@@ -44,9 +45,11 @@ export function EmployeesScreen({ navigation }: Props) {
   const { t } = useTranslation();
   const { api } = useAuth();
   const [search, setSearch] = useState('');
-  const [active, setActive] = useState(true);
+  const [active, setActive] = useState<boolean | undefined>(true);
+  const [siteId, setSiteId] = useState('');
   const q = useDebounced(search.trim(), 300);
-  const filter = { q, isActive: active };
+  const filter = { q, isActive: active, siteId: siteId || undefined };
+  const sites = useQuery({ queryKey: queryKeys.sites, queryFn: () => api.listSites() });
   const query = useQuery({ queryKey: queryKeys.employees(filter), queryFn: () => api.listEmployees(filter) });
 
   return (
@@ -65,9 +68,17 @@ export function EmployeesScreen({ navigation }: Props) {
             style={{ flex: 1, fontFamily: fonts.body, fontSize: 16, color: colors.text }}
           />
         </View>
-        <View style={{ flexDirection: 'row', gap: 8 }}>
-          <Chip label={t('admin.employees.active')} selected={active} onPress={() => setActive(true)} />
-          <Chip label={t('admin.employees.inactive')} selected={!active} onPress={() => setActive(false)} />
+        <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
+          <Chip label={t('admin.employees.active')} selected={active === true} onPress={() => setActive(true)} />
+          <Chip label={t('admin.employees.inactive')} selected={active === false} onPress={() => setActive(false)} />
+          <Chip label={t('admin.employees.all')} selected={active === undefined} onPress={() => setActive(undefined)} />
+          <PickerField
+            compact
+            label={t('admin.employees.site')}
+            value={siteId}
+            onChange={setSiteId}
+            options={[{ value: '', label: t('admin.attendance.allSites') }, ...(sites.data ?? []).map((s) => ({ value: s.id, label: s.name }))]}
+          />
         </View>
       </View>
 
@@ -107,6 +118,11 @@ export function EmployeesScreen({ navigation }: Props) {
               {item.lockedUntil && Date.parse(item.lockedUntil) > Date.now() ? (
                 <Text variant="small" color={colors.checkOut}>
                   {t('admin.employees.locked')}
+                </Text>
+              ) : null}
+              {!item.isActive ? (
+                <Text variant="small" color={colors.muted}>
+                  {t('admin.employees.inactive')}
                 </Text>
               ) : null}
             </Pressable>

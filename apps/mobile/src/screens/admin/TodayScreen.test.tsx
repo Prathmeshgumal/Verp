@@ -1,11 +1,11 @@
 import React from 'react';
-import { Alert } from 'react-native';
-import { act, fireEvent, screen } from '@testing-library/react-native';
+import { fireEvent, screen } from '@testing-library/react-native';
 import type { DashboardTodayDto } from '@ve/shared';
 import { fakeApi } from '../../testing/fakeApi';
-import { adminUser, loggedIn, renderWithAuth } from '../../testing/render';
-import { TodayScreen } from './TodayScreen';
+import { adminUser, fakeNavigation, loggedIn, renderWithAuth } from '../../testing/render';
+import { formatDistance, TodayScreen } from './TodayScreen';
 
+const mapDay = { employeeId: 'e1', name: 'Ramesh Kale', siteId: 's1', siteName: 'Plot 7', status: 'CHECKED_IN' as const, checkInAt: '2026-09-25T03:32:00Z', checkOutAt: null, checkInLat: 18.59, checkInLng: 73.73, needsReview: false };
 const dashboard: DashboardTodayDto = {
   workDate: '2026-09-25',
   activeEmployees: 47,
@@ -16,28 +16,66 @@ const dashboard: DashboardTodayDto = {
   missedCheckouts: 1,
   needsReview: 3,
   working: [{ employeeId: 'e1', name: 'Ramesh Kale', siteName: 'Plot 7', checkInAt: '2026-09-25T03:32:00Z' }],
-  mapDays: [],
-  refused: [],
+  mapDays: [
+    { ...mapDay, dayId: 'd1' },
+    { ...mapDay, dayId: 'd2', employeeId: 'e2', name: 'Amol Patil' },
+  ],
+  refused: [
+    { id: 'ev9', employeeId: 'e3', name: 'Sunil More', siteName: 'Plot 7', type: 'IN', result: 'OUTSIDE_SITE', serverTime: '2026-09-25T04:10:00Z', lat: 18.6, lng: 73.75, accuracyM: 10, distanceM: 1500 },
+  ],
 };
 
-test('shows the day counts and who is working', async () => {
-  await renderWithAuth(<TodayScreen />, { api: fakeApi({ dashboard: jest.fn(async () => dashboard) }), state: loggedIn(adminUser) });
-  expect(await screen.findByText('31')).toBeOnTheScreen();
-  expect(screen.getByText('Not yet in')).toBeOnTheScreen();
-  expect(screen.getByText('14')).toBeOnTheScreen();
-  expect(screen.getByText('Checked in 33 · Missed check-outs 1 · Active 47')).toBeOnTheScreen();
-  expect(screen.getByText('Ramesh Kale')).toBeOnTheScreen();
-  expect(screen.getByText('Plot 7 · since 9:02 AM')).toBeOnTheScreen();
-  expect(screen.getByText('RK')).toBeOnTheScreen();
-});
-
-test('log out asks first', async () => {
-  const alert = jest.spyOn(Alert, 'alert');
-  const { auth } = await renderWithAuth(<TodayScreen />, {
-    api: fakeApi({ dashboard: jest.fn(async () => dashboard) }),
+async function renderToday() {
+  const navigation = { ...fakeNavigation(), getParent: jest.fn() };
+  const parent = { navigate: jest.fn() };
+  navigation.getParent.mockReturnValue(parent);
+  await renderWithAuth(<TodayScreen navigation={navigation as never} route={{ key: 'k', name: 'Today' } as never} />, {
+    api: fakeApi({ dashboard: jest.fn(async () => dashboard), listSites: jest.fn(async () => []) }),
     state: loggedIn(adminUser),
   });
-  await fireEvent.press(await screen.findByRole('button', { name: 'Log out' }));
-  await act(async () => alert.mock.calls[0]?.[2]?.[1]?.onPress?.());
-  expect(auth.logout).toHaveBeenCalled();
+  await screen.findByText('Today');
+  return { navigation, parent };
+}
+
+test('shows every count from the web dashboard', async () => {
+  await renderToday();
+  for (const label of ['Working now: 31', 'Checked in: 33', 'Completed: 2', 'Not yet in: 14', 'Missed check-outs: 1', 'Needs review: 3', 'Refused today: 1', 'Active employees: 47']) {
+    expect(screen.getByLabelText(label)).toBeOnTheScreen();
+  }
+});
+
+test('who is working opens their day', async () => {
+  const { navigation } = await renderToday();
+  expect(screen.getByText('Plot 7 · since 9:02 AM')).toBeOnTheScreen();
+  await fireEvent.press(screen.getByRole('button', { name: 'Ramesh Kale' }));
+  expect(navigation.navigate).toHaveBeenCalledWith('AttendanceDetail', { id: 'd1' });
+});
+
+test('refused attempts show why and how far away', async () => {
+  await renderToday();
+  expect(screen.getByText('Refused attempts')).toBeOnTheScreen();
+  expect(screen.getByText('Check-in refused · outside the site')).toBeOnTheScreen();
+  expect(screen.getByText('1.5 km from Plot 7 · 9:40 AM')).toBeOnTheScreen();
+});
+
+test('missed check-outs and review counts open the filtered attendance list', async () => {
+  const { parent } = await renderToday();
+  await fireEvent.press(screen.getByRole('button', { name: 'Missed check-outs: 1' }));
+  expect(parent.navigate).toHaveBeenCalledWith('AttendanceTab', {
+    screen: 'AttendanceList',
+    params: { filters: { from: '2020-01-01', to: '2026-09-25', status: 'MISSED_CHECKOUT' } },
+  });
+});
+
+test('distances read in metres, then kilometres', () => {
+  expect(formatDistance(340.4)).toBe('340 m');
+  expect(formatDistance(1500)).toBe('1.5 km');
+});
+
+test('a tag for two people at one spot lists them; tapping one opens their day', async () => {
+  const { navigation } = await renderToday();
+  await fireEvent(screen.getByTestId('today-map'), 'message', { nativeEvent: { data: JSON.stringify({ type: 'tag', key: 'd1' }) } });
+  expect(await screen.findByText('2 people here')).toBeOnTheScreen();
+  await fireEvent.press(screen.getByRole('button', { name: 'Amol Patil' }));
+  expect(navigation.navigate).toHaveBeenCalledWith('AttendanceDetail', { id: 'd2' });
 });

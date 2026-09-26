@@ -1,20 +1,24 @@
-import React, { useState } from 'react';
-import { FlatList, Pressable, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { FlatList, Pressable, ScrollView, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import type { AdminDayDto } from '@ve/shared';
 import { useAuth } from '../../auth/AuthContext';
-import { addDays, formatTime, formatWorkDateMedium } from '../../attendance/format';
+import { formatTime, formatWorkDateMedium } from '../../attendance/format';
 import { localToday } from '../../attendance/localDate';
 import { queryKeys } from '../../attendance/queryKeys';
-import type { AttendanceStackParamList } from '../../navigation/types';
-import { colors, radius } from '../../theme/tokens';
+import { shareFile } from '../../native/device';
+import type { AttendanceFilters, AttendanceStackParamList } from '../../navigation/types';
+import { colors, fonts, radius } from '../../theme/tokens';
 import { Button } from '../../ui/Button';
 import { ErrorState, Loading } from '../../ui/Centered';
+import { DatePickerField } from '../../ui/DatePickerField';
 import { Icon } from '../../ui/Icon';
+import { PickerField } from '../../ui/PickerField';
 import { Screen } from '../../ui/Screen';
 import { Text } from '../../ui/Text';
+import { adminErrorKey } from './adminErrors';
 
 type Props = NativeStackScreenProps<AttendanceStackParamList, 'AttendanceList'>;
 
@@ -25,7 +29,7 @@ export function StatusBadge({ status }: { status: AdminDayDto['status'] }) {
   const bg = status === 'CHECKED_IN' ? colors.successBg : status === 'MISSED_CHECKOUT' ? colors.warnBg : colors.lineSoft;
   const fg = status === 'CHECKED_IN' ? colors.checkIn : status === 'MISSED_CHECKOUT' ? colors.warnText : colors.muted;
   return (
-    <View style={{ backgroundColor: bg, borderRadius: radius.pill, paddingVertical: 4, paddingHorizontal: 10 }}>
+    <View style={{ backgroundColor: bg, borderRadius: radius.pill, paddingVertical: 3, paddingHorizontal: 10 }}>
       <Text variant="small" color={fg}>
         {t(`admin.status.${status}`)}
       </Text>
@@ -33,70 +37,146 @@ export function StatusBadge({ status }: { status: AdminDayDto['status'] }) {
   );
 }
 
+/** The query the API gets: the employee's name is only for the screen. */
+export function toQuery(f: AttendanceFilters): Omit<AttendanceFilters, 'employeeName'> {
+  const query = { ...f };
+  delete query.employeeName;
+  return query;
+}
+
 export function AttendanceListScreen({ navigation, route }: Props) {
   const { t } = useTranslation();
   const { api } = useAuth();
   const today = localToday();
-  const [date, setDate] = useState(today);
-  const employeeId = route.params?.employeeId;
-  const employeeName = route.params?.employeeName;
-  const params = employeeId ? { from: addDays(today, -29), to: today, employeeId } : { from: date, to: date };
+  const [filters, setFilters] = useState<AttendanceFilters>({ from: today, to: today, ...route.params?.filters });
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
 
+  // Links from Today and from an employee replace the filters.
+  const incoming = route.params?.filters;
+  useEffect(() => {
+    if (incoming) setFilters({ from: today, to: today, ...incoming });
+  }, [incoming, today]);
+
+  const employees = useQuery({ queryKey: queryKeys.employees({}), queryFn: () => api.listEmployees({}) });
+  const sites = useQuery({ queryKey: queryKeys.sites, queryFn: () => api.listSites() });
   const query = useInfiniteQuery({
-    queryKey: queryKeys.attendance(params),
-    queryFn: ({ pageParam }) => api.listAttendance({ ...params, page: pageParam, pageSize: PAGE_SIZE }),
+    queryKey: queryKeys.attendance(toQuery(filters)),
+    queryFn: ({ pageParam }) => api.listAttendance({ ...toQuery(filters), page: pageParam, pageSize: PAGE_SIZE }),
     initialPageParam: 1,
     getNextPageParam: (last) => (last.page * last.pageSize < last.total ? last.page + 1 : undefined),
   });
   const items = query.data?.pages.flatMap((p) => p.items) ?? [];
+  const total = query.data?.pages[0]?.total;
+  const oneDay = filters.from === filters.to;
+
+  function update(patch: Partial<AttendanceFilters>) {
+    navigation.setParams({ filters: undefined });
+    setFilters((f) => {
+      const next = { ...f, ...patch };
+      if (next.from > next.to) return patch.from ? { ...next, to: next.from } : { ...next, from: next.to };
+      return next;
+    });
+  }
+
+  async function exportCsv() {
+    setExporting(true);
+    setExportError(null);
+    try {
+      const csv = await api.exportAttendanceCsv(toQuery(filters));
+      await shareFile(`attendance_${filters.from}_${filters.to}.csv`, csv, 'text/csv', t('admin.attendance.export'));
+    } catch (err) {
+      setExportError(t(adminErrorKey(err)));
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  const employeeOptions = [
+    { value: '', label: t('admin.attendance.allEmployees') },
+    ...(employees.data ?? []).map((e) => ({ value: e.id, label: e.name })),
+    ...(filters.employeeId && !employees.data?.some((e) => e.id === filters.employeeId)
+      ? [{ value: filters.employeeId, label: filters.employeeName ?? '…' }]
+      : []),
+  ];
+  const siteOptions = [{ value: '', label: t('admin.attendance.allSites') }, ...(sites.data ?? []).map((s) => ({ value: s.id, label: s.name }))];
+  const statusOptions = [
+    { value: '', label: t('admin.attendance.anyStatus') },
+    { value: 'CHECKED_IN', label: t('admin.status.CHECKED_IN') },
+    { value: 'COMPLETED', label: t('admin.status.COMPLETED') },
+    { value: 'MISSED_CHECKOUT', label: t('admin.status.MISSED_CHECKOUT') },
+  ];
 
   return (
     <Screen>
-      <View style={{ paddingHorizontal: 20, paddingTop: 24, paddingBottom: 12, gap: 12 }}>
-        <Text variant="h1">{t('admin.attendance.title')}</Text>
-        {employeeId ? (
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <View style={{ backgroundColor: colors.dark, borderRadius: radius.pill, paddingVertical: 8, paddingHorizontal: 14 }}>
-              <Text variant="label" color={colors.onDark}>
-                {t('admin.attendance.employeeFilter', { name: employeeName ?? '' })}
-              </Text>
-            </View>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={t('admin.attendance.clearFilter')}
-              onPress={() => navigation.setParams({ employeeId: undefined, employeeName: undefined })}
-              style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center' }}
-            >
-              <Icon name="close" />
-            </Pressable>
-            <Text variant="small" color={colors.muted}>
-              {t('admin.attendance.last30')}
-            </Text>
-          </View>
-        ) : (
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={t('admin.attendance.prevDay')}
-              onPress={() => setDate((d) => addDays(d, -1))}
-              style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center' }}
-            >
-              <Icon name="chevronLeft" />
-            </Pressable>
-            <Text variant="bodyStrong">{formatWorkDateMedium(date, t)}</Text>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={t('admin.attendance.nextDay')}
-              disabled={date >= today}
-              accessibilityState={{ disabled: date >= today }}
-              onPress={() => setDate((d) => addDays(d, 1))}
-              style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center', opacity: date >= today ? 0.3 : 1 }}
-            >
-              <Icon name="chevronRight" />
-            </Pressable>
-          </View>
-        )}
+      <View style={{ paddingHorizontal: 20, paddingTop: 20, paddingBottom: 8, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        <View style={{ flex: 1 }}>
+          <Text variant="h1">{t('admin.attendance.title')}</Text>
+          <Text variant="small" color={colors.muted}>
+            {total == null ? ' ' : t('admin.attendance.days', { count: total })}
+          </Text>
+        </View>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t('admin.attendance.export')}
+          accessibilityState={{ busy: exporting }}
+          disabled={exporting}
+          onPress={() => void exportCsv()}
+          style={{ height: 44, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.surface, opacity: exporting ? 0.5 : 1 }}
+        >
+          <Icon name="download" size={18} />
+          <Text style={{ fontFamily: fonts.bodySemi, fontSize: 14 }}>{t('admin.attendance.exportShort')}</Text>
+        </Pressable>
       </View>
+      {exportError ? (
+        <Text accessibilityRole="alert" variant="small" color={colors.danger} style={{ paddingHorizontal: 20 }}>
+          {exportError}
+        </Text>
+      ) : null}
+
+      <View style={{ paddingHorizontal: 16, paddingTop: 4, flexDirection: 'row', gap: 10 }}>
+        <DatePickerField label={t('admin.attendance.from')} value={filters.from} max={today} onChange={(from) => update({ from })} />
+        <DatePickerField label={t('admin.attendance.to')} value={filters.to} max={today} onChange={(to) => update({ to })} />
+      </View>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }} contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 10, gap: 8 }}>
+        <PickerField
+          compact
+          label={t('admin.attendance.employee')}
+          value={filters.employeeId ?? ''}
+          options={employeeOptions}
+          onChange={(v) => update({ employeeId: v || undefined, employeeName: employeeOptions.find((o) => o.value === v)?.label })}
+        />
+        <PickerField compact label={t('admin.attendance.site')} value={filters.siteId ?? ''} options={siteOptions} onChange={(v) => update({ siteId: v || undefined })} />
+        <PickerField
+          compact
+          label={t('admin.attendance.status')}
+          value={filters.status ?? ''}
+          options={statusOptions}
+          onChange={(v) => update({ status: (v || undefined) as AttendanceFilters['status'] })}
+        />
+        <Pressable
+          accessibilityRole="switch"
+          accessibilityLabel={t('admin.attendance.needsReviewOnly')}
+          accessibilityState={{ checked: !!filters.needsReview }}
+          onPress={() => update({ needsReview: filters.needsReview ? undefined : true })}
+          style={{
+            minHeight: 44,
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 6,
+            paddingHorizontal: 14,
+            borderRadius: radius.pill,
+            borderWidth: 1,
+            borderColor: filters.needsReview ? colors.dark : colors.inputBorder,
+            backgroundColor: filters.needsReview ? colors.dark : colors.surface,
+          }}
+        >
+          {filters.needsReview ? <Icon name="check" size={16} color={colors.onDark} /> : null}
+          <Text style={{ fontFamily: fonts.bodySemi, fontSize: 14 }} color={filters.needsReview ? colors.onDark : colors.text}>
+            {t('admin.attendance.needsReviewOnly')}
+          </Text>
+        </Pressable>
+      </ScrollView>
 
       {query.isPending ? (
         <Loading />
@@ -120,15 +200,15 @@ export function AttendanceListScreen({ navigation, route }: Props) {
               accessibilityRole="button"
               accessibilityLabel={`${item.employeeName}, ${t(`admin.status.${item.status}`)}`}
               onPress={() => navigation.navigate('AttendanceDetail', { id: item.id })}
-              style={{ backgroundColor: colors.surface, borderRadius: radius.lg, padding: 14, gap: 6 }}
+              style={{ backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.line, padding: 14, gap: 6 }}
             >
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
                 <Text variant="bodyStrong" style={{ flex: 1 }}>
                   {item.employeeName}
                 </Text>
                 {item.needsReview ? (
-                  <View style={{ backgroundColor: colors.warnBg, borderRadius: radius.pill, paddingVertical: 4, paddingHorizontal: 10 }}>
-                    <Text variant="small" color={colors.warnText}>
+                  <View style={{ backgroundColor: colors.dangerBg, borderRadius: radius.pill, paddingVertical: 3, paddingHorizontal: 10 }}>
+                    <Text variant="small" color={colors.danger}>
                       {t('admin.attendance.review')}
                     </Text>
                   </View>
@@ -136,7 +216,7 @@ export function AttendanceListScreen({ navigation, route }: Props) {
                 <StatusBadge status={item.status} />
               </View>
               <Text variant="small" color={colors.muted}>
-                {employeeId ? `${formatWorkDateMedium(item.workDate, t)} · ${item.siteName}` : item.siteName}
+                {oneDay ? item.siteName : `${formatWorkDateMedium(item.workDate, t)} · ${item.siteName}`}
               </Text>
               <Text variant="mono" color={colors.muted}>
                 {`${formatTime(item.checkInAt, t)} – ${item.checkOutAt ? formatTime(item.checkOutAt, t) : '?'}`}

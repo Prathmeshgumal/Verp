@@ -1,6 +1,9 @@
 package com.vehr.app.device
 
+import android.content.Intent
 import android.location.Location
+import androidx.core.content.FileProvider
+import java.io.File
 import android.os.Build
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.Promise
@@ -94,6 +97,22 @@ class VeDeviceModule(private val reactContext: ReactApplicationContext) : Native
 
     override fun cancelReminder(promise: Promise) = respond(promise) {
         Reminder.cancel(reactContext)
+        null
+    }
+
+    override fun shareFile(fileName: String, content: String, mimeType: String, title: String, promise: Promise) = respond(promise) {
+        val dir = File(reactContext.cacheDir, "exports").apply { mkdirs() }
+        val file = File(dir, fileName.replace(Regex("[^A-Za-z0-9._-]"), "_"))
+        file.writeText(content)
+        val uri = FileProvider.getUriForFile(reactContext, "${reactContext.packageName}.files", file)
+        val send = Intent(Intent.ACTION_SEND).apply {
+            type = mimeType
+            putExtra(Intent.EXTRA_STREAM, uri)
+            putExtra(Intent.EXTRA_SUBJECT, fileName)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        val chooser = Intent.createChooser(send, title).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
+        (reactContext.currentActivity ?: reactContext).startActivity(chooser)
         null
     }
 

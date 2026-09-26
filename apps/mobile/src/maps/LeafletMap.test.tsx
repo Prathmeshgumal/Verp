@@ -49,3 +49,8 @@ test('the phone position and follow mode reach the page', async () => {
   expect(injectedScripts[0]).toContain('"me":{"lat":18.501,"lng":73.801,"accuracyM":9}');
   expect(injectedScripts[0]).toContain('"follow":true');
 });
+
+test('a tapped tag comes back with its key', () => {
+  expect(parseMapMessage('{"type":"tag","key":"d1"}')).toEqual({ type: 'tag', key: 'd1' });
+  expect(parseMapMessage('{"type":"tag","key":5}')).toBeNull();
+});
