@@ -21,17 +21,20 @@ body {
   background: #8a8578;
 }
 
-/* Browsers that scale tiles by a fractional pixel ratio leave hairline gaps between them. */
+/* Browsers that scale tiles by a fractional pixel ratio leave hairline gaps between them: overlap
+   each tile by half a pixel, with normal blending so the overlap does not show as a bright line. */
 .leaflet-container img.leaflet-tile {
-  mix-blend-mode: plus-lighter;
+  mix-blend-mode: normal;
+  width: 256.5px !important;
+  height: 256.5px !important;
 }
 
 /* Sites tab: the map on the left, a fixed-width list on the right; stacked on narrow screens. */
 .ve-split {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 380px;
+  grid-template-columns: minmax(0, 1.6fr) minmax(360px, 1fr);
   gap: 16px;
-  height: clamp(420px, calc(100vh - 200px), 620px);
+  height: clamp(440px, calc(100vh - 170px), 900px);
 }
 
 .ve-split-map,
@@ -66,25 +69,25 @@ body {
 /* Today: the check-in map beside the list of who is working. */
 .ve-today {
   display: grid;
-  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  grid-template-columns: minmax(0, 1.4fr) minmax(340px, 1fr);
   gap: 16px;
   align-items: start;
 }
 
 .ve-today-list {
-  max-height: 460px;
+  max-height: calc(100vh - 250px);
   overflow-y: auto;
 }
 
-/* Site editor: location tools and map on the left, the details form on the right. */
+/* Site editor: a tall map on the left; finding the place and the details form on the right. */
 .ve-site-edit {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 400px;
+  grid-template-columns: minmax(0, 1.4fr) minmax(380px, 1fr);
   gap: 16px;
   align-items: start;
 }
 
-.ve-site-edit-details {
+.ve-site-edit-map {
   position: sticky;
   top: 76px;
 }
@@ -95,7 +98,7 @@ body {
     grid-template-columns: 1fr;
   }
 
-  .ve-site-edit-details {
+  .ve-site-edit-map {
     position: static;
   }
 }

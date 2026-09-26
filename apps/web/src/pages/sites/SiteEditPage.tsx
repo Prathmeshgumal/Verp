@@ -39,7 +39,7 @@ type FormValues = {
 };
 
 /** The map fills what is left of the window below the location tools: 320–520 px. */
-const MAP_HEIGHT = 'clamp(300px, calc(100vh - 550px), 520px)';
+const MAP_HEIGHT = 'clamp(380px, calc(100vh - 290px), 760px)';
 
 const round6 = (n: number) => Math.round(n * 1e6) / 1e6;
 const num = (v: number | string) => (typeof v === 'number' ? v : null);
@@ -196,145 +196,153 @@ function SiteEditor({ site, defaultRadiusM, maxAccuracyM }: { site: SiteDto | nu
       <Title order={1}>{site ? 'Edit site' : 'New site'}</Title>
 
       <div className="ve-site-edit">
-        <Paper withBorder p="md" radius="md">
+        <Paper withBorder p="md" radius="md" className="ve-site-edit-map">
           <Title order={3} mb="sm">
             Location
           </Title>
-          <Stack gap="sm">
-            <form onSubmit={(event) => void findPlaces(event)}>
-              <Group align="flex-end" wrap="nowrap">
-                <TextInput
-                  label="Search for a place"
-                  placeholder="Area, landmark or address"
-                  value={placeQuery}
-                  onChange={(event) => setPlaceQuery(event.currentTarget.value)}
-                  style={{ flex: 1 }}
-                />
-                <Button type="submit" variant="default" leftSection={<IconSearch size={16} />} loading={searching}>
-                  Search
-                </Button>
-              </Group>
-            </form>
-            {places !== null ? (
-              <Paper withBorder p="xs" radius="md">
-                <Stack gap={2}>
-                  {places.length === 0 ? (
-                    <Text size="sm" c="dimmed">
-                      No places found. Try a nearby landmark.
-                    </Text>
-                  ) : (
-                    places.map((p) => (
-                      <Button
-                        key={`${p.lat},${p.lng}`}
-                        variant="subtle"
-                        justify="flex-start"
-                        h="auto"
-                        py={6}
-                        styles={{ label: { whiteSpace: 'normal', textAlign: 'left' } }}
-                        onClick={() => {
-                          moveTo(p, true);
-                          setPlaces(null);
-                        }}
-                      >
-                        {p.name}
-                      </Button>
-                    ))
-                  )}
-                  <Text size="xs" c="dimmed">
-                    Search by Nominatim · © OpenStreetMap contributors
-                  </Text>
-                </Stack>
-              </Paper>
-            ) : null}
-            <form onSubmit={(event) => void pasteFromGoogle(event)}>
-              <Group align="flex-end" wrap="nowrap">
-                <TextInput
-                  label="Paste from Google Maps"
-                  description="In Google Maps, tap Share → Copy link, or long-press the spot to copy its coordinates."
-                  placeholder="https://maps.app.goo.gl/… or 17.4167, 78.3664"
-                  value={linkText}
-                  onChange={(event) => setLinkText(event.currentTarget.value)}
-                  style={{ flex: 1 }}
-                />
-                <Button type="submit" variant="default" leftSection={<IconLink size={16} />} loading={resolving}>
-                  Go
-                </Button>
-              </Group>
-            </form>
-            <Group>
-              <Button variant="default" leftSection={<IconCurrentLocation size={16} />} loading={locating} onClick={() => void locateMe()}>
-                Use my location
-              </Button>
-              {locating && progressM !== null ? (
-                <Text size="sm" c="dimmed">
-                  {`Getting your location… ±${Math.round(progressM)} m`}
-                </Text>
-              ) : null}
-            </Group>
-            {note ? (
-              <Text size="sm" c="ledgerGreen">
-                {note}
-              </Text>
-            ) : null}
-            <SiteMapPicker
-              center={center}
-              radiusM={radiusM}
-              recenterKey={recenterKey}
-              accuracy={accuracy}
-              overview={(others.data ?? []).map((s) => ({ lat: s.lat, lng: s.lng }))}
-              height={MAP_HEIGHT}
-              onMove={(p) => moveTo(p, false)}
-            />
-            <Text size="sm" c="dimmed">
-              {center
-                ? 'Drag the pin, or click the map, to set the centre of the site.'
-                : 'Set the location: search, paste from Google Maps, use my location, or tap the map.'}
-            </Text>
-          </Stack>
+          <SiteMapPicker
+            center={center}
+            radiusM={radiusM}
+            recenterKey={recenterKey}
+            accuracy={accuracy}
+            overview={(others.data ?? []).map((s) => ({ lat: s.lat, lng: s.lng }))}
+            height={MAP_HEIGHT}
+            onMove={(p) => moveTo(p, false)}
+          />
+          <Text size="sm" c="dimmed" mt="xs">
+            {center
+              ? 'Drag the pin, or click the map, to set the centre of the site.'
+              : 'Set the location: search, paste from Google Maps, use my location, or tap the map.'}
+          </Text>
         </Paper>
 
-        <Paper withBorder p="md" radius="md" className="ve-site-edit-details">
-          <Title order={3} mb="sm">
-            Details
-          </Title>
-          <form noValidate onSubmit={form.onSubmit((values) => save.mutate(schema.parse(values)))}>
-            <Stack>
-              <TextInput label="Site name" {...form.getInputProps('name')} />
-              <TextInput label="Address (optional)" {...form.getInputProps('address')} />
-              <Group grow>
-                <NumberInput label="Latitude" decimalScale={6} hideControls {...form.getInputProps('lat')} />
-                <NumberInput label="Longitude" decimalScale={6} hideControls {...form.getInputProps('lng')} />
-              </Group>
-              <NumberInput
-                label="Allowed distance (metres)"
-                description="Workers must be this close to the pin to check in."
-                min={10}
-                max={1000}
-                step={10}
-                allowDecimal={false}
-                clampBehavior="none"
-                {...form.getInputProps('radiusM')}
-              />
-              <Slider
-                min={10}
-                max={1000}
-                step={10}
-                value={radiusM}
-                onChange={(value) => form.setFieldValue('radiusM', value)}
-                label={(value) => `${value} m`}
-                thumbLabel="Allowed distance slider"
-                marks={[{ value: 50 }, { value: 100 }, { value: 200 }, { value: 500 }]}
-              />
-              {site ? <Switch label="Site is in use" {...form.getInputProps('isActive', { type: 'checkbox' })} /> : null}
-              {error ? <Alert color="ledgerOrange">{error}</Alert> : null}
-              <Group justify="flex-end">
-                <Button type="submit" loading={save.isPending} disabled={!center}>
-                  Save site
+        <Stack gap="md">
+          <Paper withBorder p="md" radius="md">
+            <Title order={3} mb="sm">
+              Find the place
+            </Title>
+            <Stack gap="sm">
+              <form onSubmit={(event) => void findPlaces(event)}>
+                <Group align="flex-end" wrap="nowrap">
+                  <TextInput
+                    label="Search for a place"
+                    placeholder="Area, landmark or address"
+                    value={placeQuery}
+                    onChange={(event) => setPlaceQuery(event.currentTarget.value)}
+                    style={{ flex: 1 }}
+                  />
+                  <Button type="submit" variant="default" leftSection={<IconSearch size={16} />} loading={searching}>
+                    Search
+                  </Button>
+                </Group>
+              </form>
+              {places !== null ? (
+                <Paper withBorder p="xs" radius="md">
+                  <Stack gap={2}>
+                    {places.length === 0 ? (
+                      <Text size="sm" c="dimmed">
+                        No places found. Try a nearby landmark.
+                      </Text>
+                    ) : (
+                      places.map((p) => (
+                        <Button
+                          key={`${p.lat},${p.lng}`}
+                          variant="subtle"
+                          justify="flex-start"
+                          h="auto"
+                          py={6}
+                          styles={{ label: { whiteSpace: 'normal', textAlign: 'left' } }}
+                          onClick={() => {
+                            moveTo(p, true);
+                            setPlaces(null);
+                          }}
+                        >
+                          {p.name}
+                        </Button>
+                      ))
+                    )}
+                    <Text size="xs" c="dimmed">
+                      Search by Nominatim · © OpenStreetMap contributors
+                    </Text>
+                  </Stack>
+                </Paper>
+              ) : null}
+              <form onSubmit={(event) => void pasteFromGoogle(event)}>
+                <Group align="flex-end" wrap="nowrap">
+                  <TextInput
+                    label="Paste from Google Maps"
+                    description="In Google Maps, tap Share → Copy link, or long-press the spot to copy its coordinates."
+                    placeholder="https://maps.app.goo.gl/… or 17.4167, 78.3664"
+                    value={linkText}
+                    onChange={(event) => setLinkText(event.currentTarget.value)}
+                    style={{ flex: 1 }}
+                  />
+                  <Button type="submit" variant="default" leftSection={<IconLink size={16} />} loading={resolving}>
+                    Go
+                  </Button>
+                </Group>
+              </form>
+              <Group>
+                <Button variant="default" leftSection={<IconCurrentLocation size={16} />} loading={locating} onClick={() => void locateMe()}>
+                  Use my location
                 </Button>
+                {locating && progressM !== null ? (
+                  <Text size="sm" c="dimmed">
+                    {`Getting your location… ±${Math.round(progressM)} m`}
+                  </Text>
+                ) : null}
               </Group>
+              {note ? (
+                <Text size="sm" c="ledgerGreen">
+                  {note}
+                </Text>
+              ) : null}
             </Stack>
-          </form>
-        </Paper>
+          </Paper>
+
+          <Paper withBorder p="md" radius="md">
+            <Title order={3} mb="sm">
+              Details
+            </Title>
+            <form noValidate onSubmit={form.onSubmit((values) => save.mutate(schema.parse(values)))}>
+              <Stack>
+                <TextInput label="Site name" {...form.getInputProps('name')} />
+                <TextInput label="Address (optional)" {...form.getInputProps('address')} />
+                <Group grow>
+                  <NumberInput label="Latitude" decimalScale={6} hideControls {...form.getInputProps('lat')} />
+                  <NumberInput label="Longitude" decimalScale={6} hideControls {...form.getInputProps('lng')} />
+                </Group>
+                <NumberInput
+                  label="Allowed distance (metres)"
+                  description="Workers must be this close to the pin to check in."
+                  min={10}
+                  max={1000}
+                  step={10}
+                  allowDecimal={false}
+                  clampBehavior="none"
+                  {...form.getInputProps('radiusM')}
+                />
+                <Slider
+                  min={10}
+                  max={1000}
+                  step={10}
+                  value={radiusM}
+                  onChange={(value) => form.setFieldValue('radiusM', value)}
+                  label={(value) => `${value} m`}
+                  thumbLabel="Allowed distance slider"
+                  marks={[{ value: 50 }, { value: 100 }, { value: 200 }, { value: 500 }]}
+                />
+                {site ? <Switch label="Site is in use" {...form.getInputProps('isActive', { type: 'checkbox' })} /> : null}
+                {error ? <Alert color="ledgerOrange">{error}</Alert> : null}
+                <Group justify="flex-end">
+                  <Button type="submit" loading={save.isPending} disabled={!center}>
+                    Save site
+                  </Button>
+                </Group>
+              </Stack>
+            </form>
+          </Paper>
+        </Stack>
       </div>
     </Stack>
   );

@@ -29,7 +29,7 @@ export function DayMap({ day, site }: { day: AdminDayDto; site: SiteSummary }) {
   for (const p of pins) bounds.extend([p.lat, p.lng]);
 
   return (
-    <MapContainer {...MAP_LIMITS} bounds={bounds.pad(0.15)} style={{ height: 260, borderRadius: 12 }} scrollWheelZoom={false}>
+    <MapContainer {...MAP_LIMITS} bounds={bounds.pad(0.15)} style={{ height: 320, borderRadius: 12 }} scrollWheelZoom={false}>
       <OsmTiles />
       <Circle center={[site.lat, site.lng]} radius={site.radiusM} pathOptions={{ color: '#B8480F', weight: 2, fillOpacity: 0.12 }} />
       {pins.map((p) => (

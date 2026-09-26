@@ -96,7 +96,7 @@ export function DashboardPage() {
               No one has checked in yet today.
             </Text>
           ) : null}
-          <WorkingMap days={visibleDays(d.mapDays, showFinished)} sites={sites.data ?? []} tz={tz} onOpen={setOpenDayId} height={380} />
+          <WorkingMap days={visibleDays(d.mapDays, showFinished)} sites={sites.data ?? []} tz={tz} onOpen={setOpenDayId} height="clamp(360px, calc(100vh - 340px), 640px)" />
         </Paper>
 
         <Paper withBorder p="md" radius="md" className="ve-today-list">
