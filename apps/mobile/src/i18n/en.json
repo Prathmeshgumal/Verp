@@ -59,5 +59,28 @@
       "generic": "Something went wrong. Try again",
       "sessionExpired": "Please log in again"
     }
+  },
+  "result": {
+    "saved": "Attendance saved",
+    "checkedInAt": "Checked in at",
+    "checkedOutAt": "Checked out at",
+    "notSaved": "Not saved",
+    "openSettings": "Open settings",
+    "locationOff": "Turn on location",
+    "locationOffHelp": "Location is off on this phone",
+    "permissionDenied": "Allow location",
+    "permissionHelp": "VE HR needs your location to save attendance",
+    "preciseRequired": "Allow precise location",
+    "preciseHelp": "Turn on \"Use precise location\"",
+    "lowAccuracy": "Can't find you clearly",
+    "lowAccuracyHelp": "Step outside and try again",
+    "outside": "You are {{distance}} m away from the site",
+    "outsideHelp": "Walk closer and try again",
+    "alreadyIn": "Already checked in today",
+    "alreadyOut": "Already checked out today",
+    "notCheckedIn": "You have not checked in today",
+    "contactSupervisor": "Please contact your supervisor",
+    "network": "Not saved, no internet",
+    "networkHelp": "Check your signal and try again"
   }
 }
