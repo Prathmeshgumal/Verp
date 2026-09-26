@@ -1,12 +1,15 @@
-import { Group, Paper, SimpleGrid, Stack, Table, Text, Title } from '@mantine/core';
+import { Group, Paper, SimpleGrid, Stack, Switch, Table, Text, Title } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Link } from 'react-router';
 import { PageError, PageLoader } from '../components/PageState';
 import { queryKeys } from '../lib/queryKeys';
 import { formatTime, formatWorkDate } from '../lib/time';
 import { useCompanyTz } from '../lib/useCompanySettings';
 import { useServices } from '../services';
+import { AttendanceDrawer } from './attendance/AttendanceDrawer';
+import { visibleDays } from './today/workingMap';
+import { WorkingMap } from './today/WorkingMap';
 
 /** Earlier than any record: the dashboard's missed/review counts cover all time. */
 export const ALL_TIME_FROM = '2020-01-01';
@@ -44,6 +47,9 @@ export function DashboardPage() {
   const { api } = useServices();
   const tz = useCompanyTz();
   const query = useQuery({ queryKey: queryKeys.dashboard, queryFn: () => api.dashboard(), refetchInterval: 60_000 });
+  const sites = useQuery({ queryKey: queryKeys.sites, queryFn: () => api.listSites() });
+  const [showFinished, setShowFinished] = useState(false);
+  const [openDayId, setOpenDayId] = useState<string | null>(null);
 
   if (!query.data) {
     return query.isError ? <PageError error={query.error} onRetry={() => void query.refetch()} /> : <PageLoader />;
@@ -72,6 +78,23 @@ export function DashboardPage() {
           {query.isError ? ' · could not refresh, retrying' : ''}
         </Text>
       </Group>
+
+      <Paper withBorder p="md" radius="md">
+        <Group justify="space-between" mb="sm">
+          <Title order={3}>On site today</Title>
+          <Switch
+            label="Also show finished today"
+            checked={showFinished}
+            onChange={(event) => setShowFinished(event.currentTarget.checked)}
+          />
+        </Group>
+        {d.mapDays.length === 0 ? (
+          <Text c="dimmed" mb="sm">
+            No one has checked in yet today.
+          </Text>
+        ) : null}
+        <WorkingMap days={visibleDays(d.mapDays, showFinished)} sites={sites.data ?? []} tz={tz} onOpen={setOpenDayId} height="55vh" />
+      </Paper>
 
       <SimpleGrid cols={{ base: 2, sm: 3, lg: 4 }}>
         {stats.map((stat) => (
@@ -106,6 +129,7 @@ export function DashboardPage() {
           </Table>
         )}
       </Paper>
+      {openDayId ? <AttendanceDrawer dayId={openDayId} onClose={() => setOpenDayId(null)} /> : null}
     </Stack>
   );
 }

@@ -63,3 +63,71 @@ body {
     overflow: visible;
   }
 }
+
+/* Today map: tags sit above their point; bubbles centre on the site. */
+.ve-anchor {
+  overflow: visible;
+}
+
+.ve-tag,
+.ve-bubble {
+  position: absolute;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 35%);
+  font-family: "Public Sans", sans-serif;
+}
+
+.ve-tag {
+  transform: translate(-50%, calc(-100% - 8px));
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: #fff;
+}
+
+.ve-tag::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -5px;
+  margin-left: -5px;
+  border: 5px solid transparent;
+  border-bottom: 0;
+}
+
+.ve-tag-green {
+  background: #1e6b45;
+}
+
+.ve-tag-green::after {
+  border-top-color: #1e6b45;
+}
+
+.ve-tag-orange {
+  background: #b8480f;
+}
+
+.ve-tag-orange::after {
+  border-top-color: #b8480f;
+}
+
+.ve-tag-grey {
+  background: #6b675e;
+}
+
+.ve-tag-grey::after {
+  border-top-color: #6b675e;
+}
+
+.ve-bubble {
+  transform: translate(-50%, -50%);
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #1b1d1f;
+  color: #f4f1ea;
+  font-size: 13px;
+  font-weight: 700;
+}
