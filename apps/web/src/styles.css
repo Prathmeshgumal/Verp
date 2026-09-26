@@ -383,3 +383,79 @@
     animation: none;
   }
 }
+
+/* Several people at one spot: a count badge on the tag, and a list when it is clicked. */
+.ve-tag-count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 16px;
+  height: 16px;
+  margin-right: 6px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 25%);
+  font-size: 11px;
+}
+
+.ve-stack-popup .leaflet-popup-content-wrapper {
+  background: var(--popover);
+  color: var(--popover-foreground);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 18%);
+}
+
+.ve-stack-popup .leaflet-popup-tip {
+  background: var(--popover);
+}
+
+.ve-stack-popup .leaflet-popup-content {
+  margin: 6px;
+}
+
+.ve-stack-list {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ve-stack-list button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font: 500 13px "Public Sans", sans-serif;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.ve-stack-list button:hover {
+  background: var(--accent);
+}
+
+.ve-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.ve-dot-green {
+  background: #15803d;
+}
+
+.ve-dot-orange {
+  background: #e8540f;
+}
+
+.ve-dot-grey {
+  background: #6b675e;
+}

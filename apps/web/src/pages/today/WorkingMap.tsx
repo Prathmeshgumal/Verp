@@ -1,10 +1,10 @@
 import type { DashboardMapDay, SiteDto } from '@ve/shared';
 import L from 'leaflet';
 import { useState } from 'react';
-import { Circle, MapContainer, Marker, useMap, useMapEvents } from 'react-leaflet';
+import { Circle, MapContainer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
 import { MAP_LIMITS, OsmTiles } from '../../maps/OsmTiles';
 import { INDIA_BOUNDS } from '../sites/SiteMapPicker';
-import { bubbleHtml, GROUP_BELOW_ZOOM, siteBubbles, tagHtml } from './workingMap';
+import { bubbleHtml, GROUP_BELOW_ZOOM, siteBubbles, stackDays, stackHtml, tagLabel, tagTone } from './workingMap';
 
 interface Props {
   days: DashboardMapDay[];
@@ -40,14 +40,38 @@ function Tags({ days, sites, tz, onOpen }: Omit<Props, 'height'>) {
       />
     ));
   }
-  return days.map((d) => (
-    <Marker
-      key={d.dayId}
-      position={[d.checkInLat, d.checkInLng]}
-      icon={labelIcon(tagHtml(d, tz))}
-      eventHandlers={{ click: () => onOpen(d.dayId) }}
-    />
-  ));
+  return stackDays(days).map((stack) =>
+    stack.days.length === 1 ? (
+      <Marker
+        key={stack.key}
+        position={[stack.lat, stack.lng]}
+        icon={labelIcon(stackHtml(stack.days, tz))}
+        eventHandlers={{ click: () => onOpen(stack.days[0]!.dayId) }}
+      />
+    ) : (
+      // Several people at one spot: the tag opens a list, and each name opens that person's day.
+      <Marker key={stack.key} position={[stack.lat, stack.lng]} icon={labelIcon(stackHtml(stack.days, tz))}>
+        <Popup closeButton={false} offset={[0, -30]} className="ve-stack-popup">
+          <ul className="ve-stack-list">
+            {stack.days.map((d) => (
+              <li key={d.dayId}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    map.closePopup();
+                    onOpen(d.dayId);
+                  }}
+                >
+                  <span className={`ve-dot ve-dot-${tagTone(d)}`} />
+                  {tagLabel(d, tz)}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </Popup>
+      </Marker>
+    ),
+  );
 }
 
 /** Where each worker checked in today. Positions come from check-in only; nothing is tracked afterwards. */
