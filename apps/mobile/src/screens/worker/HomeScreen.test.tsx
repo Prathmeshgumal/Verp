@@ -1,6 +1,6 @@
 import React from 'react';
 import { Alert, AppState, Linking, PermissionsAndroid } from 'react-native';
-import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react-native';
 import type { AttendanceResult, DayDto, MeTodayResponse } from '@ve/shared';
 import { NetworkError } from '../../api/errors';
 import { loadPending, savePending } from '../../attendance/pendingAction';
@@ -8,6 +8,7 @@ import { fakeApi } from '../../testing/fakeApi';
 import { emitFakeLocation, fakeState } from '../../testing/fakeNative';
 import { renderWithAuth } from '../../testing/render';
 import { HomeScreen } from './HomeScreen';
+import { previewMapHeight } from './LocationPreview';
 
 const site = { id: 's1', name: 'Plot 7, Hinjewadi', lat: 18.59, lng: 73.73, radiusM: 100 };
 const today = (extra: Partial<MeTodayResponse> = {}): MeTodayResponse => ({
@@ -240,4 +241,29 @@ test('no site: no preview and no watch', async () => {
   expect(await screen.findByText('No site assigned')).toBeOnTheScreen();
   expect(screen.queryByText('Looking for your location…')).toBeNull();
   expect(fakeState.watchIntervalMs).toBeNull();
+});
+
+test('the CHECK IN button sits in a scroll view, so small screens can still reach it', async () => {
+  await renderHome();
+  expect(within(screen.getByTestId('home-scroll')).getByRole('button', { name: 'CHECK IN' })).toBeOnTheScreen();
+});
+
+test('the preview map gets shorter on short screens', () => {
+  expect(previewMapHeight(1000)).toBe(200);
+  expect(previewMapHeight(640)).toBe(141);
+});
+
+test('coming back to the app checks location without asking for permission again', async () => {
+  const listeners: ((state: string) => void)[] = [];
+  jest.spyOn(AppState, 'addEventListener').mockImplementation((_type, listener) => {
+    listeners.push(listener as (state: string) => void);
+    return { remove: jest.fn() } as never;
+  });
+  await renderHome();
+  // Android reports the app as backgrounded while its permission dialog is open.
+  await act(async () => listeners.forEach((l) => l('background')));
+  await act(async () => listeners.forEach((l) => l('active')));
+  await waitFor(() => expect(fakeState.watchIntervalMs).toBe(1000));
+  expect(PermissionsAndroid.requestMultiple).toHaveBeenCalledTimes(1);
+  expect(PermissionsAndroid.check).toHaveBeenCalled();
 });

@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from 'react';
-import { Pressable, View } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { Pressable, useWindowDimensions, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { previewStatus, type PreviewStatus } from '../../attendance/preview';
 import { LeafletMap } from '../../maps/LeafletMap';
 import { useLiveFix } from '../../native/liveLocation';
-import { ensureLocationReady, openAppSettings, openLocationSettings, type LocationProblem } from '../../native/location';
+import { checkLocationReady, ensureLocationReady, openAppSettings, openLocationSettings, type LocationProblem } from '../../native/location';
 import { colors } from '../../theme/tokens';
 import { Button } from '../../ui/Button';
 import { Card } from '../../ui/Card';
@@ -18,7 +18,10 @@ interface Props {
   active: boolean;
 }
 
-const MAP_HEIGHT = 200;
+/** 200 px, but at most 22% of the window, so the CHECK IN button still fits on small phones. */
+export function previewMapHeight(windowHeight: number): number {
+  return Math.min(200, Math.round(windowHeight * 0.22));
+}
 
 const DOT: Record<PreviewStatus['kind'], string> = {
   inside: colors.checkIn,
@@ -33,11 +36,16 @@ export function LocationPreview({ site, maxAccuracyM, active }: Props) {
   const [problem, setProblem] = useState<LocationProblem | null>(null);
   const [ready, setReady] = useState(false);
   const [recenterKey, setRecenterKey] = useState(0);
+  const { height: windowHeight } = useWindowDimensions();
+  /** Ask once; later runs only check. Android backgrounds the app while its dialog is open, which re-runs this. */
+  const asked = useRef(false);
 
   useEffect(() => {
     if (!active) return;
     let cancelled = false;
-    ensureLocationReady()
+    const ready = asked.current ? checkLocationReady : ensureLocationReady;
+    asked.current = true;
+    ready()
       .then((p) => {
         if (cancelled) return;
         setProblem(p);
@@ -87,7 +95,7 @@ export function LocationPreview({ site, maxAccuracyM, active }: Props) {
           testID="preview-map"
           center={{ lat: site.lat, lng: site.lng }}
           radiusM={site.radiusM}
-          height={MAP_HEIGHT}
+          height={previewMapHeight(windowHeight)}
           me={fix ? { lat: fix.lat, lng: fix.lng, accuracyM: fix.accuracyM } : null}
           follow
           recenterKey={recenterKey}

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Modal, Pressable, View } from 'react-native';
+import { Modal, Pressable, ScrollView, View } from 'react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useAuth, useUser } from '../../auth/AuthContext';
@@ -120,66 +120,68 @@ export function HomeScreen() {
         </Pressable>
       </View>
 
-      {missedYesterday ? (
-        <View style={{ marginHorizontal: 20, marginTop: 20 }}>
-          <Banner tone="warn" icon="alert" title={t('home.missedTitle')} body={t('home.missedBody')} />
-        </View>
-      ) : null}
-
-      <StatusCard view={view} now={now} />
-
-      {(view.kind === 'checkIn' || view.kind === 'working') && today.site ? (
-        <View style={{ marginHorizontal: 20, marginTop: 16 }}>
-          <LocationPreview site={today.site} maxAccuracyM={today.maxAccuracyM} active={screenActive && phase.kind === 'idle'} />
-        </View>
-      ) : null}
-
-      <View style={{ flex: 1, justifyContent: 'center', paddingHorizontal: 20, gap: 16 }}>
-        {view.kind === 'checkIn' ? (
-          <>
-            <Button label={t('home.checkIn')} variant="checkIn" size="big" icon="checkIn" onPress={() => void run('checkIn')} />
-            <Text color={colors.muted} style={{ textAlign: 'center', fontSize: 17 }}>
-              {t('home.checkInHint')}
-            </Text>
-          </>
+      <ScrollView testID="home-scroll" contentContainerStyle={{ flexGrow: 1, paddingBottom: 20 }}>
+        {missedYesterday ? (
+          <View style={{ marginHorizontal: 20, marginTop: 20 }}>
+            <Banner tone="warn" icon="alert" title={t('home.missedTitle')} body={t('home.missedBody')} />
+          </View>
         ) : null}
-        {view.kind === 'working' ? (
-          <>
-            <Button label={t('home.checkOut')} variant="checkOut" size="big" icon="checkOut" onPress={() => void run('checkOut')} />
-            <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8 }}>
-              <Icon name="bell" size={20} color={colors.muted} />
-              <Text color={colors.muted} style={{ fontSize: 16 }}>
-                {t('home.reminderAt', { time: formatHhMm(today.reminderTime, t) })}
+
+        <StatusCard view={view} now={now} />
+
+        {(view.kind === 'checkIn' || view.kind === 'working') && today.site ? (
+          <View style={{ marginHorizontal: 20, marginTop: 16 }}>
+            <LocationPreview site={today.site} maxAccuracyM={today.maxAccuracyM} active={screenActive && phase.kind === 'idle'} />
+          </View>
+        ) : null}
+
+        <View style={{ flex: 1, justifyContent: 'center', paddingHorizontal: 20, gap: 16 }}>
+          {view.kind === 'checkIn' ? (
+            <>
+              <Button label={t('home.checkIn')} variant="checkIn" size="big" icon="checkIn" onPress={() => void run('checkIn')} />
+              <Text color={colors.muted} style={{ textAlign: 'center', fontSize: 17 }}>
+                {t('home.checkInHint')}
               </Text>
-            </View>
-          </>
-        ) : null}
-        {view.kind === 'done' ? (
-          <Card style={{ borderRadius: 28, paddingVertical: 32, paddingHorizontal: 24, alignItems: 'center', gap: 16 }}>
-            <View style={{ width: 96, height: 96, borderRadius: 48, backgroundColor: colors.successBg, alignItems: 'center', justifyContent: 'center' }}>
-              <Icon name="check" size={48} color={colors.checkIn} strokeWidth={2.4} />
-            </View>
-            <Text variant="h1" style={{ fontSize: 32 }}>
-              {t('home.doneTitle')}
-            </Text>
-            <Text variant="monoLarge">
-              {`${formatTime(view.checkInAt, t, false)} – ${view.checkOutAt ? formatTime(view.checkOutAt, t, false) : '?'}`}
-            </Text>
-            {view.workedMinutes != null ? (
-              <Text color={colors.muted} style={{ fontSize: 18 }}>
-                {t('home.worked', { duration: formatDuration(view.workedMinutes, t) })}
+            </>
+          ) : null}
+          {view.kind === 'working' ? (
+            <>
+              <Button label={t('home.checkOut')} variant="checkOut" size="big" icon="checkOut" onPress={() => void run('checkOut')} />
+              <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8 }}>
+                <Icon name="bell" size={20} color={colors.muted} />
+                <Text color={colors.muted} style={{ fontSize: 16 }}>
+                  {t('home.reminderAt', { time: formatHhMm(today.reminderTime, t) })}
+                </Text>
+              </View>
+            </>
+          ) : null}
+          {view.kind === 'done' ? (
+            <Card style={{ borderRadius: 28, paddingVertical: 32, paddingHorizontal: 24, alignItems: 'center', gap: 16 }}>
+              <View style={{ width: 96, height: 96, borderRadius: 48, backgroundColor: colors.successBg, alignItems: 'center', justifyContent: 'center' }}>
+                <Icon name="check" size={48} color={colors.checkIn} strokeWidth={2.4} />
+              </View>
+              <Text variant="h1" style={{ fontSize: 32 }}>
+                {t('home.doneTitle')}
               </Text>
-            ) : null}
-          </Card>
-        ) : null}
-        {view.kind === 'noSite' ? (
-          <Card style={{ alignItems: 'center', gap: 12, paddingVertical: 32 }}>
-            <Icon name="person" size={40} color={colors.muted} />
-            <Text variant="h2">{t('home.noSiteTitle')}</Text>
-            <Text color={colors.muted}>{t('home.noSiteBody')}</Text>
-          </Card>
-        ) : null}
-      </View>
+              <Text variant="monoLarge">
+                {`${formatTime(view.checkInAt, t, false)} – ${view.checkOutAt ? formatTime(view.checkOutAt, t, false) : '?'}`}
+              </Text>
+              {view.workedMinutes != null ? (
+                <Text color={colors.muted} style={{ fontSize: 18 }}>
+                  {t('home.worked', { duration: formatDuration(view.workedMinutes, t) })}
+                </Text>
+              ) : null}
+            </Card>
+          ) : null}
+          {view.kind === 'noSite' ? (
+            <Card style={{ alignItems: 'center', gap: 12, paddingVertical: 32 }}>
+              <Icon name="person" size={40} color={colors.muted} />
+              <Text variant="h2">{t('home.noSiteTitle')}</Text>
+              <Text color={colors.muted}>{t('home.noSiteBody')}</Text>
+            </Card>
+          ) : null}
+        </View>
+      </ScrollView>
 
       <Modal
         visible={phase.kind !== 'idle'}
