@@ -86,5 +86,42 @@
   "reminder": {
     "title": "Did you check out?",
     "body": "Open VE HR and tap CHECK OUT before you leave"
+  },
+  "home": {
+    "greeting": "Namaste, {{name}}",
+    "menu": "Menu",
+    "yourSite": "Your site",
+    "checkIn": "CHECK IN",
+    "checkOut": "CHECK OUT",
+    "checkInHint": "Stand inside the site, then tap",
+    "working": "Working",
+    "since": "Since {{time}}",
+    "soFar": "{{site}} · {{duration}} so far",
+    "reminderAt": "Reminder at {{time}}",
+    "doneTitle": "Done for today",
+    "worked": "{{duration}} worked",
+    "missedTitle": "You did not check out yesterday",
+    "missedBody": "Tell your supervisor",
+    "noSiteTitle": "No site assigned",
+    "noSiteBody": "Please contact your supervisor"
+  },
+  "busy": {
+    "locating": "Finding your location…",
+    "locatingHelp": "Stay still for a few seconds",
+    "saving": "Saving…",
+    "checking": "Checking…"
+  },
+  "history": {
+    "title": "My attendance",
+    "subtitle": "Last 30 days",
+    "today": "Today, {{day}}",
+    "notPresent": "Not present",
+    "noCheckout": "No check-out · {{time}} – ?",
+    "working": "Working · since {{time}}"
+  },
+  "menu": {
+    "appVersion": "App version {{version}}",
+    "logoutTitle": "Log out?",
+    "logoutBody": "You will need your phone number and PIN to log in again."
   }
 }

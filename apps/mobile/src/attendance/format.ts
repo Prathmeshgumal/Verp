@@ -58,3 +58,9 @@ export function toIsoWithOffset(date: Date): string {
     `${sign}${pad(Math.floor(abs / 60))}:${pad(abs % 60)}`
   );
 }
+
+/** Company clock time "19:00" → "7:00 PM". */
+export function formatHhMm(hhmm: string, t: TFunction): string {
+  const [h = 0, m = 0] = hhmm.split(':').map(Number);
+  return `${h % 12 || 12}:${pad(m)} ${h >= 12 ? t('date.pm') : t('date.am')}`;
+}

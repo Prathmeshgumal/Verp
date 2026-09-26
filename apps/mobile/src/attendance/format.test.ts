@@ -2,6 +2,7 @@ import i18n from '../i18n';
 import {
   addDays,
   formatDuration,
+  formatHhMm,
   formatLongDate,
   formatTime,
   formatWorkDateMedium,
@@ -41,4 +42,10 @@ test('dates', () => {
 
 test('device time carries the local offset, as the API schema requires', () => {
   expect(toIsoWithOffset(new Date('2026-09-25T03:32:00.123Z'))).toBe('2026-09-25T09:02:00.123+05:30');
+});
+
+test('company clock times are shown in 12-hour form', () => {
+  expect(formatHhMm('19:00', t)).toBe('7:00 PM');
+  expect(formatHhMm('00:05', t)).toBe('12:05 AM');
+  expect(formatHhMm('12:30', t)).toBe('12:30 PM');
 });
