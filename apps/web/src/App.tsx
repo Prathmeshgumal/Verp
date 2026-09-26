@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router';
 import { RequireAuth } from './auth/RequireAuth';
 import { AppLayout } from './layout/AppLayout';
 import { DashboardPage } from './pages/DashboardPage';
+import { EmployeeDetailPage } from './pages/employees/EmployeeDetailPage';
 import { EmployeesPage } from './pages/employees/EmployeesPage';
 import { LoginPage } from './pages/LoginPage';
 
@@ -18,6 +19,7 @@ export function App() {
       >
         <Route index element={<DashboardPage />} />
         <Route path="employees" element={<EmployeesPage />} />
+        <Route path="employees/:id" element={<EmployeeDetailPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>
