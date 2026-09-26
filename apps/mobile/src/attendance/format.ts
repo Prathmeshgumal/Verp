@@ -64,3 +64,14 @@ export function formatHhMm(hhmm: string, t: TFunction): string {
   const [h = 0, m = 0] = hhmm.split(':').map(Number);
   return `${h % 12 || 12}:${pad(m)} ${h >= 12 ? t('date.pm') : t('date.am')}`;
 }
+
+/** "September 2026" for a "2026-09" month. */
+export function formatMonthYear(month: string, t: TFunction): string {
+  const [y, m = 1] = month.split('-').map(Number);
+  return `${list(t, 'date.months')[m - 1]} ${y}`;
+}
+
+/** "25 September 2026" */
+export function formatWorkDateLong(workDate: string, t: TFunction): string {
+  return `${Number(workDate.slice(8))} ${formatMonthYear(workDate.slice(0, 7), t)}`;
+}
