@@ -10,6 +10,8 @@ export type NativeDeviceInfo = {
   sdkInt: number;
 };
 
+export type NativeFix = { lat: number; lng: number; accuracyM: number; isMock: boolean };
+
 export interface Spec extends TurboModule {
   getDeviceInfo(): Promise<NativeDeviceInfo>;
   randomUuid(): Promise<string>;
@@ -19,6 +21,9 @@ export interface Spec extends TurboModule {
   prefGet(key: string): Promise<string | null>;
   prefSet(key: string, value: string): Promise<void>;
   prefDelete(key: string): Promise<void>;
+  isLocationEnabled(): Promise<boolean>;
+  /** Resolves with the best reading within timeoutMs (early once accuracy <= target); rejects with code NO_FIX if none. */
+  getCurrentPosition(timeoutMs: number, targetAccuracyM: number): Promise<NativeFix>;
 }
 
 export default TurboModuleRegistry.getEnforcing<Spec>('NativeVeDevice');

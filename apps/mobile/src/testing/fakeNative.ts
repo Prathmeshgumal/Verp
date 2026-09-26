@@ -56,4 +56,9 @@ export const fakeNative = {
   prefDelete: async (key: string) => {
     fakeState.prefs.delete(key);
   },
+  isLocationEnabled: async () => fakeState.locationEnabled,
+  getCurrentPosition: async (_timeoutMs: number, _targetAccuracyM: number) => {
+    if (!fakeState.fix) throw Object.assign(new Error('No location fix'), { code: 'NO_FIX' });
+    return { ...fakeState.fix };
+  },
 } satisfies Spec;
