@@ -10,14 +10,12 @@ import { Link, useNavigate, useParams } from 'react-router';
 import { z } from 'zod';
 import { PageError, PageLoader } from '../../components/PageState';
 import { errorMessage } from '../../lib/errors';
+import { locateBest, type Reading } from '../../lib/locate';
 import { queryKeys } from '../../lib/queryKeys';
 import { useCompanySettings } from '../../lib/useCompanySettings';
 import { useServices } from '../../services';
 import type { PlaceResult } from './placeSearch';
 import { SiteMapPicker, type LatLng } from './SiteMapPicker';
-
-/** Pune city centre: only the starting view until the admin moves the pin. */
-const DEFAULT_CENTER: LatLng = { lat: 18.5204, lng: 73.8567 };
 
 const schema = z.object({
   name: z.string().trim().min(1, 'Enter the site name').max(120, 'Name is too long'),
@@ -32,12 +30,15 @@ const schema = z.object({
 type FormValues = {
   name: string;
   address: string;
-  /** NumberInput gives '' while the box is empty. */
+  /** NumberInput gives '' while the box is empty; a new site starts empty (no pin). */
   lat: number | string;
   lng: number | string;
   radiusM: number | string;
   isActive: boolean;
 };
+
+/** The map fills the window below the page header, but never shrinks under 480 px. */
+const MAP_HEIGHT = 'max(480px, calc(100vh - 330px))';
 
 const round6 = (n: number) => Math.round(n * 1e6) / 1e6;
 const num = (v: number | string) => (typeof v === 'number' ? v : null);
@@ -51,32 +52,47 @@ export function SiteEditPage() {
   if (id && !siteQ.data) {
     return siteQ.isError ? <PageError error={siteQ.error} onRetry={() => void siteQ.refetch()} /> : <PageLoader />;
   }
-  return <SiteEditor key={id ?? 'new'} site={siteQ.data ?? null} defaultRadiusM={settings.data?.defaultRadiusM ?? 100} />;
+  return (
+    <SiteEditor
+      key={id ?? 'new'}
+      site={siteQ.data ?? null}
+      defaultRadiusM={settings.data?.defaultRadiusM ?? 100}
+      maxAccuracyM={settings.data?.maxAccuracyM ?? 50}
+    />
+  );
 }
 
-function SiteEditor({ site, defaultRadiusM }: { site: SiteDto | null; defaultRadiusM: number }) {
+function SiteEditor({ site, defaultRadiusM, maxAccuracyM }: { site: SiteDto | null; defaultRadiusM: number; maxAccuracyM: number }) {
   const { api, searchPlaces } = useServices();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [recenterKey, setRecenterKey] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [note, setNote] = useState<string | null>(null);
   const [placeQuery, setPlaceQuery] = useState('');
   const [places, setPlaces] = useState<PlaceResult[] | null>(null);
   const [searching, setSearching] = useState(false);
   const [locating, setLocating] = useState(false);
+  const [progressM, setProgressM] = useState<number | null>(null);
+  const [accuracy, setAccuracy] = useState<Reading | null>(null);
+  const others = useQuery({ queryKey: queryKeys.sites, queryFn: () => api.listSites(), enabled: !site });
 
   const form = useForm<FormValues>({
     initialValues: site
       ? { name: site.name, address: site.address ?? '', lat: site.lat, lng: site.lng, radiusM: site.radiusM, isActive: site.isActive }
-      : { name: '', address: '', lat: DEFAULT_CENTER.lat, lng: DEFAULT_CENTER.lng, radiusM: defaultRadiusM, isActive: true },
+      : { name: '', address: '', lat: '', lng: '', radiusM: defaultRadiusM, isActive: true },
     validate: zod4Resolver(schema),
   });
 
-  const center: LatLng = { lat: num(form.values.lat) ?? DEFAULT_CENTER.lat, lng: num(form.values.lng) ?? DEFAULT_CENTER.lng };
+  const lat = num(form.values.lat);
+  const lng = num(form.values.lng);
+  const center: LatLng | null = lat !== null && lng !== null ? { lat, lng } : null;
   const radiusM = Math.min(1000, Math.max(10, num(form.values.radiusM) ?? 10));
 
   function moveTo(p: LatLng, recenter: boolean) {
     form.setValues({ lat: round6(p.lat), lng: round6(p.lng) });
+    setAccuracy(null);
+    setNote(null);
     if (recenter) setRecenterKey((k) => k + 1);
   }
 
@@ -96,29 +112,32 @@ function SiteEditor({ site, defaultRadiusM }: { site: SiteDto | null; defaultRad
     }
   }
 
-  function locateMe() {
+  async function locateMe() {
     if (!('geolocation' in navigator)) {
       setError('This browser cannot share its location. Drag the pin instead.');
       return;
     }
     setLocating(true);
     setError(null);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setLocating(false);
-        moveTo({ lat: pos.coords.latitude, lng: pos.coords.longitude }, true);
-      },
-      (err) => {
-        setLocating(false);
-        // 1 = PERMISSION_DENIED
-        setError(
-          err.code === 1
-            ? 'Location permission was refused. Allow it in the browser, or drag the pin.'
-            : 'Could not get your location. Drag the pin instead.',
-        );
-      },
-      { enableHighAccuracy: true, timeout: 15_000, maximumAge: 0 },
-    );
+    setNote(null);
+    setProgressM(null);
+    const result = await locateBest(navigator.geolocation, maxAccuracyM, setProgressM);
+    setLocating(false);
+    setProgressM(null);
+    if (result.kind === 'ok') {
+      moveTo(result.reading, true);
+      setAccuracy(result.reading);
+      setNote(`Your location · accurate to ±${Math.round(result.reading.accuracyM)} m`);
+    } else if (result.kind === 'imprecise') {
+      setError(
+        `Your location is only accurate to ±${Math.round(result.reading.accuracyM)} m, more than the ±${maxAccuracyM} m allowed. ` +
+          'Laptops usually cannot tell their exact position. Search, paste from Google Maps, or drag the pin.',
+      );
+    } else if (result.kind === 'denied') {
+      setError('Location permission was refused. Allow it in the browser, or drag the pin.');
+    } else {
+      setError('Could not get your location. Drag the pin instead.');
+    }
   }
 
   const save = useMutation({
@@ -191,13 +210,33 @@ function SiteEditor({ site, defaultRadiusM }: { site: SiteDto | null; defaultRad
             </Paper>
           ) : null}
           <Group>
-            <Button variant="default" leftSection={<IconCurrentLocation size={16} />} loading={locating} onClick={locateMe}>
+            <Button variant="default" leftSection={<IconCurrentLocation size={16} />} loading={locating} onClick={() => void locateMe()}>
               Use my location
             </Button>
+            {locating && progressM !== null ? (
+              <Text size="sm" c="dimmed">
+                {`Getting your location… ±${Math.round(progressM)} m`}
+              </Text>
+            ) : null}
           </Group>
-          <SiteMapPicker center={center} radiusM={radiusM} recenterKey={recenterKey} onMove={(p) => moveTo(p, false)} />
+          {note ? (
+            <Text size="sm" c="ledgerGreen">
+              {note}
+            </Text>
+          ) : null}
+          <SiteMapPicker
+            center={center}
+            radiusM={radiusM}
+            recenterKey={recenterKey}
+            accuracy={accuracy}
+            overview={(others.data ?? []).map((s) => ({ lat: s.lat, lng: s.lng }))}
+            height={MAP_HEIGHT}
+            onMove={(p) => moveTo(p, false)}
+          />
           <Text size="sm" c="dimmed">
-            Drag the pin, or click the map, to set the centre of the site.
+            {center
+              ? 'Drag the pin, or click the map, to set the centre of the site.'
+              : 'Set the location: search, paste from Google Maps, use my location, or tap the map.'}
           </Text>
         </Stack>
 
@@ -232,7 +271,7 @@ function SiteEditor({ site, defaultRadiusM }: { site: SiteDto | null; defaultRad
             {site ? <Switch label="Site is in use" {...form.getInputProps('isActive', { type: 'checkbox' })} /> : null}
             {error ? <Alert color="ledgerOrange">{error}</Alert> : null}
             <Group justify="flex-end">
-              <Button type="submit" loading={save.isPending}>
+              <Button type="submit" loading={save.isPending} disabled={!center}>
                 Save site
               </Button>
             </Group>
