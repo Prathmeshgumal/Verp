@@ -7,10 +7,12 @@ import { AttendanceListScreen } from '../screens/admin/AttendanceListScreen';
 import { EmployeeCreateScreen } from '../screens/admin/EmployeeCreateScreen';
 import { EmployeeDetailScreen } from '../screens/admin/EmployeeDetailScreen';
 import { EmployeesScreen } from '../screens/admin/EmployeesScreen';
+import { SiteEditScreen } from '../screens/admin/SiteEditScreen';
+import { SitesScreen } from '../screens/admin/SitesScreen';
 import { TodayScreen } from '../screens/admin/TodayScreen';
 import { colors, fonts } from '../theme/tokens';
 import { TabBar } from '../ui/TabBar';
-import type { AdminTabParamList, AttendanceStackParamList, EmployeesStackParamList } from './types';
+import type { AdminTabParamList, AttendanceStackParamList, EmployeesStackParamList, SitesStackParamList } from './types';
 
 const Tab = createBottomTabNavigator<AdminTabParamList>();
 const AttendanceStack = createNativeStackNavigator<AttendanceStackParamList>();
@@ -52,12 +54,23 @@ function EmployeesNavigator() {
     </EmployeesStack.Navigator>
   );
 }
+const SitesStack = createNativeStackNavigator<SitesStackParamList>();
+
+function SitesNavigator() {
+  return (
+    <SitesStack.Navigator screenOptions={stackScreenOptions}>
+      <SitesStack.Screen name="Sites" component={SitesScreen} options={{ headerShown: false }} />
+      <SitesStack.Screen name="SiteEdit" component={SiteEditScreen} />
+    </SitesStack.Navigator>
+  );
+}
 
 export function AdminNavigator() {
   return (
     <Tab.Navigator screenOptions={{ headerShown: false }} tabBar={(props) => <TabBar {...props} items={ITEMS} height={68} />}>
       <Tab.Screen name="TodayTab" component={TodayScreen} />
       <Tab.Screen name="EmployeesTab" component={EmployeesNavigator} />
+      <Tab.Screen name="SitesTab" component={SitesNavigator} />
       <Tab.Screen name="AttendanceTab" component={AttendanceNavigator} />
     </Tab.Navigator>
   );

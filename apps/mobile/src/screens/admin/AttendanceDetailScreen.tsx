@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../auth/AuthContext';
 import { formatDuration, formatTime, formatWorkDateMedium } from '../../attendance/format';
 import { queryKeys } from '../../attendance/queryKeys';
+import { LeafletMap, type MapPin } from '../../maps/LeafletMap';
 import type { AttendanceStackParamList } from '../../navigation/types';
 import { colors } from '../../theme/tokens';
 import { Banner } from '../../ui/Banner';
@@ -31,11 +32,26 @@ export function AttendanceDetailScreen({ route }: Props) {
       </Screen>
     );
   }
-  const { day, events } = query.data;
+  const { day, events, site } = query.data;
 
   return (
     <Screen edges={[]}>
       <ScrollView contentContainerStyle={{ padding: 16, gap: 12 }}>
+        <View style={{ borderRadius: 16, overflow: 'hidden' }}>
+          <LeafletMap
+            center={{ lat: site.lat, lng: site.lng }}
+            radiusM={site.radiusM}
+            height={220}
+            interactive={false}
+            recenterKey={1}
+            pins={[
+              { lat: day.checkInLat, lng: day.checkInLng, color: colors.checkIn },
+              ...(day.checkOutLat != null && day.checkOutLng != null
+                ? [{ lat: day.checkOutLat, lng: day.checkOutLng, color: colors.checkOut } satisfies MapPin]
+                : []),
+            ]}
+          />
+        </View>
         <View style={{ gap: 4 }}>
           <Text variant="h1">{day.employeeName}</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>

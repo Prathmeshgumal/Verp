@@ -22,3 +22,18 @@ jest.mock('react-native-svg', () => {
 });
 
 jest.mock('react-native-safe-area-context', () => require('react-native-safe-area-context/jest/mock').default);
+
+jest.mock('react-native-webview', () => {
+  const React = require('react');
+  const WebView = React.forwardRef((props, ref) => {
+    React.useImperativeHandle(ref, () => ({
+      injectJavaScript: (js) => require('./src/testing/webView').injectedScripts.push(js),
+    }));
+    return React.createElement('WebView', props);
+  });
+  return { __esModule: true, default: WebView, WebView };
+});
+
+beforeEach(() => {
+  require('./src/testing/webView').injectedScripts.length = 0;
+});

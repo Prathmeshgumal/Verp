@@ -198,6 +198,26 @@
       "notFound": "Not found. It may have been removed",
       "generic": "Something went wrong. Try again"
     },
+    "sites": {
+      "title": "Sites",
+      "add": "Add site",
+      "empty": "No sites yet",
+      "radius": "{{m}} m",
+      "inactive": "Inactive",
+      "newTitle": "New site",
+      "editTitle": "Edit site",
+      "name": "Site name",
+      "address": "Address (optional)",
+      "allowedDistance": "Allowed distance",
+      "smaller": "Smaller",
+      "larger": "Larger",
+      "dragHint": "Drag the pin to the site gate or centre.",
+      "useMyLocation": "Use my location",
+      "locating": "Finding your location…",
+      "active": "Site is active",
+      "save": "Save site",
+      "saving": "Saving…"
+    },
     "status": {
       "CHECKED_IN": "Working",
       "COMPLETED": "Done",
