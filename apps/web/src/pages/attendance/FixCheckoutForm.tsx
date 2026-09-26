@@ -1,10 +1,12 @@
-import { Alert, Button, Group, Paper, Stack, Textarea, TextInput } from '@mantine/core';
 import { useForm } from '@mantine/form';
-import { notifications } from '@mantine/notifications';
 import { useMutation } from '@tanstack/react-query';
 import type { AdminDayDto } from '@ve/shared';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { useState } from 'react';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { TextareaField, TextField } from '../../components/Field';
+import { Notice } from '../../components/PageState';
 import { z } from 'zod';
 import { errorMessage } from '../../lib/errors';
 import { companyInputToIso, isoToCompanyInput } from '../../lib/time';
@@ -37,42 +39,40 @@ export function FixCheckoutForm({ day, tz, onDone, onCancel }: Props) {
       // The schema above has checked that the time parses.
       api.fixCheckout(day.id, { checkOutAt: companyInputToIso(values.checkOutAt, tz)!, reason: values.reason.trim() }),
     onSuccess: () => {
-      notifications.show({ color: 'ledgerGreen', message: 'Check-out fixed' });
+      toast.success('Check-out fixed');
       onDone();
     },
     onError: (err) => setError(errorMessage(err)),
   });
 
   return (
-    <Paper withBorder p="md" radius="md">
-      <form
-        noValidate
-        onSubmit={form.onSubmit((values) => {
-          setError(null);
-          fix.mutate(values);
-        })}
-      >
-        <Stack>
-          <TextInput
-            type="datetime-local"
-            label="Check-out time"
-            description={`Company time (${tz})`}
-            min={`${day.workDate}T00:00`}
-            max={`${day.workDate}T23:59`}
-            {...form.getInputProps('checkOutAt')}
-          />
-          <Textarea label="Reason" placeholder="e.g. Supervisor confirmed they left at 6 pm" autosize minRows={2} {...form.getInputProps('reason')} />
-          {error ? <Alert color="ledgerOrange">{error}</Alert> : null}
-          <Group justify="flex-end">
-            <Button variant="default" onClick={onCancel}>
-              Cancel
-            </Button>
-            <Button type="submit" loading={fix.isPending}>
-              Save check-out
-            </Button>
-          </Group>
-        </Stack>
-      </form>
-    </Paper>
+    <form
+      noValidate
+      className="bg-muted/40 grid gap-4 rounded-xl border p-4"
+      onSubmit={form.onSubmit((values) => {
+        setError(null);
+        fix.mutate(values);
+      })}
+    >
+      <TextField
+        type="datetime-local"
+        label="Check-out time"
+        description={`Company time (${tz})`}
+        min={`${day.workDate}T00:00`}
+        max={`${day.workDate}T23:59`}
+        inputClassName="ve-num"
+        {...form.getInputProps('checkOutAt')}
+      />
+      <TextareaField label="Reason" placeholder="e.g. Supervisor confirmed they left at 6 pm" rows={2} {...form.getInputProps('reason')} />
+      {error ? <Notice>{error}</Notice> : null}
+      <div className="flex justify-end gap-2">
+        <Button variant="outline" type="button" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button type="submit" loading={fix.isPending}>
+          Save check-out
+        </Button>
+      </div>
+    </form>
   );
 }

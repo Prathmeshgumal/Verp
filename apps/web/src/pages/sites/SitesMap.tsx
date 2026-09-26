@@ -12,8 +12,8 @@ interface Props {
   onSelect: (id: string) => void;
 }
 
-const IN_USE = '#B8480F';
-const NOT_IN_USE = '#8A8578';
+const IN_USE = '#FF5B14';
+const NOT_IN_USE = '#8A8A90';
 
 const pinIcon = (inUse: boolean) =>
   L.divIcon({ className: '', html: `<div class="ve-pin${inUse ? '' : ' ve-pin-off'}"></div>`, iconSize: [22, 22], iconAnchor: [11, 11] });

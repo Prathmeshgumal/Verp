@@ -1,9 +1,13 @@
-import { Anchor, Badge, Button, Group, Paper, SimpleGrid, Stack, Table, Text, Title } from '@mantine/core';
-import { notifications } from '@mantine/notifications';
-import { IconArrowLeft } from '@tabler/icons-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
+import { ArrowUpRightIcon } from 'lucide-react';
 import { Link, useParams } from 'react-router';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { SimpleTable } from '../../components/DataTable';
+import { PageHeader } from '../../components/PageHeader';
+import { Panel, PanelHeader } from '../../components/Panel';
+import { Pill } from '../../components/Pill';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { FlagBadges } from '../../components/FlagBadges';
 import { PageError, PageLoader } from '../../components/PageState';
@@ -54,14 +58,14 @@ export function EmployeeDetailPage() {
           unlock: 'Unlocked',
           toggleActive: employeeQ.data?.isActive ? 'Employee deactivated' : 'Employee activated',
         };
-        notifications.show({ color: 'ledgerGreen', message: done[kind as Exclude<Action, 'resetPin'>] });
+        toast.success(done[kind as Exclude<Action, 'resetPin'>]);
       }
       void queryClient.invalidateQueries({ queryKey: ['employees'] });
       void queryClient.invalidateQueries({ queryKey: queryKeys.dashboard });
     },
     onError: (err) => {
       setConfirming(null);
-      notifications.show({ color: 'red', title: 'Not done', message: errorMessage(err) });
+      toast.error('Not done', { description: errorMessage(err) });
     },
   });
 
@@ -93,125 +97,112 @@ export function EmployeeDetailPage() {
   };
 
   return (
-    <Stack gap="lg">
-      <Anchor component={Link} to="/employees" size="sm">
-        <Group gap={4}>
-          <IconArrowLeft size={16} /> Employees
-        </Group>
-      </Anchor>
-
-      <Group justify="space-between" align="flex-start">
-        <Stack gap={4}>
-          <Group gap="sm">
-            <Title order={1}>{e.name}</Title>
-            <Badge color={status.color} variant="light">
-              {status.label}
-            </Badge>
-          </Group>
-          <Text c="dimmed" className="ve-num">
+    <div className="grid gap-6">
+      <PageHeader
+        back={{ to: '/employees', label: 'Employees' }}
+        title={e.name}
+        badge={<Pill tone={status.tone}>{status.label}</Pill>}
+        description={
+          <span className="ve-num">
             {formatPhone(e.phone)}
             {e.employeeCode ? ` · ${e.employeeCode}` : ''}
-          </Text>
-        </Stack>
-        <Group gap="xs">
-          <Button variant="default" onClick={() => setConfirming('resetPin')}>
-            Reset PIN
-          </Button>
-          <Button variant="default" onClick={() => setConfirming('revoke')}>
-            Log out everywhere
-          </Button>
-          {status.label === 'Locked' ? (
-            <Button variant="default" loading={action.isPending && action.variables === 'unlock'} onClick={() => action.mutate('unlock')}>
-              Unlock
+          </span>
+        }
+        actions={
+          <>
+            <Button variant="outline" onClick={() => setConfirming('resetPin')}>
+              Reset PIN
             </Button>
-          ) : null}
-          <Button variant={e.isActive ? 'outline' : 'filled'} color={e.isActive ? 'red' : undefined} onClick={() => setConfirming('toggleActive')}>
-            {e.isActive ? 'Deactivate' : 'Activate'}
-          </Button>
-        </Group>
-      </Group>
+            <Button variant="outline" onClick={() => setConfirming('revoke')}>
+              Log out everywhere
+            </Button>
+            {status.label === 'Locked' ? (
+              <Button variant="outline" loading={action.isPending && action.variables === 'unlock'} onClick={() => action.mutate('unlock')}>
+                Unlock
+              </Button>
+            ) : null}
+            <Button
+              variant={e.isActive ? 'outline' : 'default'}
+              className={e.isActive ? 'text-danger hover:text-danger border-danger/30 hover:bg-danger-soft' : undefined}
+              onClick={() => setConfirming('toggleActive')}
+            >
+              {e.isActive ? 'Deactivate' : 'Activate'}
+            </Button>
+          </>
+        }
+      />
 
-      <SimpleGrid cols={{ base: 1, md: 2 }}>
-        <Paper withBorder p="md" radius="md">
-          <Title order={3} mb="sm">
-            Details
-          </Title>
-          <EmployeeEditForm key={e.id} employee={e} sites={sitesQ.data ?? []} />
-        </Paper>
-        <Paper withBorder p="md" radius="md">
-          <Title order={3} mb="sm">
-            Phones logged in
-          </Title>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Panel>
+          <PanelHeader title="Details" />
+          <div className="px-4 pt-2 pb-4">
+            <EmployeeEditForm key={e.id} employee={e} sites={sitesQ.data ?? []} />
+          </div>
+        </Panel>
+        <Panel className="self-start">
+          <PanelHeader title="Phones logged in" />
           {e.sessions.length === 0 ? (
-            <Text c="dimmed">Not logged in on any phone.</Text>
+            <p className="text-muted-foreground px-4 pt-1 pb-5 text-sm">Not logged in on any phone.</p>
           ) : (
-            <Table>
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th>Phone</Table.Th>
-                  <Table.Th>Logged in</Table.Th>
-                  <Table.Th>Last used</Table.Th>
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                {e.sessions.map((s) => (
-                  <Table.Tr key={s.id}>
-                    <Table.Td>{s.deviceModel ?? 'Unknown phone'}</Table.Td>
-                    <Table.Td>{formatDateTime(s.createdAt, tz)}</Table.Td>
-                    <Table.Td>{formatDateTime(s.lastUsedAt, tz)}</Table.Td>
-                  </Table.Tr>
-                ))}
-              </Table.Tbody>
-            </Table>
+            <div className="pt-1 pb-2">
+              <SimpleTable
+                rows={e.sessions}
+                rowKey={(s) => s.id}
+                columns={[
+                  { key: 'phone', title: 'Phone', render: (s) => s.deviceModel ?? 'Unknown phone' },
+                  { key: 'created', title: 'Logged in', render: (s) => <span className="ve-num text-xs">{formatDateTime(s.createdAt, tz)}</span> },
+                  { key: 'used', title: 'Last used', render: (s) => <span className="ve-num text-xs">{formatDateTime(s.lastUsedAt, tz)}</span> },
+                ]}
+              />
+            </div>
           )}
-        </Paper>
-      </SimpleGrid>
+        </Panel>
+      </div>
 
-      <Paper withBorder p="md" radius="md">
-        <Group justify="space-between" mb="sm">
-          <Title order={3}>Last 30 days</Title>
-          <Anchor component={Link} to={`/attendance?from=${from}&to=${today}&employeeId=${id}`}>
+      <Panel>
+        <PanelHeader title="Last 30 days">
+          <Link
+            to={`/attendance?from=${from}&to=${today}&employeeId=${id}`}
+            className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm transition-colors"
+          >
             Open in Attendance
-          </Anchor>
-        </Group>
+            <ArrowUpRightIcon className="size-3.5" />
+          </Link>
+        </PanelHeader>
         {daysQ.isError ? (
-          <PageError error={daysQ.error} onRetry={() => void daysQ.refetch()} />
+          <div className="p-4">
+            <PageError error={daysQ.error} onRetry={() => void daysQ.refetch()} />
+          </div>
         ) : !daysQ.data ? (
           <PageLoader />
         ) : daysQ.data.items.length === 0 ? (
-          <Text c="dimmed">No attendance in the last 30 days.</Text>
+          <p className="text-muted-foreground px-4 pt-1 pb-5 text-sm">No attendance in the last 30 days.</p>
         ) : (
-          <Table>
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th>Date</Table.Th>
-                <Table.Th>Site</Table.Th>
-                <Table.Th>In</Table.Th>
-                <Table.Th>Out</Table.Th>
-                <Table.Th>Hours</Table.Th>
-                <Table.Th>Status</Table.Th>
-              </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>
-              {daysQ.data.items.map((d) => (
-                <Table.Tr key={d.id}>
-                  <Table.Td>{formatWorkDate(d.workDate)}</Table.Td>
-                  <Table.Td>{d.siteName}</Table.Td>
-                  <Table.Td className="ve-num">{formatTime(d.checkInAt, tz)}</Table.Td>
-                  <Table.Td className="ve-num">{d.checkOutAt ? formatTime(d.checkOutAt, tz) : '—'}</Table.Td>
-                  <Table.Td className="ve-num">{formatMinutes(d.workedMinutes)}</Table.Td>
-                  <Table.Td>
-                    <Group gap={4}>
+          <div className="pt-1 pb-2">
+            <SimpleTable
+              rows={daysQ.data.items}
+              rowKey={(d) => d.id}
+              columns={[
+                { key: 'date', title: 'Date', render: (d) => formatWorkDate(d.workDate) },
+                { key: 'site', title: 'Site', render: (d) => d.siteName },
+                { key: 'in', title: 'In', render: (d) => <span className="ve-num">{formatTime(d.checkInAt, tz)}</span> },
+                { key: 'out', title: 'Out', render: (d) => <span className="ve-num">{d.checkOutAt ? formatTime(d.checkOutAt, tz) : '—'}</span> },
+                { key: 'hours', title: 'Hours', render: (d) => <span className="ve-num">{formatMinutes(d.workedMinutes)}</span> },
+                {
+                  key: 'status',
+                  title: 'Status',
+                  render: (d) => (
+                    <div className="flex flex-wrap gap-1">
                       <StatusBadge status={d.status} />
                       <FlagBadges flags={d.flags} needsReview={d.needsReview} />
-                    </Group>
-                  </Table.Td>
-                </Table.Tr>
-              ))}
-            </Table.Tbody>
-          </Table>
+                    </div>
+                  ),
+                },
+              ]}
+            />
+          </div>
         )}
-      </Paper>
+      </Panel>
 
       {confirming ? (
         <ConfirmDialog
@@ -223,6 +214,6 @@ export function EmployeeDetailPage() {
         />
       ) : null}
       {newPin ? <PinModal opened name={e.name} pin={newPin} onClose={() => setNewPin(null)} /> : null}
-    </Stack>
+    </div>
   );
 }

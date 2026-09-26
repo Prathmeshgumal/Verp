@@ -1,21 +1,20 @@
 import '@testing-library/jest-dom/vitest';
-import { notifications } from '@mantine/notifications';
 import { cleanup } from '@testing-library/react';
+import { toast } from 'sonner';
 import { afterEach } from 'vitest';
 
 afterEach(() => {
   cleanup();
-  // The notifications store is global; without this, one test's toasts show up in the next.
-  notifications.clean();
+  // Toasts live in a global store; without this, one test's toasts show up in the next.
+  toast.dismiss();
 });
 
-// jsdom lacks these browser APIs, which Mantine uses. Files marked `@vitest-environment node` have no window.
+// jsdom lacks these browser APIs, which Radix and Leaflet use. Files marked `@vitest-environment node` have no window.
 if (typeof window !== 'undefined') {
-  // matchMedia must report a match: mantine-datatable hides every column whose media query does not match.
   Object.defineProperty(window, 'matchMedia', {
     writable: true,
     value: (query: string) => ({
-      matches: true,
+      matches: false,
       media: query,
       onchange: null,
       addListener: () => {},
@@ -31,11 +30,9 @@ if (typeof window !== 'undefined') {
     disconnect() {}
   } as unknown as typeof ResizeObserver;
   window.HTMLElement.prototype.scrollIntoView = () => {};
-  // mantine-datatable scrolls the table back to the top after a page change.
   window.Element.prototype.scrollTo = () => {};
-  // Mantine's autosize Textarea listens for font loads on document.fonts.
-  Object.defineProperty(document, 'fonts', {
-    configurable: true,
-    value: { addEventListener: () => {}, removeEventListener: () => {} },
-  });
+  // Radix sliders and menus capture the pointer.
+  window.Element.prototype.hasPointerCapture = () => false;
+  window.Element.prototype.setPointerCapture = () => {};
+  window.Element.prototype.releasePointerCapture = () => {};
 }

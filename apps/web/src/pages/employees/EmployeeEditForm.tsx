@@ -1,10 +1,11 @@
-import { Alert, Button, Group, Stack } from '@mantine/core';
 import { useForm } from '@mantine/form';
-import { notifications } from '@mantine/notifications';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { EmployeeDto, SiteDto } from '@ve/shared';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { useState } from 'react';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { Notice } from '../../components/PageState';
 import { errorMessage } from '../../lib/errors';
 import { useServices } from '../../services';
 import { EmployeeFields, employeeFormSchema, employeeToForm, toEmployeeUpdate, type EmployeeFormValues } from './employeeForm';
@@ -20,7 +21,7 @@ export function EmployeeEditForm({ employee, sites }: { employee: EmployeeDto; s
     onSuccess: (updated) => {
       form.setValues(employeeToForm(updated));
       form.resetDirty(employeeToForm(updated));
-      notifications.show({ color: 'ledgerGreen', message: 'Saved' });
+      toast.success('Saved');
       void queryClient.invalidateQueries({ queryKey: ['employees'] });
     },
     onError: (err) => setError(errorMessage(err)),
@@ -29,20 +30,19 @@ export function EmployeeEditForm({ employee, sites }: { employee: EmployeeDto; s
   return (
     <form
       noValidate
+      className="grid gap-4"
       onSubmit={form.onSubmit((values) => {
         setError(null);
         save.mutate(values);
       })}
     >
-      <Stack>
-        <EmployeeFields form={form} sites={sites} />
-        {error ? <Alert color="ledgerOrange">{error}</Alert> : null}
-        <Group justify="flex-end">
-          <Button type="submit" loading={save.isPending} disabled={!form.isDirty()}>
-            Save changes
-          </Button>
-        </Group>
-      </Stack>
+      <EmployeeFields form={form} sites={sites} />
+      {error ? <Notice>{error}</Notice> : null}
+      <div className="flex justify-end">
+        <Button type="submit" loading={save.isPending} disabled={!form.isDirty()}>
+          Save changes
+        </Button>
+      </div>
     </form>
   );
 }

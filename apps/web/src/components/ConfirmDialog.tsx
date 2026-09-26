@@ -1,4 +1,5 @@
-import { Button, Group, Modal, Stack, Text } from '@mantine/core';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface Props {
   opened: boolean;
@@ -13,18 +14,21 @@ interface Props {
 
 export function ConfirmDialog({ opened, title, message, confirmLabel, danger, busy, onConfirm, onClose }: Props) {
   return (
-    <Modal opened={opened} onClose={onClose} title={title}>
-      <Stack>
-        <Text>{message}</Text>
-        <Group justify="flex-end">
-          <Button variant="default" onClick={onClose}>
+    <Dialog open={opened} onOpenChange={(open) => (open ? undefined : onClose())}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>{message}</DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          <Button color={danger ? 'red' : undefined} loading={busy} onClick={onConfirm}>
+          <Button variant={danger ? 'destructive' : 'default'} loading={busy} onClick={onConfirm}>
             {confirmLabel}
           </Button>
-        </Group>
-      </Stack>
-    </Modal>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

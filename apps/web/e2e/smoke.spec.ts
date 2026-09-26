@@ -62,6 +62,7 @@ test('log in, add a site and a worker, see their check-in, export CSV', async ({
   const drawer = page.getByRole('dialog', { name: 'Attendance day' });
   await expect(drawer.getByText('Check-in · Saved')).toBeVisible();
   await drawer.getByRole('button', { name: 'Close' }).click();
+  await expect(drawer).toBeHidden();
 
   // CSV export of the current filter.
   const download = page.waitForEvent('download');

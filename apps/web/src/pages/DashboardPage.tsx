@@ -1,8 +1,13 @@
-import { Group, Paper, SimpleGrid, Stack, Switch, Table, Text, Title } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
-import { useState, type ReactNode } from 'react';
+import { ArrowUpRightIcon } from 'lucide-react';
+import { useState } from 'react';
 import { Link } from 'react-router';
+import { SwitchField } from '../components/Field';
+import { PageHeader } from '../components/PageHeader';
 import { PageError, PageLoader } from '../components/PageState';
+import { Panel, PanelHeader } from '../components/Panel';
+import { SimpleTable } from '../components/DataTable';
+import { cn } from '@/lib/utils';
 import { queryKeys } from '../lib/queryKeys';
 import { formatTime, formatWorkDate } from '../lib/time';
 import { useCompanyTz } from '../lib/useCompanySettings';
@@ -18,28 +23,29 @@ interface Stat {
   label: string;
   value: number;
   href?: string;
-  tone?: string;
+  /** Colours the number when it is above zero. */
+  tone?: 'warning' | 'danger';
 }
 
-function StatCard({ label, value, href, tone }: Stat) {
-  const body: ReactNode = (
+const TONE_TEXT = { warning: 'text-warning', danger: 'text-danger' } as const;
+
+function StatCell({ label, value, href, tone }: Stat) {
+  const body = (
     <>
-      <Text size="xs" c="dimmed" lh={1.3}>
+      <span className="text-muted-foreground flex items-center justify-between gap-2 text-xs">
         {label}
-      </Text>
-      <Text className="ve-num" fz={26} fw={600} lh={1.2} mt={4} c={tone}>
-        {value}
-      </Text>
+        {href ? <ArrowUpRightIcon aria-hidden className="size-3.5 opacity-0 transition-opacity group-hover:opacity-100" /> : null}
+      </span>
+      <span className={cn('ve-num mt-2 block text-[28px] leading-none font-medium tracking-tight', tone && value > 0 ? TONE_TEXT[tone] : undefined)}>{value}</span>
     </>
   );
+  const cell = 'bg-card group block px-4 py-3.5';
   return href ? (
-    <Paper component={Link} to={href} withBorder px="md" py="sm" radius="md" style={{ textDecoration: 'none', color: 'inherit' }}>
+    <Link to={href} className={cn(cell, 'hover:bg-accent/60 transition-colors')}>
       {body}
-    </Paper>
+    </Link>
   ) : (
-    <Paper withBorder px="md" py="sm" radius="md">
-      {body}
-    </Paper>
+    <div className={cell}>{body}</div>
   );
 }
 
@@ -62,74 +68,69 @@ export function DashboardPage() {
     { label: 'Working now', value: d.workingNow },
     { label: 'Completed today', value: d.completedToday },
     { label: 'Not yet in', value: d.notYetIn },
-    { label: 'Missed check-outs', value: d.missedCheckouts, href: `/attendance?${upToToday}&status=MISSED_CHECKOUT`, tone: 'ledgerOrange.6' },
-    { label: 'Needs review', value: d.needsReview, href: `/attendance?${upToToday}&needsReview=true`, tone: 'red.7' },
+    { label: 'Missed check-outs', value: d.missedCheckouts, href: `/attendance?${upToToday}&status=MISSED_CHECKOUT`, tone: 'warning' },
+    { label: 'Needs review', value: d.needsReview, href: `/attendance?${upToToday}&needsReview=true`, tone: 'danger' },
   ];
 
   return (
-    <Stack gap="lg">
-      <Group justify="space-between" align="flex-end">
-        <div>
-          <Title order={1}>Today</Title>
-          <Text c="dimmed">{formatWorkDate(d.workDate)}</Text>
-        </div>
-        <Text size="sm" c="dimmed">
-          Updated {formatTime(new Date(query.dataUpdatedAt).toISOString(), tz)}
-          {query.isError ? ' · could not refresh, retrying' : ''}
-        </Text>
-      </Group>
+    <div className="grid gap-6">
+      <PageHeader
+        title="Today"
+        description={formatWorkDate(d.workDate)}
+        actions={
+          <span className="text-muted-foreground flex items-center gap-2 text-xs">
+            <span aria-hidden className={cn('ve-live size-2 rounded-full', query.isError ? 'bg-warning' : 'bg-success')} />
+            Updated <span className="ve-num">{formatTime(new Date(query.dataUpdatedAt).toISOString(), tz)}</span>
+            {query.isError ? ' · could not refresh, retrying' : ''}
+          </span>
+        }
+      />
 
-      <SimpleGrid cols={{ base: 2, sm: 4, xl: 7 }} spacing="sm">
+      <div className="bg-border grid grid-cols-2 gap-px overflow-hidden rounded-xl border sm:grid-cols-4 xl:grid-cols-7">
         {stats.map((stat) => (
-          <StatCard key={stat.label} {...stat} />
+          <StatCell key={stat.label} {...stat} />
         ))}
-      </SimpleGrid>
+      </div>
 
       <div className="ve-today">
-        <Paper withBorder p="md" radius="md">
-          <Group justify="space-between" mb="sm" wrap="nowrap">
-            <Title order={3}>On site today</Title>
-            <Switch size="xs" label="Also show finished today" checked={showFinished} onChange={(event) => setShowFinished(event.currentTarget.checked)} />
-          </Group>
-          {d.mapDays.length === 0 ? (
-            <Text size="sm" c="dimmed" mb="sm">
-              No one has checked in yet today.
-            </Text>
-          ) : null}
-          <WorkingMap days={visibleDays(d.mapDays, showFinished)} sites={sites.data ?? []} tz={tz} onOpen={setOpenDayId} height="clamp(360px, calc(100vh - 340px), 640px)" />
-        </Paper>
+        <Panel className="pb-4">
+          <PanelHeader title="On site today">
+            <SwitchField label="Also show finished today" checked={showFinished} onChange={setShowFinished} />
+          </PanelHeader>
+          <div className="px-4 pt-2">
+            {d.mapDays.length === 0 ? <p className="text-muted-foreground mb-3 text-sm">No one has checked in yet today.</p> : null}
+            <WorkingMap
+              days={visibleDays(d.mapDays, showFinished)}
+              sites={sites.data ?? []}
+              tz={tz}
+              onOpen={setOpenDayId}
+              height="clamp(360px, calc(100vh - 330px), 640px)"
+            />
+          </div>
+        </Panel>
 
-        <Paper withBorder p="md" radius="md" className="ve-today-list">
-          <Title order={3} mb="sm">
-            Working now
-          </Title>
+        <Panel className="ve-today-list">
+          <PanelHeader title="Working now">
+            <span className="text-muted-foreground ve-num text-xs">{d.working.length}</span>
+          </PanelHeader>
           {d.working.length === 0 ? (
-            <Text size="sm" c="dimmed">
-              Nobody is checked in right now.
-            </Text>
+            <p className="text-muted-foreground px-4 pt-1 pb-5 text-sm">Nobody is checked in right now.</p>
           ) : (
-            <Table>
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th>Name</Table.Th>
-                  <Table.Th>Site</Table.Th>
-                  <Table.Th>Checked in</Table.Th>
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                {d.working.map((w) => (
-                  <Table.Tr key={w.employeeId}>
-                    <Table.Td>{w.name}</Table.Td>
-                    <Table.Td>{w.siteName}</Table.Td>
-                    <Table.Td className="ve-num">{formatTime(w.checkInAt, tz)}</Table.Td>
-                  </Table.Tr>
-                ))}
-              </Table.Tbody>
-            </Table>
+            <div className="pt-1 pb-2">
+              <SimpleTable
+                rows={d.working}
+                rowKey={(w) => w.employeeId}
+                columns={[
+                  { key: 'name', title: 'Name', render: (w) => <span className="font-medium">{w.name}</span> },
+                  { key: 'site', title: 'Site', render: (w) => <span className="text-muted-foreground">{w.siteName}</span> },
+                  { key: 'in', title: 'Checked in', className: 'text-right', render: (w) => <span className="ve-num">{formatTime(w.checkInAt, tz)}</span> },
+                ]}
+              />
+            </div>
           )}
-        </Paper>
+        </Panel>
       </div>
       {openDayId ? <AttendanceDrawer dayId={openDayId} onClose={() => setOpenDayId(null)} /> : null}
-    </Stack>
+    </div>
   );
 }

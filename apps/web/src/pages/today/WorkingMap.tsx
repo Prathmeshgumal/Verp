@@ -63,7 +63,7 @@ export function WorkingMap({ days, sites, tz, onOpen, height }: Props) {
             center={[s.lat, s.lng]}
             radius={s.radiusM}
             interactive={false}
-            pathOptions={{ color: '#B8480F', weight: 1.5, opacity: 0.5, fillOpacity: 0.06 }}
+            pathOptions={{ color: '#FF5B14', weight: 1.5, opacity: 0.5, fillOpacity: 0.06 }}
           />
         ))}
       <Tags days={days} sites={sites} tz={tz} onOpen={onOpen} />

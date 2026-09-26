@@ -1,15 +1,19 @@
-import { Alert, Anchor, Button, Group, NumberInput, Paper, Slider, Stack, Switch, Text, TextInput, Title } from '@mantine/core';
 import { useForm } from '@mantine/form';
-import { notifications } from '@mantine/notifications';
-import { IconArrowLeft, IconCurrentLocation, IconLink, IconSearch } from '@tabler/icons-react';
+import { CrosshairIcon, LinkIcon, SearchIcon } from 'lucide-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { parseCoordinates } from '@ve/shared';
 import type { SiteDto } from '@ve/shared';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { useRef, useState, type FormEvent } from 'react';
-import { Link, useNavigate, useParams } from 'react-router';
+import { useNavigate, useParams } from 'react-router';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { Slider } from '@/components/ui/slider';
+import { NumberField, SwitchField, TextField } from '../../components/Field';
+import { PageHeader } from '../../components/PageHeader';
+import { Panel, PanelHeader } from '../../components/Panel';
 import { z } from 'zod';
-import { PageError, PageLoader } from '../../components/PageState';
+import { Notice, PageError, PageLoader } from '../../components/PageState';
 import { errorMessage } from '../../lib/errors';
 import { locateBest, type Reading } from '../../lib/locate';
 import { queryKeys } from '../../lib/queryKeys';
@@ -180,170 +184,151 @@ function SiteEditor({ site, defaultRadiusM, maxAccuracyM }: { site: SiteDto | nu
         : api.createSite({ name: v.name, address: v.address || undefined, lat: v.lat, lng: v.lng, radiusM: v.radiusM }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['sites'] });
-      notifications.show({ color: 'ledgerGreen', message: 'Site saved' });
+      toast.success('Site saved');
       navigate('/sites');
     },
     onError: (err) => setError(errorMessage(err)),
   });
 
   return (
-    <Stack gap="lg">
-      <Anchor component={Link} to="/sites" size="sm">
-        <Group gap={4}>
-          <IconArrowLeft size={16} /> Sites
-        </Group>
-      </Anchor>
-      <Title order={1}>{site ? 'Edit site' : 'New site'}</Title>
+    <div className="grid gap-6">
+      <PageHeader
+        back={{ to: '/sites', label: 'Sites' }}
+        title={site ? 'Edit site' : 'New site'}
+        description="Place the pin where workers stand, then set how far from it they may check in."
+      />
 
       <div className="ve-site-edit">
-        <Paper withBorder p="md" radius="md" className="ve-site-edit-map">
-          <Title order={3} mb="sm">
-            Location
-          </Title>
-          <SiteMapPicker
-            center={center}
-            radiusM={radiusM}
-            recenterKey={recenterKey}
-            accuracy={accuracy}
-            overview={(others.data ?? []).map((s) => ({ lat: s.lat, lng: s.lng }))}
-            height={MAP_HEIGHT}
-            onMove={(p) => moveTo(p, false)}
-          />
-          <Text size="sm" c="dimmed" mt="xs">
-            {center
-              ? 'Drag the pin, or click the map, to set the centre of the site.'
-              : 'Set the location: search, paste from Google Maps, use my location, or tap the map.'}
-          </Text>
-        </Paper>
+        <Panel className="ve-site-edit-map pb-4">
+          <PanelHeader title="Location" />
+          <div className="px-4 pt-2">
+            <div className="overflow-hidden rounded-lg border">
+              <SiteMapPicker
+                center={center}
+                radiusM={radiusM}
+                recenterKey={recenterKey}
+                accuracy={accuracy}
+                overview={(others.data ?? []).map((s) => ({ lat: s.lat, lng: s.lng }))}
+                height={MAP_HEIGHT}
+                onMove={(p) => moveTo(p, false)}
+              />
+            </div>
+            <p className="text-muted-foreground mt-2 text-sm">
+              {center
+                ? 'Drag the pin, or click the map, to set the centre of the site.'
+                : 'Set the location: search, paste from Google Maps, use my location, or tap the map.'}
+            </p>
+          </div>
+        </Panel>
 
-        <Stack gap="md">
-          <Paper withBorder p="md" radius="md">
-            <Title order={3} mb="sm">
-              Find the place
-            </Title>
-            <Stack gap="sm">
-              <form onSubmit={(event) => void findPlaces(event)}>
-                <Group align="flex-end" wrap="nowrap">
-                  <TextInput
-                    label="Search for a place"
-                    placeholder="Area, landmark or address"
-                    value={placeQuery}
-                    onChange={(event) => setPlaceQuery(event.currentTarget.value)}
-                    style={{ flex: 1 }}
-                  />
-                  <Button type="submit" variant="default" leftSection={<IconSearch size={16} />} loading={searching}>
-                    Search
-                  </Button>
-                </Group>
+        <div className="grid gap-4">
+          <Panel>
+            <PanelHeader title="Find the place" />
+            <div className="grid gap-4 px-4 pt-2 pb-4">
+              <form className="flex items-end gap-2" onSubmit={(event) => void findPlaces(event)}>
+                <TextField
+                  label="Search for a place"
+                  placeholder="Area, landmark or address"
+                  value={placeQuery}
+                  onChange={(event) => setPlaceQuery(event.currentTarget.value)}
+                  className="flex-1"
+                />
+                <Button type="submit" variant="outline" loading={searching}>
+                  {searching ? null : <SearchIcon />}
+                  Search
+                </Button>
               </form>
               {places !== null ? (
-                <Paper withBorder p="xs" radius="md">
-                  <Stack gap={2}>
-                    {places.length === 0 ? (
-                      <Text size="sm" c="dimmed">
-                        No places found. Try a nearby landmark.
-                      </Text>
-                    ) : (
-                      places.map((p) => (
-                        <Button
-                          key={`${p.lat},${p.lng}`}
-                          variant="subtle"
-                          justify="flex-start"
-                          h="auto"
-                          py={6}
-                          styles={{ label: { whiteSpace: 'normal', textAlign: 'left' } }}
-                          onClick={() => {
-                            moveTo(p, true);
-                            setPlaces(null);
-                          }}
-                        >
-                          {p.name}
-                        </Button>
-                      ))
-                    )}
-                    <Text size="xs" c="dimmed">
-                      Search by Nominatim · © OpenStreetMap contributors
-                    </Text>
-                  </Stack>
-                </Paper>
+                <div className="bg-muted/40 grid gap-0.5 rounded-lg border p-1.5">
+                  {places.length === 0 ? (
+                    <p className="text-muted-foreground px-2 py-1.5 text-sm">No places found. Try a nearby landmark.</p>
+                  ) : (
+                    places.map((p) => (
+                      <Button
+                        key={`${p.lat},${p.lng}`}
+                        variant="ghost"
+                        className="h-auto justify-start py-1.5 text-left font-normal whitespace-normal"
+                        onClick={() => {
+                          moveTo(p, true);
+                          setPlaces(null);
+                        }}
+                      >
+                        {p.name}
+                      </Button>
+                    ))
+                  )}
+                  <p className="text-muted-foreground px-2 pt-1 text-[11px]">Search by Nominatim · © OpenStreetMap contributors</p>
+                </div>
               ) : null}
-              <form onSubmit={(event) => void pasteFromGoogle(event)}>
-                <Group align="flex-end" wrap="nowrap">
-                  <TextInput
-                    label="Paste from Google Maps"
-                    description="In Google Maps, tap Share → Copy link, or long-press the spot to copy its coordinates."
-                    placeholder="https://maps.app.goo.gl/… or 17.4167, 78.3664"
-                    value={linkText}
-                    onChange={(event) => setLinkText(event.currentTarget.value)}
-                    style={{ flex: 1 }}
-                  />
-                  <Button type="submit" variant="default" leftSection={<IconLink size={16} />} loading={resolving}>
-                    Go
-                  </Button>
-                </Group>
+              <form className="flex items-end gap-2" onSubmit={(event) => void pasteFromGoogle(event)}>
+                <TextField
+                  label="Paste from Google Maps"
+                  description="In Google Maps, tap Share → Copy link, or long-press the spot to copy its coordinates."
+                  placeholder="https://maps.app.goo.gl/… or 17.4167, 78.3664"
+                  value={linkText}
+                  onChange={(event) => setLinkText(event.currentTarget.value)}
+                  className="flex-1"
+                />
+                <Button type="submit" variant="outline" loading={resolving}>
+                  {resolving ? null : <LinkIcon />}
+                  Go
+                </Button>
               </form>
-              <Group>
-                <Button variant="default" leftSection={<IconCurrentLocation size={16} />} loading={locating} onClick={() => void locateMe()}>
+              <div className="flex flex-wrap items-center gap-3">
+                <Button variant="outline" loading={locating} onClick={() => void locateMe()}>
+                  {locating ? null : <CrosshairIcon />}
                   Use my location
                 </Button>
                 {locating && progressM !== null ? (
-                  <Text size="sm" c="dimmed">
-                    {`Getting your location… ±${Math.round(progressM)} m`}
-                  </Text>
+                  <span className="text-muted-foreground ve-num text-sm">{`Getting your location… ±${Math.round(progressM)} m`}</span>
                 ) : null}
-              </Group>
-              {note ? (
-                <Text size="sm" c="ledgerGreen">
-                  {note}
-                </Text>
-              ) : null}
-            </Stack>
-          </Paper>
+              </div>
+              {note ? <p className="text-success text-sm font-medium">{note}</p> : null}
+            </div>
+          </Panel>
 
-          <Paper withBorder p="md" radius="md">
-            <Title order={3} mb="sm">
-              Details
-            </Title>
-            <form noValidate onSubmit={form.onSubmit((values) => save.mutate(schema.parse(values)))}>
-              <Stack>
-                <TextInput label="Site name" {...form.getInputProps('name')} />
-                <TextInput label="Address (optional)" {...form.getInputProps('address')} />
-                <Group grow>
-                  <NumberInput label="Latitude" decimalScale={6} hideControls {...form.getInputProps('lat')} />
-                  <NumberInput label="Longitude" decimalScale={6} hideControls {...form.getInputProps('lng')} />
-                </Group>
-                <NumberInput
-                  label="Allowed distance (metres)"
-                  description="Workers must be this close to the pin to check in."
-                  min={10}
-                  max={1000}
-                  step={10}
-                  allowDecimal={false}
-                  clampBehavior="none"
-                  {...form.getInputProps('radiusM')}
-                />
+          <Panel>
+            <PanelHeader title="Details" />
+            <form noValidate className="grid gap-4 px-4 pt-2 pb-4" onSubmit={form.onSubmit((values) => save.mutate(schema.parse(values)))}>
+              <TextField label="Site name" {...form.getInputProps('name')} />
+              <TextField label="Address (optional)" {...form.getInputProps('address')} />
+              <div className="grid grid-cols-2 gap-3">
+                <NumberField label="Latitude" decimalScale={6} {...form.getInputProps('lat')} />
+                <NumberField label="Longitude" decimalScale={6} {...form.getInputProps('lng')} />
+              </div>
+              <NumberField
+                label="Allowed distance (metres)"
+                description="Workers must be this close to the pin to check in."
+                {...form.getInputProps('radiusM')}
+              />
+              <div className="grid gap-2 pb-1">
                 <Slider
                   min={10}
                   max={1000}
                   step={10}
-                  value={radiusM}
-                  onChange={(value) => form.setFieldValue('radiusM', value)}
-                  label={(value) => `${value} m`}
-                  thumbLabel="Allowed distance slider"
-                  marks={[{ value: 50 }, { value: 100 }, { value: 200 }, { value: 500 }]}
+                  value={[radiusM]}
+                  onValueChange={([value]) => form.setFieldValue('radiusM', value ?? radiusM)}
+                  aria-label="Allowed distance slider"
                 />
-                {site ? <Switch label="Site is in use" {...form.getInputProps('isActive', { type: 'checkbox' })} /> : null}
-                {error ? <Alert color="ledgerOrange">{error}</Alert> : null}
-                <Group justify="flex-end">
-                  <Button type="submit" loading={save.isPending} disabled={!center}>
-                    Save site
-                  </Button>
-                </Group>
-              </Stack>
+                <div className="text-muted-foreground ve-num flex justify-between text-[11px]">
+                  <span>10 m</span>
+                  <span>500 m</span>
+                  <span>1000 m</span>
+                </div>
+              </div>
+              {site ? (
+                <SwitchField label="Site is in use" checked={form.values.isActive} onChange={(checked) => form.setFieldValue('isActive', checked)} />
+              ) : null}
+              {error ? <Notice>{error}</Notice> : null}
+              <div className="flex justify-end">
+                <Button type="submit" loading={save.isPending} disabled={!center}>
+                  Save site
+                </Button>
+              </div>
             </form>
-          </Paper>
-        </Stack>
+          </Panel>
+        </div>
       </div>
-    </Stack>
+    </div>
   );
 }

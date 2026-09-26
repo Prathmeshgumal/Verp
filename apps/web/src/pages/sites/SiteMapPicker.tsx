@@ -67,7 +67,7 @@ export function SiteMapPicker({ center, radiusM, onMove, recenterKey, accuracy =
       <OsmTiles />
       {center ? (
         <>
-          <Circle center={[center.lat, center.lng]} radius={radiusM} pathOptions={{ color: '#B8480F', weight: 2.5, fillOpacity: 0.14 }} />
+          <Circle center={[center.lat, center.lng]} radius={radiusM} pathOptions={{ color: '#FF5B14', weight: 2.5, fillOpacity: 0.14 }} />
           <Marker
             position={[center.lat, center.lng]}
             icon={pinIcon}
@@ -86,7 +86,7 @@ export function SiteMapPicker({ center, radiusM, onMove, recenterKey, accuracy =
           center={[accuracy.lat, accuracy.lng]}
           radius={accuracy.accuracyM}
           interactive={false}
-          pathOptions={{ color: '#1F4E8C', weight: 1.5, dashArray: '4 4', fillOpacity: 0.06 }}
+          pathOptions={{ color: '#2563EB', weight: 1.5, dashArray: '4 4', fillOpacity: 0.06 }}
         />
       ) : null}
       <ClickToMove onMove={onMove} />
