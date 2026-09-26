@@ -82,5 +82,9 @@
     "contactSupervisor": "Please contact your supervisor",
     "network": "Not saved, no internet",
     "networkHelp": "Check your signal and try again"
+  },
+  "reminder": {
+    "title": "Did you check out?",
+    "body": "Open VE HR and tap CHECK OUT before you leave"
   }
 }
