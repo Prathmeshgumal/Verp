@@ -6,7 +6,7 @@ import { useSearchParams } from 'react-router';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { DataTable } from '../../components/DataTable';
-import { CheckboxField, SelectField, TextField } from '../../components/Field';
+import { CheckboxField, DateField, SelectField } from '../../components/Field';
 import { PageHeader } from '../../components/PageHeader';
 import { FlagBadges } from '../../components/FlagBadges';
 import { PageError } from '../../components/PageState';
@@ -86,22 +86,22 @@ export function AttendancePage() {
       />
 
       <div className="flex flex-wrap items-end gap-3">
-        <TextField type="date" label="From" inputClassName="ve-num w-40" value={filters.from} onChange={(e) => update({ from: e.currentTarget.value })} />
-        <TextField type="date" label="To" inputClassName="ve-num w-40" value={filters.to} onChange={(e) => update({ to: e.currentTarget.value })} />
+        <DateField label="From" className="w-40" value={filters.from} onChange={(from) => update({ from })} />
+        <DateField label="To" className="w-40" value={filters.to} onChange={(to) => update({ to })} />
         <SelectField
           label="Employee"
           className="w-48"
           data={employeeOptions}
           value={filters.employeeId ?? ''}
-          onChange={(e) => update({ employeeId: e.currentTarget.value || undefined })}
+          onChange={(v) => update({ employeeId: v || undefined })}
         />
-        <SelectField label="Site" className="w-44" data={siteOptions} value={filters.siteId ?? ''} onChange={(e) => update({ siteId: e.currentTarget.value || undefined })} />
+        <SelectField label="Site" className="w-44" data={siteOptions} value={filters.siteId ?? ''} onChange={(v) => update({ siteId: v || undefined })} />
         <SelectField
           label="Status"
           className="w-44"
           data={statusOptions}
           value={filters.status ?? ''}
-          onChange={(e) => update({ status: (e.currentTarget.value || undefined) as AttendanceFilters['status'] })}
+          onChange={(v) => update({ status: (v || undefined) as AttendanceFilters['status'] })}
         />
         <CheckboxField
           label="Needs review only"

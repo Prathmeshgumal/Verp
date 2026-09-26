@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
-import { NumberField, SelectField, TextField } from '../components/Field';
+import { NumberField, SelectField } from '../components/Field';
 import { PageHeader } from '../components/PageHeader';
 import { Panel } from '../components/Panel';
 import { Notice, PageLoader } from '../components/PageState';
@@ -32,6 +32,16 @@ type FormValues = {
   defaultRadiusM: number | string;
   clockMismatchMinutes: number | string;
 };
+
+/** Every 15 minutes, labelled "7:00 PM"; a saved time off the grid stays in the list. */
+function reminderOptions(current: string): { value: string; label: string }[] {
+  const times = Array.from({ length: 96 }, (_, i) => `${String(Math.floor(i / 4)).padStart(2, '0')}:${String((i % 4) * 15).padStart(2, '0')}`);
+  if (current && !times.includes(current)) times.push(current);
+  return times.sort().map((value) => {
+    const [h = 0, m = 0] = value.split(':').map(Number);
+    return { value, label: `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h >= 12 ? 'PM' : 'AM'}` };
+  });
+}
 
 export function SettingsPage() {
   const settings = useCompanySettings();
@@ -71,11 +81,11 @@ function SettingsForm({ settings }: { settings: SettingsDto }) {
         >
           <Section title="Time" hint="How days are split and when reminders go out.">
             <SelectField label="Time zone" description="Work days and every time shown use this zone." data={zoneOptions} {...form.getInputProps('timezone')} />
-            <TextField
-              type="time"
+            <SelectField
               label="Check-out reminder time"
               description="Workers still checked in get a reminder on their phone at this time."
-              inputClassName="ve-num w-40"
+              className="max-w-56"
+              data={reminderOptions(form.values.reminderTime)}
               {...form.getInputProps('reminderTime')}
             />
           </Section>

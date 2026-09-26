@@ -1,16 +1,17 @@
-import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import { expect, test, vi } from 'vitest';
 import { NetworkError } from '../api/errors';
 import { queryKeys } from '../lib/queryKeys';
 import { testSettings } from '../testing/fakes';
 import { renderWithProviders } from '../testing/render';
+import { pickOption } from '../testing/select';
 import { SettingsPage } from './SettingsPage';
 
 test('shows the current settings', () => {
   renderWithProviders(<SettingsPage />);
-  expect(screen.getByLabelText('Time zone')).toHaveValue('Asia/Kolkata');
+  expect(screen.getByLabelText('Time zone')).toHaveTextContent('Asia/Kolkata');
   expect(screen.getByLabelText('Required GPS accuracy (metres)')).toHaveValue('50');
-  expect(screen.getByLabelText('Check-out reminder time')).toHaveValue('19:00');
+  expect(screen.getByLabelText('Check-out reminder time')).toHaveTextContent('7:00 PM');
 });
 
 test('saving sends the new values and updates the whole app', async () => {
@@ -20,7 +21,7 @@ test('saving sends the new values and updates the whole app', async () => {
   const accuracy = screen.getByLabelText('Required GPS accuracy (metres)');
   await user.clear(accuracy);
   await user.type(accuracy, '30');
-  fireEvent.change(screen.getByLabelText('Check-out reminder time'), { target: { value: '18:30' } });
+  await pickOption(user, screen.getByLabelText('Check-out reminder time'), '6:30 PM');
   await user.click(screen.getByRole('button', { name: 'Save settings' }));
   await waitFor(() =>
     expect(updateSettings).toHaveBeenCalledWith({

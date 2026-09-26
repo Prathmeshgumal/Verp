@@ -3,6 +3,7 @@ import { expect, test, vi } from 'vitest';
 import { ApiError } from '../../api/errors';
 import { employee, site } from '../../testing/fakes';
 import { renderWithProviders } from '../../testing/render';
+import { pickOption } from '../../testing/select';
 import { EmployeesPage } from './EmployeesPage';
 
 const sites = [site(), site({ id: 's2', name: 'Old yard', isActive: false })];
@@ -37,9 +38,9 @@ test('search waits for typing to stop and sends one query', async () => {
 test('site and status filters change the query', async () => {
   const { user, listEmployees } = renderPage();
   await screen.findByRole('link', { name: 'Ravi Kumar' });
-  await user.selectOptions(screen.getByLabelText('Site'), 'Plot 7');
+  await pickOption(user, screen.getByLabelText('Site'), 'Plot 7');
   await waitFor(() => expect(listEmployees).toHaveBeenLastCalledWith({ q: undefined, siteId: 's1', isActive: true }));
-  await user.selectOptions(screen.getByLabelText('Status'), 'All');
+  await pickOption(user, screen.getByLabelText('Status'), 'All');
   await waitFor(() => expect(listEmployees).toHaveBeenLastCalledWith({ q: undefined, siteId: 's1', isActive: undefined }));
 });
 
@@ -51,8 +52,9 @@ test('adding an employee shows the PIN once and refreshes the list', async () =>
   const dialog = screen.getByRole('dialog', { name: 'Add employee' });
   await user.type(within(dialog).getByLabelText('Name'), ' Sunil Patil ');
   await user.type(within(dialog).getByLabelText(/Mobile number/), '98123 45678');
-  expect(within(dialog).queryByRole('option', { name: /Old yard/ })).not.toBeInTheDocument();
-  await user.selectOptions(within(dialog).getByLabelText('Site'), 'Plot 7');
+  await user.click(within(dialog).getByLabelText('Site'));
+  expect(screen.queryByRole('option', { name: /Old yard/ })).not.toBeInTheDocument();
+  await user.click(screen.getByRole('option', { name: 'Plot 7' }));
   await user.click(within(dialog).getByRole('button', { name: 'Create employee' }));
 
   expect(await screen.findByTestId('pin-value')).toHaveTextContent('482913');

@@ -40,7 +40,8 @@ test('log in, add a site and a worker, see their check-in, export CSV', async ({
   const dialog = page.getByRole('dialog');
   await dialog.getByLabel('Name', { exact: true }).fill(workerName);
   await dialog.getByLabel('Mobile number').fill(mobile);
-  await dialog.getByLabel('Site').selectOption({ label: siteName });
+  await dialog.getByLabel('Site').click();
+  await page.getByRole('option', { name: siteName }).click();
   await dialog.getByRole('button', { name: 'Create employee' }).click();
   const pin = (await page.getByTestId('pin-value').textContent())?.trim() ?? '';
   expect(pin).toMatch(/^\d{6}$/);

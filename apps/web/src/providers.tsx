@@ -33,7 +33,7 @@ export function AppProviders({ services, queryClient, env = 'default', children 
         <QueryClientProvider client={queryClient}>
           <ServicesProvider value={services}>{children}</ServicesProvider>
         </QueryClientProvider>
-        <Toaster position="top-right" />
+        <Toaster position="bottom-right" />
       </TooltipProvider>
     </ThemeProvider>
   );

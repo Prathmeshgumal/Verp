@@ -2,10 +2,14 @@ import { useEffect, useId, useState, type ChangeEvent, type ComponentProps, type
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { NativeSelect } from '@/components/ui/native-select';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
+import dayjs from 'dayjs';
+import { CalendarIcon } from 'lucide-react';
 
 interface FieldFrame {
   label: ReactNode;
@@ -112,22 +116,86 @@ export function NumberField({ label, description, error, className, value = '', 
 
 type Option = string | { value: string; label: string };
 
-type SelectFieldProps = FieldFrame & Omit<ComponentProps<'select'>, 'className'> & { data: Option[] };
+/** Radix Select cannot hold an empty value, so "" (e.g. "All sites") travels as this stand-in. */
+const EMPTY = '__empty__';
 
-export function SelectField({ label, description, error, className, data, ...props }: SelectFieldProps) {
+interface SelectFieldProps extends FieldFrame {
+  data: Option[];
+  value?: string;
+  /** Takes the new value; @mantine/form's getInputProps onChange accepts that too. */
+  onChange: (value: string) => void;
+  onBlur?: () => void;
+  placeholder?: string;
+  disabled?: boolean;
+}
+
+export function SelectField({ label, description, error, className, data, value = '', onChange, onBlur, placeholder, disabled }: SelectFieldProps) {
   const id = useId();
   return (
     <Frame id={id} label={label} description={description} error={error} className={className}>
-      <NativeSelect id={id} aria-invalid={error ? true : undefined} aria-describedby={describedBy(id, description, error)} {...props}>
-        {data.map((option) => {
-          const { value, label: text } = typeof option === 'string' ? { value: option, label: option } : option;
-          return (
-            <option key={value} value={value}>
-              {text}
-            </option>
-          );
-        })}
-      </NativeSelect>
+      <Select
+        value={value === '' ? EMPTY : value}
+        onValueChange={(v) => onChange(v === EMPTY ? '' : v)}
+        onOpenChange={(open) => (open ? undefined : onBlur?.())}
+        disabled={disabled}
+      >
+        <SelectTrigger id={id} aria-invalid={error ? true : undefined} aria-describedby={describedBy(id, description, error)}>
+          <SelectValue placeholder={placeholder} />
+        </SelectTrigger>
+        <SelectContent>
+          {data.map((option) => {
+            const { value: v, label: text } = typeof option === 'string' ? { value: option, label: option } : option;
+            return (
+              <SelectItem key={v} value={v === '' ? EMPTY : v}>
+                {text}
+              </SelectItem>
+            );
+          })}
+        </SelectContent>
+      </Select>
+    </Frame>
+  );
+}
+
+interface DateFieldProps extends FieldFrame {
+  /** YYYY-MM-DD */
+  value: string;
+  onChange: (value: string) => void;
+}
+
+/** A button showing the date that opens a calendar. */
+export function DateField({ label, description, error, className, value, onChange }: DateFieldProps) {
+  const id = useId();
+  const [open, setOpen] = useState(false);
+  const date = value ? dayjs(value, 'YYYY-MM-DD') : null;
+  return (
+    <Frame id={id} label={label} description={description} error={error} className={className}>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger
+          id={id}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={describedBy(id, description, error)}
+          className={cn(
+            'border-input bg-card hover:bg-accent/40 flex h-9 w-full items-center gap-2 rounded-lg border px-3 text-left text-sm shadow-xs outline-none',
+            'focus-visible:border-ring focus-visible:ring-ring/40 focus-visible:ring-[3px] data-[state=open]:border-ring data-[state=open]:ring-ring/25 data-[state=open]:ring-[3px]',
+          )}
+        >
+          <CalendarIcon aria-hidden className="text-muted-foreground size-4 shrink-0" />
+          <span className={cn('ve-num truncate', !date && 'text-muted-foreground')}>{date ? date.format('D MMM YYYY') : 'Pick a date'}</span>
+        </PopoverTrigger>
+        <PopoverContent>
+          <Calendar
+            mode="single"
+            selected={date?.toDate()}
+            defaultMonth={date?.toDate()}
+            onSelect={(d) => {
+              if (!d) return;
+              onChange(dayjs(d).format('YYYY-MM-DD'));
+              setOpen(false);
+            }}
+          />
+        </PopoverContent>
+      </Popover>
     </Frame>
   );
 }

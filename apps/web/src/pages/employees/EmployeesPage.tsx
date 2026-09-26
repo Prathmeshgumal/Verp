@@ -65,14 +65,14 @@ export function EmployeesPage() {
           label="Site"
           className="w-48"
           value={siteId}
-          onChange={(event) => setSiteId(event.currentTarget.value)}
+          onChange={setSiteId}
           data={[{ value: '', label: 'All sites' }, ...(sites.data ?? []).map((s) => ({ value: s.id, label: s.name }))]}
         />
         <SelectField
           label="Status"
           className="w-36"
           value={status}
-          onChange={(event) => setStatus(event.currentTarget.value as StatusFilter)}
+          onChange={(v) => setStatus(v as StatusFilter)}
           data={[
             { value: 'active', label: 'Active' },
             { value: 'inactive', label: 'Inactive' },
