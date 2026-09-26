@@ -4,6 +4,7 @@ Construction workforce attendance: geofenced check-in/check-out for workers, adm
 
 - `packages/shared`: schemas, error codes, DTO types, geo maths (used by API, web, mobile)
 - `apps/api`: Fastify + Postgres REST API
+- `apps/web`: React admin dashboard (Vite + Mantine)
 - `apps/mobile`: React Native Android app (Android 10+) for workers and admins
 - Design spec: `docs/superpowers/specs/2026-09-25-ve-hr-phase1-design.md`
 
@@ -35,6 +36,21 @@ pnpm --filter @ve/mobile android           # build + install the debug app
 - APKs are split per ABI. Most phones need `app-arm64-v8a-release.apk`.
 - Before each release, run `docs/testing/mobile-manual-checklist.md`.
 
+## Admin web dashboard
+
+```bash
+cp apps/web/.env.example apps/web/.env    # VITE_API_URL=http://localhost:3000
+pnpm --filter @ve/web dev                 # http://localhost:5173 (API must be running)
+```
+
+Smoke test (real API + Chromium, uses a throwaway `ve_e2e` database):
+
+```bash
+docker compose up -d db
+pnpm --filter @ve/web exec playwright install chromium   # once
+pnpm --filter @ve/web e2e
+```
+
 ## Checks
 
 ```bash
@@ -53,3 +69,4 @@ Edit `apps/api/src/db/schema.ts`, then `pnpm --filter @ve/api db:generate --name
 - The web dashboard and API **must share a registrable domain** (e.g. `admin.example.com` + `api.example.com`): the admin refresh cookie is `SameSite=Strict`.
 - RLS is enabled on every table with no policies; the API connects as the table owner. Do not use Supabase's anon key from any client.
 - The missed-checkout job runs inside the API process (at startup and every 15 minutes). It is idempotent, so running several instances is safe.
+- Web: `VITE_API_URL=https://api.example.com pnpm --filter @ve/web build`, then serve `apps/web/dist` as static files, with every unknown path answered by `index.html`. Set the API's `WEB_ORIGIN` to the dashboard's exact origin.
