@@ -71,6 +71,20 @@ class VeDeviceModule(private val reactContext: ReactApplicationContext) : Native
         }
     }
 
+    override fun scheduleReminder(
+        workDate: String,
+        reminderTime: String,
+        timezone: String,
+        title: String,
+        body: String,
+        promise: Promise,
+    ) = respond(promise) { Reminder.schedule(reactContext, workDate, reminderTime, timezone, title, body) }
+
+    override fun cancelReminder(promise: Promise) = respond(promise) {
+        Reminder.cancel(reactContext)
+        null
+    }
+
     @Synchronized
     private fun installationId(): String =
         prefs.get(INSTALL_ID) ?: UUID.randomUUID().toString().also { prefs.set(INSTALL_ID, it) }

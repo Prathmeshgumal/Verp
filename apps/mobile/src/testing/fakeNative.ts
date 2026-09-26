@@ -61,4 +61,11 @@ export const fakeNative = {
     if (!fakeState.fix) throw Object.assign(new Error('No location fix'), { code: 'NO_FIX' });
     return { ...fakeState.fix };
   },
+  scheduleReminder: async (workDate: string, reminderTime: string, timezone: string, title: string, body: string) => {
+    fakeState.reminders = [{ workDate, reminderTime, timezone, title, body }];
+    return true;
+  },
+  cancelReminder: async () => {
+    fakeState.reminders = [];
+  },
 } satisfies Spec;

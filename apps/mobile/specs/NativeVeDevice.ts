@@ -24,6 +24,9 @@ export interface Spec extends TurboModule {
   isLocationEnabled(): Promise<boolean>;
   /** Resolves with the best reading within timeoutMs (early once accuracy <= target); rejects with code NO_FIX if none. */
   getCurrentPosition(timeoutMs: number, targetAccuracyM: number): Promise<NativeFix>;
+  /** Schedules the one check-out reminder; returns false if that moment has already passed. */
+  scheduleReminder(workDate: string, reminderTime: string, timezone: string, title: string, body: string): Promise<boolean>;
+  cancelReminder(): Promise<void>;
 }
 
 export default TurboModuleRegistry.getEnforcing<Spec>('NativeVeDevice');
