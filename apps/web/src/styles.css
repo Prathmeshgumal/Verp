@@ -16,3 +16,50 @@ body {
   border: 3px solid #fff;
   box-shadow: 0 1px 4px rgb(0 0 0 / 40%);
 }
+
+.ve-pin-off {
+  background: #8a8578;
+}
+
+/* Sites tab: the map on the left, the list on the right; stacked on narrow screens. */
+.ve-split {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: 16px;
+  height: calc(100vh - 180px);
+  min-height: 480px;
+}
+
+.ve-split-map,
+.ve-split-list {
+  min-height: 0;
+}
+
+.ve-split-list {
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.ve-site-row {
+  cursor: pointer;
+}
+
+.ve-site-row[aria-current="true"] {
+  border-color: #b8480f;
+  box-shadow: 0 0 0 1px #b8480f;
+}
+
+@media (max-width: 900px) {
+  .ve-split {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+
+  .ve-split-map {
+    height: 320px;
+  }
+
+  .ve-split-list {
+    overflow: visible;
+  }
+}
