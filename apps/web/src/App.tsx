@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router';
 import { RequireAuth } from './auth/RequireAuth';
 import { AppLayout } from './layout/AppLayout';
+import { AttendancePage } from './pages/attendance/AttendancePage';
 import { DashboardPage } from './pages/DashboardPage';
 import { EmployeeDetailPage } from './pages/employees/EmployeeDetailPage';
 import { EmployeesPage } from './pages/employees/EmployeesPage';
@@ -25,6 +26,7 @@ export function App() {
         <Route path="sites" element={<SitesPage />} />
         <Route path="sites/new" element={<SiteEditPage />} />
         <Route path="sites/:id" element={<SiteEditPage />} />
+        <Route path="attendance" element={<AttendancePage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>
