@@ -1,0 +1,35 @@
+{
+  "app": { "name": "VE HR" },
+  "common": {
+    "tryAgain": "Try again",
+    "ok": "OK",
+    "cancel": "Cancel",
+    "save": "Save",
+    "done": "Done",
+    "back": "Back",
+    "close": "Close",
+    "loading": "Loading…",
+    "loadMore": "Load more",
+    "logout": "Log out",
+    "noInternet": "No internet",
+    "noInternetHelp": "Check your connection and try again"
+  },
+  "date": {
+    "weekdays": "Sunday,Monday,Tuesday,Wednesday,Thursday,Friday,Saturday",
+    "weekdaysShort": "Sun,Mon,Tue,Wed,Thu,Fri,Sat",
+    "months": "January,February,March,April,May,June,July,August,September,October,November,December",
+    "monthsShort": "Jan,Feb,Mar,Apr,May,Jun,Jul,Aug,Sep,Oct,Nov,Dec",
+    "am": "AM",
+    "pm": "PM",
+    "hoursMinutes": "{{h}} h {{m}} min",
+    "hoursMinutesShort": "{{h}}h {{m}}m"
+  },
+  "tabs": {
+    "home": "Home",
+    "history": "My attendance",
+    "today": "Today",
+    "employees": "Employees",
+    "sites": "Sites",
+    "attendance": "Attendance"
+  }
+}

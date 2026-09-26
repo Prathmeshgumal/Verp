@@ -1,0 +1,14 @@
+import i18n from 'i18next';
+import { initReactI18next } from 'react-i18next';
+import en from './en.json';
+
+// Resources are bundled, so init completes synchronously. Hindi and Marathi are added later as more resources.
+void i18n.use(initReactI18next).init({
+  resources: { en: { translation: en } },
+  lng: 'en',
+  fallbackLng: 'en',
+  interpolation: { escapeValue: false },
+  initAsync: false,
+});
+
+export default i18n;
