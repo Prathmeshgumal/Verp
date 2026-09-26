@@ -4,10 +4,13 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { AttendanceDetailScreen } from '../screens/admin/AttendanceDetailScreen';
 import { AttendanceListScreen } from '../screens/admin/AttendanceListScreen';
+import { EmployeeCreateScreen } from '../screens/admin/EmployeeCreateScreen';
+import { EmployeeDetailScreen } from '../screens/admin/EmployeeDetailScreen';
+import { EmployeesScreen } from '../screens/admin/EmployeesScreen';
 import { TodayScreen } from '../screens/admin/TodayScreen';
 import { colors, fonts } from '../theme/tokens';
 import { TabBar } from '../ui/TabBar';
-import type { AdminTabParamList, AttendanceStackParamList } from './types';
+import type { AdminTabParamList, AttendanceStackParamList, EmployeesStackParamList } from './types';
 
 const Tab = createBottomTabNavigator<AdminTabParamList>();
 const AttendanceStack = createNativeStackNavigator<AttendanceStackParamList>();
@@ -37,11 +40,24 @@ function AttendanceNavigator() {
     </AttendanceStack.Navigator>
   );
 }
+const EmployeesStack = createNativeStackNavigator<EmployeesStackParamList>();
+
+function EmployeesNavigator() {
+  const { t } = useTranslation();
+  return (
+    <EmployeesStack.Navigator screenOptions={stackScreenOptions}>
+      <EmployeesStack.Screen name="Employees" component={EmployeesScreen} options={{ headerShown: false }} />
+      <EmployeesStack.Screen name="EmployeeCreate" component={EmployeeCreateScreen} options={{ title: t('admin.employees.createTitle') }} />
+      <EmployeesStack.Screen name="EmployeeDetail" component={EmployeeDetailScreen} options={{ title: t('admin.employees.detailTitle') }} />
+    </EmployeesStack.Navigator>
+  );
+}
 
 export function AdminNavigator() {
   return (
     <Tab.Navigator screenOptions={{ headerShown: false }} tabBar={(props) => <TabBar {...props} items={ITEMS} height={68} />}>
       <Tab.Screen name="TodayTab" component={TodayScreen} />
+      <Tab.Screen name="EmployeesTab" component={EmployeesNavigator} />
       <Tab.Screen name="AttendanceTab" component={AttendanceNavigator} />
     </Tab.Navigator>
   );
