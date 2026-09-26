@@ -1,6 +1,6 @@
 import { AppShell, Burger, Button, Group, NavLink, Text, Title } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import { IconCalendarCheck, IconLayoutDashboard, IconLogout, IconMapPin, IconUsers, type TablerIcon } from '@tabler/icons-react';
+import { IconCalendarCheck, IconLayoutDashboard, IconLogout, IconMapPin, IconSettings, IconUsers, type TablerIcon } from '@tabler/icons-react';
 import { Link, Outlet, useLocation } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
 import { PageError, PageLoader } from '../components/PageState';
@@ -11,6 +11,7 @@ export const NAV: { to: string; label: string; icon: TablerIcon }[] = [
   { to: '/employees', label: 'Employees', icon: IconUsers },
   { to: '/sites', label: 'Sites', icon: IconMapPin },
   { to: '/attendance', label: 'Attendance', icon: IconCalendarCheck },
+  { to: '/settings', label: 'Settings', icon: IconSettings },
 ];
 
 export function AppLayout() {

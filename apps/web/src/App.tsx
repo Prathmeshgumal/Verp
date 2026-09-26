@@ -6,6 +6,7 @@ import { DashboardPage } from './pages/DashboardPage';
 import { EmployeeDetailPage } from './pages/employees/EmployeeDetailPage';
 import { EmployeesPage } from './pages/employees/EmployeesPage';
 import { LoginPage } from './pages/LoginPage';
+import { SettingsPage } from './pages/SettingsPage';
 import { SiteEditPage } from './pages/sites/SiteEditPage';
 import { SitesPage } from './pages/sites/SitesPage';
 
@@ -27,6 +28,7 @@ export function App() {
         <Route path="sites/new" element={<SiteEditPage />} />
         <Route path="sites/:id" element={<SiteEditPage />} />
         <Route path="attendance" element={<AttendancePage />} />
+        <Route path="settings" element={<SettingsPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>
