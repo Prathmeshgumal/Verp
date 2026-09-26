@@ -84,6 +84,9 @@ jobs:
           java-version: 17
           cache: gradle
       - uses: android-actions/setup-android@v3
+        with:
+          # The default also asks for 'tools', which the current sdkmanager no longer has.
+          packages: platform-tools
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @ve/mobile test
       - name: Release APK
