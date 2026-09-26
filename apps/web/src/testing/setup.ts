@@ -31,6 +31,8 @@ if (typeof window !== 'undefined') {
     disconnect() {}
   } as unknown as typeof ResizeObserver;
   window.HTMLElement.prototype.scrollIntoView = () => {};
+  // mantine-datatable scrolls the table back to the top after a page change.
+  window.Element.prototype.scrollTo = () => {};
   // Mantine's autosize Textarea listens for font loads on document.fonts.
   Object.defineProperty(document, 'fonts', {
     configurable: true,
