@@ -41,7 +41,7 @@ test('a stored employee session opens the worker home', async () => {
 test('a stored admin session opens the admin Today screen, never worker screens', async () => {
   storeSession(adminUser);
   server({
-    '/admin/dashboard/today': { workDate: '2026-09-25', activeEmployees: 1, checkedInToday: 0, workingNow: 0, completedToday: 0, notYetIn: 1, missedCheckouts: 0, needsReview: 0, working: [] } satisfies DashboardTodayDto,
+    '/admin/dashboard/today': { workDate: '2026-09-25', activeEmployees: 1, checkedInToday: 0, workingNow: 0, completedToday: 0, notYetIn: 1, missedCheckouts: 0, needsReview: 0, working: [], mapDays: [] } satisfies DashboardTodayDto,
   });
   await render(<App />);
   expect(await screen.findByText('Nobody is working right now')).toBeOnTheScreen();

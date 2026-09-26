@@ -145,6 +145,21 @@ export interface Paginated<T> {
   pageSize: number;
 }
 
+/** One of today's days, placed at its check-in position on the Today map. */
+export interface DashboardMapDay {
+  dayId: string;
+  employeeId: string;
+  name: string;
+  siteId: string;
+  siteName: string;
+  status: 'CHECKED_IN' | 'COMPLETED';
+  checkInAt: string;
+  checkOutAt: string | null;
+  checkInLat: number;
+  checkInLng: number;
+  needsReview: boolean;
+}
+
 export interface DashboardTodayDto {
   workDate: string;
   activeEmployees: number;
@@ -155,6 +170,7 @@ export interface DashboardTodayDto {
   missedCheckouts: number;
   needsReview: number;
   working: Array<{ employeeId: string; name: string; siteName: string; checkInAt: string }>;
+  mapDays: DashboardMapDay[];
 }
 
 export interface SettingsDto {
