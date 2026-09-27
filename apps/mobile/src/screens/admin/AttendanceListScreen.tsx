@@ -307,9 +307,11 @@ export function AttendanceListScreen({ navigation, route }: Props) {
         />
       </View>
       <ScrollView
+        testID="attendance-filters"
         horizontal
         showsHorizontalScrollIndicator={false}
-        style={{ flexGrow: 0 }}
+        // flexShrink 0: otherwise Android squeezes this row when the list below wants the space.
+        style={{ flexGrow: 0, flexShrink: 0 }}
         contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 10, gap: 8 }}
       >
         <PickerField

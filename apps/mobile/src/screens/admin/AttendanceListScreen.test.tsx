@@ -135,3 +135,9 @@ test('the Refused tab lists earlier refused attempts with the same dates and peo
   await fireEvent.press(screen.getByRole('button', { name: 'Ramesh Kale, Show on map' }));
   expect(await screen.findByTestId('refused-map')).toBeOnTheScreen();
 });
+
+test('the filter chip row keeps its full height above the list', async () => {
+  await renderList();
+  // A horizontal ScrollView shrinks by default on Android when the list below wants the space, cutting the chips off.
+  expect(screen.getByTestId('attendance-filters')).toHaveStyle({ flexGrow: 0, flexShrink: 0 });
+});
