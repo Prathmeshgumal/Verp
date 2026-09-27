@@ -21,7 +21,15 @@ export function rewriteCookiePath(cookie: string): string {
   return cookie.replace(/;\s*path=\/([^;]*)/i, (_m, rest: string) => `; Path=${PUBLIC_PREFIX}/${rest}`);
 }
 
-export default async function handler(request: Request, backendUrl = process.env.BACKEND_URL): Promise<Response> {
+/**
+ * Vercel calls the default export as handler(request, context), so the backend address must not be a
+ * second parameter there (it would receive Vercel's context object and crash). Tests call proxy() directly.
+ */
+export default function handler(request: Request): Promise<Response> {
+  return proxy(request, process.env.BACKEND_URL);
+}
+
+export async function proxy(request: Request, backendUrl: string | undefined): Promise<Response> {
   if (!backendUrl) return new Response('BACKEND_URL is not set for this deployment', { status: 500 });
 
   const incoming = new URL(request.url);
