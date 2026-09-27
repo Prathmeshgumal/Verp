@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import type { SettingsDto } from '@ve/shared';
@@ -7,10 +7,11 @@ import { useAuth, useUser } from '../../auth/AuthContext';
 import { formatHhMm } from '../../attendance/format';
 import { queryKeys } from '../../attendance/queryKeys';
 import { getDeviceInfo } from '../../native/device';
-import { colors, radius } from '../../theme/tokens';
+import { colors, fonts, radius } from '../../theme/tokens';
 import { Avatar } from '../../ui/Avatar';
 import { Button } from '../../ui/Button';
 import { ErrorState, Loading } from '../../ui/Centered';
+import { Icon } from '../../ui/Icon';
 import { PickerField } from '../../ui/PickerField';
 import { Screen } from '../../ui/Screen';
 import { Text } from '../../ui/Text';
@@ -30,6 +31,10 @@ export function reminderTimes(current: string): string[] {
 
 type NumberKey = 'maxAccuracyM' | 'defaultRadiusM' | 'clockMismatchMinutes';
 const LIMITS: Record<NumberKey, [number, number]> = { maxAccuracyM: [5, 500], defaultRadiusM: [10, 1000], clockMismatchMinutes: [1, 120] };
+
+function toForm(s: SettingsDto): Record<keyof SettingsDto, string> {
+  return { timezone: s.timezone, reminderTime: s.reminderTime, maxAccuracyM: String(s.maxAccuracyM), defaultRadiusM: String(s.defaultRadiusM), clockMismatchMinutes: String(s.clockMismatchMinutes) };
+}
 
 export function SettingsScreen() {
   const { t } = useTranslation();
@@ -51,8 +56,14 @@ export function SettingsScreen() {
   }, []);
   const s = query.data;
   useEffect(() => {
-    if (s) setForm({ timezone: s.timezone, reminderTime: s.reminderTime, maxAccuracyM: String(s.maxAccuracyM), defaultRadiusM: String(s.defaultRadiusM), clockMismatchMinutes: String(s.clockMismatchMinutes) });
+    if (s) setForm(toForm(s));
   }, [s]);
+  // A "saved" note fades out on its own; an error stays until the next change.
+  useEffect(() => {
+    if (!message || message.error) return;
+    const timer = setTimeout(() => setMessage(null), 2500);
+    return () => clearTimeout(timer);
+  }, [message]);
 
   if (query.isPending || (s && !form)) return <Loading />;
   if (!s || !form) {
@@ -88,10 +99,17 @@ export function SettingsScreen() {
     }
   }
 
+  const saved = toForm(s);
+  const dirty = (Object.keys(saved) as (keyof SettingsDto)[]).some((k) => saved[k] !== form[k]);
+  function edit(patch: Partial<typeof form>) {
+    setMessage(null);
+    setForm({ ...form!, ...patch });
+  }
+
   const zones = ZONES.includes(form.timezone) ? ZONES : [form.timezone, ...ZONES];
   const numberField = (key: NumberKey, label: string, help?: string) => (
     <View style={{ gap: 4 }}>
-      <TextField label={label} value={form[key]} onChangeText={(v) => setForm({ ...form, [key]: v })} keyboardType="number-pad" error={errors[key] ?? null} />
+      <TextField label={label} value={form[key]} onChangeText={(v) => edit({ [key]: v })} keyboardType="number-pad" error={errors[key] ?? null} />
       {help ? (
         <Text variant="small" color={colors.muted}>
           {help}
@@ -117,12 +135,12 @@ export function SettingsScreen() {
               {t('admin.settings.timeHint')}
             </Text>
           </View>
-          <PickerField label={t('admin.settings.timezone')} value={form.timezone} options={zones.map((z) => ({ value: z, label: z }))} onChange={(timezone) => setForm({ ...form, timezone })} />
+          <PickerField label={t('admin.settings.timezone')} value={form.timezone} options={zones.map((z) => ({ value: z, label: z }))} onChange={(timezone) => edit({ timezone })} />
           <PickerField
             label={t('admin.settings.reminder')}
             value={form.reminderTime}
             options={reminderTimes(form.reminderTime).map((v) => ({ value: v, label: formatHhMm(v, t) }))}
-            onChange={(reminderTime) => setForm({ ...form, reminderTime })}
+            onChange={(reminderTime) => edit({ reminderTime })}
           />
           <Text variant="small" color={colors.muted} style={{ marginTop: -8 }}>
             {t('admin.settings.reminderHelp')}
@@ -141,27 +159,54 @@ export function SettingsScreen() {
           {numberField('clockMismatchMinutes', t('admin.settings.clock'), t('admin.settings.clockHelp'))}
         </View>
 
-        {message ? (
-          <Text accessibilityRole="alert" variant="bodyStrong" color={message.error ? colors.danger : colors.checkIn}>
-            {message.text}
+        <View testID="settings-account" style={{ backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.line, overflow: 'hidden' }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16 }}>
+            <Avatar name={user.name} />
+            <View style={{ flex: 1 }}>
+              <Text variant="bodyStrong">{user.name}</Text>
+              <Text variant="small" color={colors.muted}>
+                {user.email ?? t('admin.tag')}
+              </Text>
+            </View>
+          </View>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t('common.logout')}
+            onPress={() => void confirmLogout()}
+            style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 52, paddingHorizontal: 16, borderTopWidth: 1, borderTopColor: colors.line, backgroundColor: pressed ? colors.dangerBg : 'transparent' })}
+          >
+            <Icon name="logout" size={20} color={colors.danger} />
+            <Text color={colors.danger} style={{ fontFamily: fonts.bodySemi, fontSize: 16 }}>
+              {t('common.logout')}
+            </Text>
+          </Pressable>
+        </View>
+        {version ? (
+          <Text variant="small" color={colors.muted} style={{ textAlign: 'center' }}>
+            {t('menu.appVersion', { version })}
           </Text>
         ) : null}
-        <Button label={busy ? t('admin.employees.saving') : t('admin.settings.save')} onPress={() => void save()} disabled={busy} />
-
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 4 }}>
-          <Avatar name={user.name} />
-          <View style={{ flex: 1 }}>
-            <Text variant="bodyStrong">{user.name}</Text>
-            <Text variant="small" color={colors.muted}>
-              {user.email ?? t('admin.tag')}
-              {version ? ` · ${t('menu.appVersion', { version })}` : ''}
-            </Text>
-          </View>
-        </View>
       </ScrollView>
-      <View testID="settings-footer" style={{ paddingHorizontal: 16, paddingVertical: 12, borderTopWidth: 1, borderTopColor: colors.line }}>
-        <Button label={t('common.logout')} variant="danger" icon="logout" onPress={() => void confirmLogout()} />
-      </View>
+
+      {dirty || message ? (
+        <View testID="settings-save-bar" style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 10, borderTopWidth: 1, borderTopColor: colors.line, backgroundColor: colors.surface }}>
+          {message ? (
+            <Text accessibilityRole="alert" variant="bodyStrong" color={message.error ? colors.danger : colors.checkIn} style={{ flex: 1 }}>
+              {message.text}
+            </Text>
+          ) : (
+            <Text variant="bodyStrong" style={{ flex: 1 }}>
+              {t('admin.settings.unsaved')}
+            </Text>
+          )}
+          {dirty ? (
+            <>
+              <Button label={t('admin.settings.discard')} variant="secondary" size="small" onPress={() => { setErrors({}); setMessage(null); setForm(saved); }} disabled={busy} />
+              <Button label={busy ? t('admin.employees.saving') : t('admin.settings.save')} size="small" onPress={() => void save()} disabled={busy} />
+            </>
+          ) : null}
+        </View>
+      ) : null}
     </Screen>
   );
 }

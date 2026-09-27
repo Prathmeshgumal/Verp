@@ -41,9 +41,21 @@ test('numbers out of range are not sent', async () => {
   expect(updateSettings).not.toHaveBeenCalled();
 });
 
-test('log out stays pinned below the scrolling settings', async () => {
+test('the save bar only shows once something has changed, and Discard puts it back', async () => {
   await renderSettings();
-  expect(within(screen.getByTestId('settings-footer')).getByRole('button', { name: 'Log out' })).toBeOnTheScreen();
+  expect(screen.queryByRole('button', { name: 'Save settings' })).toBeNull();
+  await fireEvent.changeText(screen.getByLabelText('Required GPS accuracy (metres)'), '30');
+  expect(within(screen.getByTestId('settings-save-bar')).getByText('Unsaved changes')).toBeOnTheScreen();
+  await fireEvent.press(screen.getByRole('button', { name: 'Discard' }));
+  expect(screen.getByLabelText('Required GPS accuracy (metres)').props.value).toBe('50');
+  expect(screen.queryByTestId('settings-save-bar')).toBeNull();
+});
+
+test('log out is a row in the account section, with the admin shown above it', async () => {
+  await renderSettings();
+  const account = screen.getByTestId('settings-account');
+  expect(within(account).getByText('admin@ve.test')).toBeOnTheScreen();
+  expect(within(account).getByRole('button', { name: 'Log out' })).toBeOnTheScreen();
 });
 
 test('log out asks first', async () => {
