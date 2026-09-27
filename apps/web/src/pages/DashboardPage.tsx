@@ -16,7 +16,7 @@ import { useCompanyTz } from '../lib/useCompanySettings';
 import { useServices } from '../services';
 import { AttendanceDrawer } from './attendance/AttendanceDrawer';
 import { visibleDays } from './today/workingMap';
-import { WorkingMap } from './today/WorkingMap';
+import { type MapFocus, WorkingMap } from './today/WorkingMap';
 
 /** Earlier than any record: the dashboard's missed/review counts cover all time. */
 export const ALL_TIME_FROM = '2020-01-01';
@@ -93,7 +93,8 @@ export function DashboardPage() {
   const sites = useQuery({ queryKey: queryKeys.sites, queryFn: () => api.listSites() });
   const [showFinished, setShowFinished] = useState(false);
   const [openDayId, setOpenDayId] = useState<string | null>(null);
-  const [focus, setFocus] = useState<{ id: string; n: number } | null>(null);
+  const [focus, setFocus] = useState<MapFocus | null>(null);
+  const show = (kind: MapFocus['kind'], id: string) => setFocus((f) => ({ kind, id, n: (f?.n ?? 0) + 1 }));
 
   if (!query.data) {
     return query.isError ? <PageError error={query.error} onRetry={() => void query.refetch()} /> : <PageLoader />;
@@ -162,8 +163,23 @@ export function DashboardPage() {
                 <SimpleTable
                   rows={d.working}
                   rowKey={(w) => w.employeeId}
+                  onRowClick={(w) => show('working', w.employeeId)}
+                  isSelected={(w) => focus?.kind === 'working' && focus.id === w.employeeId}
                   columns={[
-                    { key: 'name', title: 'Name', render: (w) => <span className="font-medium">{w.name}</span> },
+                    {
+                      key: 'name',
+                      title: 'Name',
+                      render: (w) => (
+                        <button
+                          type="button"
+                          aria-label={`${w.name}, show check-in on map`}
+                          aria-pressed={focus?.kind === 'working' && focus.id === w.employeeId}
+                          className="focus-visible:ring-ring/50 rounded-sm text-left font-medium outline-none focus-visible:ring-[3px]"
+                        >
+                          {w.name}
+                        </button>
+                      ),
+                    },
                     { key: 'site', title: 'Site', render: (w) => <span className="text-muted-foreground">{w.siteName}</span> },
                     { key: 'in', title: 'Checked in', className: 'text-right', render: (w) => <span className="ve-num">{formatTime(w.checkInAt, tz)}</span> },
                   ]}
@@ -171,7 +187,7 @@ export function DashboardPage() {
               </div>
             )}
           </Panel>
-          {d.refused.length > 0 ? <RefusedPanel attempts={d.refused} tz={tz} focusedId={focus?.id ?? null} onShow={(id) => setFocus((f) => ({ id, n: (f?.n ?? 0) + 1 }))} /> : null}
+          {d.refused.length > 0 ? <RefusedPanel attempts={d.refused} tz={tz} focusedId={focus?.kind === 'refused' ? focus.id : null} onShow={(id) => show('refused', id)} /> : null}
         </div>
       </div>
       {openDayId ? <AttendanceDrawer dayId={openDayId} onClose={() => setOpenDayId(null)} /> : null}

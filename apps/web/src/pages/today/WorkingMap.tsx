@@ -16,8 +16,15 @@ interface Props {
   tz: string;
   onOpen: (dayId: string) => void;
   height: number | string;
-  /** A refused attempt to fly to and label; `n` changes on every click so the same one can be shown again. */
-  focus?: { id: string; n: number } | null;
+  /** A refused attempt or a working employee to fly to; `n` changes on every click so the same one can be shown again. */
+  focus?: MapFocus | null;
+}
+
+/** What the map should fly to: a refused attempt (by id) or someone working now (by employee id). */
+export interface MapFocus {
+  kind: 'refused' | 'working';
+  id: string;
+  n: number;
 }
 
 /** A zero-size marker; the label inside positions itself (see .ve-tag / .ve-bubble). */
@@ -80,16 +87,34 @@ function Tags({ days, sites, tz, onOpen }: Omit<Props, 'height' | 'refused' | 'f
   );
 }
 
-/** Flies to the focused refused attempt and opens its label. */
-function FocusRefused({ focus, refused, markers }: { focus: Props['focus']; refused: DashboardRefusedAttempt[]; markers: Map<string, L.CircleMarker> }) {
+/** The check-in pin of the employee a "Working now" row points at. */
+function workingDay(focus: Props['focus'], days: DashboardMapDay[]): DashboardMapDay | undefined {
+  return focus?.kind === 'working' ? days.find((d) => d.employeeId === focus.id && d.status === 'CHECKED_IN') : undefined;
+}
+
+/**
+ * Flies to the focused refused attempt (and opens its label) or to a working employee's check-in pin.
+ * Zooms in at least far enough that people are shown one by one instead of grouped per site.
+ */
+function FocusPoint({ focus, refused, days, markers }: { focus: Props['focus']; refused: DashboardRefusedAttempt[]; days: DashboardMapDay[]; markers: Map<string, L.CircleMarker> }) {
   const map = useMap();
+  // Read the latest lists without making them effect inputs: only a new click should move the map,
+  // not the dashboard's once-a-minute refresh.
+  const latest = useRef({ refused, days });
   useEffect(() => {
-    const attempt = focus && refused.find((a) => a.id === focus.id);
-    if (!attempt) return;
+    latest.current = { refused, days };
+  }, [refused, days]);
+  useEffect(() => {
+    if (!focus) return;
+    const { refused, days } = latest.current;
+    const attempt = focus.kind === 'refused' ? refused.find((a) => a.id === focus.id) : undefined;
+    const day = workingDay(focus, days);
+    const target = attempt ? L.latLng(attempt.lat, attempt.lng) : day ? L.latLng(day.checkInLat, day.checkInLng) : null;
+    if (!target) return;
     map.getContainer().scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-    map.flyTo([attempt.lat, attempt.lng], Math.max(map.getZoom(), 17), { duration: 0.6 });
-    map.once('moveend', () => markers.get(attempt.id)?.openTooltip());
-  }, [focus, refused, markers, map]);
+    map.flyTo(target, Math.max(map.getZoom(), 17, GROUP_BELOW_ZOOM), { duration: 0.6 });
+    if (attempt) map.once('moveend', () => markers.get(attempt.id)?.openTooltip());
+  }, [focus, map, markers]);
   return null;
 }
 
@@ -126,7 +151,15 @@ export function WorkingMap({ days, refused, sites, tz, onOpen, height, focus = n
         </CircleMarker>
       ))}
       <Tags days={days} sites={sites} tz={tz} onOpen={onOpen} />
-      <FocusRefused focus={focus} refused={refused} markers={markers} />
+      {workingDay(focus, days) ? (
+        <CircleMarker
+          center={[workingDay(focus, days)!.checkInLat, workingDay(focus, days)!.checkInLng]}
+          radius={22}
+          interactive={false}
+          pathOptions={{ color: '#FF5B14', weight: 3, fill: false, className: 've-focus-ring' }}
+        />
+      ) : null}
+      <FocusPoint focus={focus} refused={refused} days={days} markers={markers} />
       <RecenterControl bounds={startBounds(days, sites)} />
     </MapContainer>
   );

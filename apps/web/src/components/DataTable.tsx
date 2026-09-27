@@ -121,7 +121,20 @@ export function DataTable<T>({ columns, rows, rowKey, onRowClick, empty, fetchin
 }
 
 /** A plain table inside a panel, for short lists. */
-export function SimpleTable<T>({ columns, rows, rowKey }: { columns: Column<T>[]; rows: T[]; rowKey: (row: T) => string }) {
+export function SimpleTable<T>({
+  columns,
+  rows,
+  rowKey,
+  onRowClick,
+  isSelected,
+}: {
+  columns: Column<T>[];
+  rows: T[];
+  rowKey: (row: T) => string;
+  /** Makes the whole row clickable. Put a button in one cell as well, so the row can be reached by keyboard. */
+  onRowClick?: (row: T) => void;
+  isSelected?: (row: T) => boolean;
+}) {
   return (
     <Table>
       <TableHeader>
@@ -135,7 +148,11 @@ export function SimpleTable<T>({ columns, rows, rowKey }: { columns: Column<T>[]
       </TableHeader>
       <TableBody>
         {rows.map((row) => (
-          <TableRow key={rowKey(row)}>
+          <TableRow
+            key={rowKey(row)}
+            onClick={onRowClick ? () => onRowClick(row) : undefined}
+            className={cn(onRowClick && 'cursor-pointer', isSelected?.(row) && 'bg-accent/70 hover:bg-accent/70')}
+          >
             {columns.map((c) => (
               <TableCell key={c.key} className={cn('h-11 px-4', c.className)}>
                 {c.render(row)}

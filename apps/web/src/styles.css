@@ -460,3 +460,18 @@
 .ve-dot-grey {
   background: #6b675e;
 }
+
+/* The ring around a worker picked from "Working now" on the Today map. */
+.ve-focus-ring {
+  animation: ve-focus-pulse 1.6s ease-in-out infinite;
+}
+@keyframes ve-focus-pulse {
+  50% {
+    stroke-opacity: 0.35;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ve-focus-ring {
+    animation: none;
+  }
+}

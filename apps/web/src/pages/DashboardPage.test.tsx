@@ -7,9 +7,9 @@ import { DashboardPage } from './DashboardPage';
 
 // Leaflet needs a real browser; the page only relies on the days it passes and onOpen.
 vi.mock('./today/WorkingMap', () => ({
-  WorkingMap: (props: { days: { dayId: string }[]; refused: { id: string }[]; onOpen: (id: string) => void; focus?: { id: string } | null }) => (
+  WorkingMap: (props: { days: { dayId: string }[]; refused: { id: string }[]; onOpen: (id: string) => void; focus?: { kind: string; id: string } | null }) => (
     <div>
-      <output data-testid="map-focus">{props.focus?.id ?? 'none'}</output>
+      <output data-testid="map-focus">{props.focus ? `${props.focus.kind}:${props.focus.id}` : 'none'}</output>
       <output data-testid="map-days">{props.days.map((d) => d.dayId).join(',') || 'none'}</output>
       <output data-testid="map-refused">{props.refused.map((r) => r.id).join(',') || 'none'}</output>
       <button type="button" onClick={() => props.onOpen('d1')}>
@@ -99,8 +99,20 @@ test('clicking a refused attempt shows it on the map', async () => {
   const row = await screen.findByRole('button', { name: 'Amol Patil, show on map' });
   expect(screen.getByTestId('map-focus')).toHaveTextContent('none');
   await user.click(row);
-  expect(screen.getByTestId('map-focus')).toHaveTextContent('ev9');
+  expect(screen.getByTestId('map-focus')).toHaveTextContent('refused:ev9');
   expect(row).toHaveAttribute('aria-pressed', 'true');
+});
+
+test('clicking someone under Working now takes the map to their pin', async () => {
+  const { user } = renderWithProviders(<DashboardPage />, { api: { dashboard: vi.fn(async () => dashboardToday()) } });
+  const row = await screen.findByRole('button', { name: 'Ravi Kumar, show check-in on map' });
+  await user.click(row);
+  expect(screen.getByTestId('map-focus')).toHaveTextContent('working:e1');
+  expect(row).toHaveAttribute('aria-pressed', 'true');
+  // Clicking the site or time in the same row does the same.
+  await user.click(screen.getByRole('button', { name: 'Amol Patil, show on map' }));
+  await user.click(within(row.closest('tr')!).getByText('Plot 7'));
+  expect(screen.getByTestId('map-focus')).toHaveTextContent('working:e1');
 });
 
 test('no refused attempts shows no list', async () => {
