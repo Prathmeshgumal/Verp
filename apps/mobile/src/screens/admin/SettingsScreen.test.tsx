@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, screen, waitFor } from '@testing-library/react-native';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react-native';
 import type { SettingsDto } from '@ve/shared';
 import { answerConfirm } from '../../testing/confirm';
 import { fakeApi } from '../../testing/fakeApi';
@@ -39,6 +39,11 @@ test('numbers out of range are not sent', async () => {
   await fireEvent.press(screen.getByRole('button', { name: 'Save settings' }));
   expect(screen.getByText('Enter a whole number from 5 to 500')).toBeOnTheScreen();
   expect(updateSettings).not.toHaveBeenCalled();
+});
+
+test('log out stays pinned below the scrolling settings', async () => {
+  await renderSettings();
+  expect(within(screen.getByTestId('settings-footer')).getByRole('button', { name: 'Log out' })).toBeOnTheScreen();
 });
 
 test('log out asks first', async () => {

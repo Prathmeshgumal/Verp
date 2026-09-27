@@ -18,7 +18,7 @@ jest.mock('react-native-svg', () => {
     Component.displayName = name;
     return Component;
   };
-  return { __esModule: true, default: host('Svg'), Svg: host('Svg'), Path: host('Path') };
+  return { __esModule: true, default: host('Svg'), Svg: host('Svg'), Path: host('Path'), Defs: host('Defs'), LinearGradient: host('LinearGradient'), Stop: host('Stop'), Rect: host('Rect') };
 });
 
 jest.mock('react-native-safe-area-context', () => require('react-native-safe-area-context/jest/mock').default);
