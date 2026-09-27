@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Pressable, ScrollView, Switch, View } from 'react-native';
+import { Pressable, Switch, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { parseCoordinates } from '@ve/shared';
@@ -14,6 +14,7 @@ import { colors, fonts, radius } from '../../theme/tokens';
 import { Button } from '../../ui/Button';
 import { ErrorState, Loading } from '../../ui/Centered';
 import { Icon } from '../../ui/Icon';
+import { FadedScrollView } from '../../ui/FadedScrollView';
 import { Screen } from '../../ui/Screen';
 import { Text } from '../../ui/Text';
 import { TextField } from '../../ui/TextField';
@@ -219,7 +220,7 @@ export function SiteEditScreen({ navigation, route }: Props) {
         </Pressable>
       </View>
 
-      <ScrollView contentContainerStyle={{ padding: 20, gap: 14 }} keyboardShouldPersistTaps="handled">
+      <FadedScrollView contentContainerStyle={{ padding: 20, gap: 14 }} keyboardShouldPersistTaps="handled">
         {coords ? (
           <Text variant="mono" color={colors.muted}>
             {coords}
@@ -344,7 +345,7 @@ export function SiteEditScreen({ navigation, route }: Props) {
           </Text>
         ) : null}
         <Button label={busy ? t('admin.sites.saving') : t('admin.sites.save')} onPress={() => void save()} disabled={busy || !center} />
-      </ScrollView>
+      </FadedScrollView>
     </Screen>
   );
 }
