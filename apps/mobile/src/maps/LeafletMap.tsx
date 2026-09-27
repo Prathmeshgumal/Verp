@@ -130,6 +130,8 @@ export function LeafletMap({
         source={{ uri: MAP_URL }}
         originWhitelist={['file://*']}
         javaScriptEnabled
+        // Keeps pinches and drags on the map instead of letting the page's ScrollView take them.
+        nestedScrollEnabled={interactive}
         applicationNameForUserAgent="VeHR-admin-map"
         onMessage={onMessage}
         style={{ flex: 1, backgroundColor: 'transparent' }}

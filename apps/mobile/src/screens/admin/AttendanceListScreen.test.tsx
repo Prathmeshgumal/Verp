@@ -45,7 +45,7 @@ async function renderList(filters?: object, extra: Parameters<typeof fakeApi>[0]
     { api, state: loggedIn(adminUser) },
   );
   // The list waits for three queries; under a full parallel run that can take over the default second.
-  await screen.findByText('Ramesh Kale', {}, { timeout: 5000 });
+  await screen.findAllByText('Ramesh Kale', {}, { timeout: 5000 });
   return { listAttendance, navigation, api };
 }
 
@@ -103,4 +103,35 @@ test('more pages load on request', async () => {
   );
   await fireEvent.press(await screen.findByRole('button', { name: 'Load more' }));
   expect(await screen.findByText('Sunita Jadhav')).toBeOnTheScreen();
+});
+
+const refusedAttempt = {
+  id: 'ev1',
+  employeeId: 'e1',
+  name: 'Ramesh Kale',
+  siteId: 's1',
+  siteName: 'Plot 7',
+  workDate: '2026-09-22',
+  type: 'IN' as const,
+  result: 'LOW_ACCURACY' as const,
+  serverTime: '2026-09-22T03:40:00Z',
+  lat: 18.6,
+  lng: 73.75,
+  accuracyM: 80,
+  distanceM: null,
+};
+
+test('the Refused tab lists earlier refused attempts with the same dates and people', async () => {
+  const listRefused = jest.fn(async () => ({ items: [refusedAttempt], total: 1, page: 1, pageSize: 50 }));
+  const { listAttendance } = await renderList({ from: '2026-09-01', to: '2026-09-25', employeeId: 'e1' }, { listRefused });
+  await fireEvent.press(screen.getByRole('tab', { name: 'Refused' }));
+  expect(await screen.findByText('1 refused attempt')).toBeOnTheScreen();
+  expect(listRefused).toHaveBeenCalledWith({ from: '2026-09-01', to: '2026-09-25', employeeId: 'e1', siteId: undefined, page: 1, pageSize: 50 });
+  expect(screen.getByText('Check-in refused · location not accurate enough')).toBeOnTheScreen();
+  expect(screen.getByText('accuracy ±80 m · Tue 22 Sep · 9:10 AM')).toBeOnTheScreen();
+  expect(screen.queryByRole('button', { name: 'Export CSV' })).toBeNull();
+  expect(listAttendance).toHaveBeenCalledTimes(1);
+
+  await fireEvent.press(screen.getByRole('button', { name: 'Ramesh Kale, Show on map' }));
+  expect(await screen.findByTestId('refused-map')).toBeOnTheScreen();
 });

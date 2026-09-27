@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { RefusedAttemptDto } from '@ve/shared';
 import { useState } from 'react';
 import { ArrowUpRightIcon } from 'lucide-react';
 import { Link, useParams } from 'react-router';
@@ -19,6 +20,8 @@ import { queryKeys } from '../../lib/queryKeys';
 import { addDays, formatDateTime, formatMinutes, formatTime, formatWorkDate, todayIn } from '../../lib/time';
 import { useCompanyTz } from '../../lib/useCompanySettings';
 import { useServices } from '../../services';
+import { RefusedDrawer } from '../refused/RefusedDrawer';
+import { RefusedTable } from '../refused/RefusedTable';
 import { EmployeeEditForm } from './EmployeeEditForm';
 
 type Action = 'resetPin' | 'revoke' | 'unlock' | 'toggleActive';
@@ -36,6 +39,11 @@ export function EmployeeDetailPage() {
 
   const employeeQ = useQuery({ queryKey: queryKeys.employee(id), queryFn: () => api.getEmployee(id) });
   const sitesQ = useQuery({ queryKey: queryKeys.sites, queryFn: () => api.listSites() });
+  const [openAttempt, setOpenAttempt] = useState<RefusedAttemptDto | null>(null);
+  const refusedQ = useQuery({
+    queryKey: queryKeys.refused({ employeeId: id, from, to: today }),
+    queryFn: () => api.listRefused({ from, to: today, employeeId: id, page: 1, pageSize: 100 }),
+  });
   const daysQ = useQuery({
     queryKey: queryKeys.attendance({ employeeId: id, from, to: today }),
     queryFn: () => api.listAttendance({ from, to: today, employeeId: id, page: 1, pageSize: 100 }),
@@ -203,6 +211,39 @@ export function EmployeeDetailPage() {
           </div>
         )}
       </Panel>
+
+      <Panel>
+        <PanelHeader
+          title={
+            <span className="inline-flex items-baseline gap-2">
+              Refused attempts
+              <span className="text-muted-foreground text-xs font-normal">last 30 days</span>
+            </span>
+          }
+        >
+          <Link
+            to={`/attendance?view=refused&from=${from}&to=${today}&employeeId=${id}`}
+            className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm transition-colors"
+          >
+            See all
+            <ArrowUpRightIcon className="size-3.5" />
+          </Link>
+        </PanelHeader>
+        {refusedQ.isError ? (
+          <div className="p-4">
+            <PageError error={refusedQ.error} onRetry={() => void refusedQ.refetch()} />
+          </div>
+        ) : !refusedQ.data ? (
+          <PageLoader />
+        ) : refusedQ.data.items.length === 0 ? (
+          <p className="text-muted-foreground px-4 pt-1 pb-5 text-sm">No refused check-ins or check-outs in the last 30 days.</p>
+        ) : (
+          <div className="pt-1 pb-2">
+            <RefusedTable plain rows={refusedQ.data.items} tz={tz} onOpen={setOpenAttempt} showName={false} />
+          </div>
+        )}
+      </Panel>
+      <RefusedDrawer attempt={openAttempt} onClose={() => setOpenAttempt(null)} />
 
       {confirming ? (
         <ConfirmDialog

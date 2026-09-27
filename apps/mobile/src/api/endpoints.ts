@@ -13,6 +13,7 @@ import type {
   MeTodayResponse,
   Paginated,
   PlaceLinkDto,
+  RefusedAttemptDto,
   SettingsDto,
   SiteDto,
 } from '@ve/shared';
@@ -90,6 +91,15 @@ export interface FixCheckoutBody {
 }
 
 /** The API reads needsReview as the string "true"; false means no filter. */
+export interface RefusedListParams {
+  from: string;
+  to: string;
+  employeeId?: string;
+  siteId?: string;
+  page?: number;
+  pageSize?: number;
+}
+
 function attendanceQuery(p: AttendanceListParams): Query {
   return { ...p, needsReview: p.needsReview ? 'true' : undefined };
 }
@@ -143,6 +153,8 @@ export function createApi(client: ApiClient) {
     resolvePlaceLink: (text: string) => client.request<PlaceLinkDto>('POST', '/admin/places/resolve-link', { body: { text } }),
 
     listAttendance: (params: AttendanceListParams) => get<Paginated<AdminDayDto>>('/admin/attendance', attendanceQuery(params)),
+    /** Check-ins and check-outs refused for where the phone was, on any day in the range. */
+    listRefused: (params: RefusedListParams) => get<Paginated<RefusedAttemptDto>>('/admin/attendance/refused', { ...params }),
     getAttendance: (id: string) => get<AdminDayDetailDto>(`/admin/attendance/${id}`),
     fixCheckout: (id: string, body: FixCheckoutBody) => client.request<AdminDayDto>('PATCH', `/admin/attendance/${id}/checkout`, { body }),
     markReviewed: (id: string) => client.request<AdminDayDto>('POST', `/admin/attendance/${id}/review`),

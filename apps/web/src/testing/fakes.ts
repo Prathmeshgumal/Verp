@@ -1,4 +1,4 @@
-import type { AdminDayDto, DashboardTodayDto, EmployeeDto, PublicUser, SettingsDto, SiteDto } from '@ve/shared';
+import type { AdminDayDto, DashboardTodayDto, EmployeeDto, PublicUser, RefusedAttemptDto, SettingsDto, SiteDto } from '@ve/shared';
 import type { ApiClient } from '../api/client';
 import type { Api } from '../api/endpoints';
 
@@ -138,6 +138,7 @@ export function dashboardToday(overrides: Partial<DashboardTodayDto> = {}): Dash
         id: 'ev9',
         employeeId: 'e3',
         name: 'Amol Patil',
+        siteId: 's1',
         siteName: 'Plot 7',
         type: 'IN',
         result: 'OUTSIDE_SITE',
@@ -148,6 +149,25 @@ export function dashboardToday(overrides: Partial<DashboardTodayDto> = {}): Dash
         distanceM: 1480.4,
       },
     ],
+    ...overrides,
+  };
+}
+
+export function refusedAttempt(overrides: Partial<RefusedAttemptDto> = {}): RefusedAttemptDto {
+  return {
+    id: 'ev9',
+    employeeId: 'e3',
+    name: 'Amol Patil',
+    siteId: 's1',
+    siteName: 'Plot 7',
+    workDate: '2026-09-22',
+    type: 'IN',
+    result: 'OUTSIDE_SITE',
+    serverTime: '2026-09-22T04:10:00.000Z',
+    lat: 18.6,
+    lng: 73.75,
+    accuracyM: 12,
+    distanceM: 1480.4,
     ...overrides,
   };
 }

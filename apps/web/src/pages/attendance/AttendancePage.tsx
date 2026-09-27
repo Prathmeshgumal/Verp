@@ -1,6 +1,6 @@
 import { DownloadIcon } from 'lucide-react';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import type { AdminDayDto } from '@ve/shared';
+import type { AdminDayDto, RefusedAttemptDto } from '@ve/shared';
 import { useState } from 'react';
 import { useSearchParams } from 'react-router';
 import { toast } from 'sonner';
@@ -18,34 +18,83 @@ import { queryKeys } from '../../lib/queryKeys';
 import { formatMinutes, formatTime, formatWorkDate, todayIn } from '../../lib/time';
 import { useCompanyTz } from '../../lib/useCompanySettings';
 import { useServices } from '../../services';
+import { RefusedDrawer } from '../refused/RefusedDrawer';
+import { RefusedTable } from '../refused/RefusedTable';
 import { AttendanceDrawer } from './AttendanceDrawer';
 import { filtersFromParams, filtersToParams, type AttendanceFilters } from './attendanceFilters';
 
 const PAGE_SIZE = 50;
+
+type View = 'days' | 'refused';
+const VIEWS: { value: View; label: string }[] = [
+  { value: 'days', label: 'Days' },
+  { value: 'refused', label: 'Refused attempts' },
+];
+
+/** Days / Refused attempts, as tabs over the same filters. */
+function ViewTabs({ view, onChange }: { view: View; onChange: (view: View) => void }) {
+  return (
+    <div role="tablist" aria-label="Show" className="bg-muted inline-flex rounded-lg p-0.5">
+      {VIEWS.map((v) => (
+        <button
+          key={v.value}
+          type="button"
+          role="tab"
+          aria-selected={view === v.value}
+          onClick={() => onChange(v.value)}
+          className={
+            view === v.value
+              ? 'bg-card text-foreground h-8 rounded-md px-3 text-sm font-medium shadow-xs'
+              : 'text-muted-foreground hover:text-foreground h-8 rounded-md px-3 text-sm transition-colors'
+          }
+        >
+          {v.label}
+        </button>
+      ))}
+    </div>
+  );
+}
 
 export function AttendancePage() {
   const { api } = useServices();
   const tz = useCompanyTz();
   const [params, setParams] = useSearchParams();
   const filters = filtersFromParams(params, todayIn(tz));
+  const view: View = params.get('view') === 'refused' ? 'refused' : 'days';
   const openDayId = params.get('day');
   const { page, ...query } = filters;
   const [exporting, setExporting] = useState(false);
+  const [openAttempt, setOpenAttempt] = useState<RefusedAttemptDto | null>(null);
 
   const list = useQuery({
     queryKey: queryKeys.attendance(filters),
     queryFn: () => api.listAttendance({ ...query, page, pageSize: PAGE_SIZE }),
     placeholderData: keepPreviousData,
+    enabled: view === 'days',
   });
+  const refusedFilters = { from: filters.from, to: filters.to, employeeId: filters.employeeId, siteId: filters.siteId, page };
+  const refused = useQuery({
+    queryKey: queryKeys.refused(refusedFilters),
+    queryFn: () => api.listRefused({ ...refusedFilters, pageSize: PAGE_SIZE }),
+    placeholderData: keepPreviousData,
+    enabled: view === 'refused',
+  });
+
+  /** The URL for these filters, keeping the chosen view. */
+  function paramsFor(f: AttendanceFilters, v: View = view): URLSearchParams {
+    const next = filtersToParams(f);
+    if (v === 'refused') next.set('view', 'refused');
+    return next;
+  }
   const employees = useQuery({ queryKey: queryKeys.employees({}), queryFn: () => api.listEmployees({}) });
   const sites = useQuery({ queryKey: queryKeys.sites, queryFn: () => api.listSites() });
 
   function update(patch: Partial<AttendanceFilters>) {
-    setParams(filtersToParams({ ...filters, page: 1, ...patch }), { replace: true });
+    setParams(paramsFor({ ...filters, page: 1, ...patch }), { replace: true });
   }
 
   function openDay(id: string) {
-    const next = filtersToParams(filters);
+    const next = paramsFor(filters);
     next.set('day', id);
     setParams(next);
   }
@@ -76,14 +125,26 @@ export function AttendancePage() {
     <div className="grid gap-6">
       <PageHeader
         title="Attendance"
-        description={list.data ? `${list.data.total} ${list.data.total === 1 ? 'day' : 'days'}` : '\u00a0'}
+        description={
+          view === 'refused'
+            ? refused.data
+              ? `${refused.data.total} refused ${refused.data.total === 1 ? 'attempt' : 'attempts'}`
+              : '\u00a0'
+            : list.data
+              ? `${list.data.total} ${list.data.total === 1 ? 'day' : 'days'}`
+              : '\u00a0'
+        }
         actions={
-          <Button variant="outline" loading={exporting} onClick={() => void exportCsv()}>
-            {exporting ? null : <DownloadIcon />}
-            Export CSV
-          </Button>
+          view === 'days' ? (
+            <Button variant="outline" loading={exporting} onClick={() => void exportCsv()}>
+              {exporting ? null : <DownloadIcon />}
+              Export CSV
+            </Button>
+          ) : null
         }
       />
+
+      <ViewTabs view={view} onChange={(v) => setParams(paramsFor({ ...filters, page: 1 }, v), { replace: true })} />
 
       <div className="flex flex-wrap items-end gap-3">
         <DateField label="From" className="w-40" value={filters.from} onChange={(from) => update({ from })} />
@@ -96,22 +157,38 @@ export function AttendancePage() {
           onChange={(v) => update({ employeeId: v || undefined })}
         />
         <SelectField label="Site" className="w-44" data={siteOptions} value={filters.siteId ?? ''} onChange={(v) => update({ siteId: v || undefined })} />
-        <SelectField
-          label="Status"
-          className="w-44"
-          data={statusOptions}
-          value={filters.status ?? ''}
-          onChange={(v) => update({ status: (v || undefined) as AttendanceFilters['status'] })}
-        />
-        <CheckboxField
-          label="Needs review only"
-          className="h-9"
-          checked={!!filters.needsReview}
-          onChange={(checked) => update({ needsReview: checked || undefined })}
-        />
+        {view === 'days' ? (
+          <>
+            <SelectField
+              label="Status"
+              className="w-44"
+              data={statusOptions}
+              value={filters.status ?? ''}
+              onChange={(v) => update({ status: (v || undefined) as AttendanceFilters['status'] })}
+            />
+            <CheckboxField
+              label="Needs review only"
+              className="h-9"
+              checked={!!filters.needsReview}
+              onChange={(checked) => update({ needsReview: checked || undefined })}
+            />
+          </>
+        ) : null}
       </div>
 
-      {list.isError && !list.data ? (
+      {view === 'refused' ? (
+        refused.isError && !refused.data ? (
+          <PageError error={refused.error} onRetry={() => void refused.refetch()} />
+        ) : (
+          <RefusedTable
+            rows={refused.data?.items ?? []}
+            tz={tz}
+            onOpen={setOpenAttempt}
+            fetching={refused.isFetching}
+            paging={{ page, pageSize: PAGE_SIZE, total: refused.data?.total ?? 0, onPageChange: (p) => setParams(paramsFor({ ...filters, page: p })) }}
+          />
+        )
+      ) : list.isError && !list.data ? (
         <PageError error={list.error} onRetry={() => void list.refetch()} />
       ) : (
         <DataTable<AdminDayDto>
@@ -120,7 +197,7 @@ export function AttendancePage() {
           rowKey={(d) => d.id}
           empty="No attendance for these filters"
           onRowClick={(d) => openDay(d.id)}
-          paging={{ page, pageSize: PAGE_SIZE, total: list.data?.total ?? 0, onPageChange: (p) => setParams(filtersToParams({ ...filters, page: p })) }}
+          paging={{ page, pageSize: PAGE_SIZE, total: list.data?.total ?? 0, onPageChange: (p) => setParams(paramsFor({ ...filters, page: p })) }}
           columns={[
             { key: 'date', title: 'Date', render: (d) => <span className="whitespace-nowrap">{formatWorkDate(d.workDate)}</span> },
             {
@@ -151,7 +228,8 @@ export function AttendancePage() {
           ]}
         />
       )}
-      <AttendanceDrawer dayId={openDayId} onClose={() => setParams(filtersToParams(filters))} />
+      <AttendanceDrawer dayId={openDayId} onClose={() => setParams(paramsFor(filters))} />
+      <RefusedDrawer attempt={openAttempt} onClose={() => setOpenAttempt(null)} />
     </div>
   );
 }

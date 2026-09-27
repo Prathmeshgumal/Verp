@@ -3,7 +3,7 @@ import { Pressable, RefreshControl, ScrollView, Switch, useWindowDimensions, Vie
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import type { DashboardMapDay, DashboardRefusedAttempt } from '@ve/shared';
+import type { DashboardMapDay } from '@ve/shared';
 import { dayTime, dayTone, stackDays, stackTags, visibleDays } from '../../admin/workingMap';
 import { useAuth } from '../../auth/AuthContext';
 import { formatTime, formatWorkDateMedium } from '../../attendance/format';
@@ -17,15 +17,12 @@ import { Icon } from '../../ui/Icon';
 import { Screen } from '../../ui/Screen';
 import { Sheet, SheetOption } from '../../ui/Sheet';
 import { Text } from '../../ui/Text';
+import { type RefusedAttempt, RefusedRow, RefusedSheet } from './refused';
 
 /** Earlier than any record: the missed/review counts cover all time, as on the web. */
 export const ALL_TIME_FROM = '2020-01-01';
 
 type Props = NativeStackScreenProps<TodayStackParamList, 'Today'>;
-
-export function formatDistance(m: number): string {
-  return m < 1000 ? `${Math.round(m)} m` : `${(m / 1000).toFixed(1)} km`;
-}
 
 const TONE_DOT = { green: colors.checkIn, orange: colors.checkOut, grey: colors.muted } as const;
 
@@ -36,24 +33,27 @@ interface StatProps {
   onPress?: () => void;
 }
 
+/** A small tile, four to a row: the number first, a short label under it. */
 function Stat({ label, value, tone, onPress }: StatProps) {
   const hot = value > 0;
-  const bg = tone === 'green' ? colors.checkIn : colors.surface;
-  const valueColor = tone === 'green' ? colors.white : hot && tone === 'warn' ? colors.warnMuted : hot && tone === 'danger' ? colors.danger : colors.text;
+  const green = tone === 'green';
+  const bg = green ? colors.checkIn : hot && tone === 'warn' ? colors.warnBg : hot && tone === 'danger' ? colors.dangerBg : colors.surface;
+  const border = green ? colors.checkIn : hot && tone === 'warn' ? colors.warnBorder : hot && tone === 'danger' ? `${colors.danger}40` : colors.line;
+  const valueColor = green ? colors.white : hot && tone === 'warn' ? colors.warnText : hot && tone === 'danger' ? colors.danger : colors.text;
   const body = (
     <>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Text variant="small" numberOfLines={1} color={tone === 'green' ? colors.workingSub : colors.muted} style={{ flex: 1 }}>
-          {label}
+        <Text style={{ fontFamily: fonts.monoSemi, fontSize: 20, lineHeight: 24 }} color={valueColor}>
+          {String(value)}
         </Text>
-        {onPress ? <Icon name="chevronRight" size={16} color={colors.muted} /> : null}
+        {onPress ? <Icon name="chevronRight" size={14} color={green ? colors.onDark : valueColor} /> : null}
       </View>
-      <Text style={{ fontFamily: fonts.monoSemi, fontSize: 28, lineHeight: 34 }} color={valueColor}>
-        {String(value)}
+      <Text numberOfLines={2} style={{ fontSize: 11, lineHeight: 13 }} color={green ? colors.workingSub : hot && tone ? valueColor : colors.muted}>
+        {label}
       </Text>
     </>
   );
-  const style = { width: '48.5%' as const, backgroundColor: bg, borderRadius: radius.lg, borderWidth: 1, borderColor: tone === 'green' ? colors.checkIn : colors.line, paddingVertical: 12, paddingHorizontal: 14, gap: 2 };
+  const style = { width: '23.5%' as const, minHeight: 60, backgroundColor: bg, borderRadius: radius.md, borderWidth: 1, borderColor: border, paddingVertical: 7, paddingHorizontal: 8, gap: 1 };
   return onPress ? (
     <Pressable accessibilityRole="button" accessibilityLabel={`${label}: ${value}`} onPress={onPress} style={style}>
       {body}
@@ -89,6 +89,7 @@ export function TodayScreen({ navigation }: Props) {
   const sites = useQuery({ queryKey: queryKeys.sites, queryFn: () => api.listSites() });
   const [showFinished, setShowFinished] = useState(false);
   const [stackKey, setStackKey] = useState<string | null>(null);
+  const [openAttempt, setOpenAttempt] = useState<RefusedAttempt | null>(null);
 
   if (query.isPending) return <Loading />;
   if (!query.data) {
@@ -143,7 +144,7 @@ export function TodayScreen({ navigation }: Props) {
           <Text variant="h1">{t('admin.today.title')}</Text>
         </View>
 
-        <View style={{ paddingHorizontal: 16, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 8 }}>
+        <View style={{ paddingHorizontal: 16, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 6 }}>
           <Stat label={t('admin.today.workingNow')} value={d.workingNow} tone="green" />
           <Stat label={t('admin.today.checkedIn')} value={d.checkedInToday} />
           <Stat label={t('admin.today.completed')} value={d.completedToday} />
@@ -218,12 +219,13 @@ export function TodayScreen({ navigation }: Props) {
           <View style={{ marginHorizontal: 16, marginTop: 16, backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.line }}>
             <SectionHeader title={t('admin.today.refused')} count={d.refused.length} />
             {d.refused.map((a) => (
-              <RefusedRow key={a.id} attempt={a} />
+              <RefusedRow key={a.id} attempt={a} onPress={() => setOpenAttempt(a)} />
             ))}
           </View>
         ) : null}
       </ScrollView>
 
+      <RefusedSheet attempt={openAttempt} onClose={() => setOpenAttempt(null)} />
       <Sheet visible={!!openStack} title={t('admin.today.here', { count: openStack?.days.length ?? 0 })} onClose={() => setStackKey(null)}>
         {(openStack?.days ?? []).map((day: DashboardMapDay) => (
           <View key={day.dayId} style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
@@ -235,22 +237,5 @@ export function TodayScreen({ navigation }: Props) {
         ))}
       </Sheet>
     </Screen>
-  );
-}
-
-function RefusedRow({ attempt: a }: { attempt: DashboardRefusedAttempt }) {
-  const { t } = useTranslation();
-  const where = a.distanceM != null ? t('admin.today.fromSite', { distance: formatDistance(a.distanceM), site: a.siteName ?? '—' }) : t('admin.today.accuracy', { m: Math.round(a.accuracyM) });
-  return (
-    <View accessible accessibilityLabel={a.name} style={{ flexDirection: 'row', gap: 12, paddingVertical: 10, paddingHorizontal: 14, borderTopWidth: 1, borderTopColor: colors.lineSoft }}>
-      <View style={{ width: 8, height: 8, borderRadius: 4, marginTop: 8, backgroundColor: colors.danger }} />
-      <View style={{ flex: 1, gap: 1 }}>
-        <Text variant="bodyStrong" style={{ fontSize: 16 }}>
-          {a.name}
-        </Text>
-        <Text variant="small">{t('admin.today.refusedLine', { type: t(`admin.events.${a.type}`), reason: t(`admin.today.${a.result}`) })}</Text>
-        <Text variant="small" color={colors.muted}>{`${where} · ${formatTime(a.serverTime, t)}`}</Text>
-      </View>
-    </View>
   );
 }

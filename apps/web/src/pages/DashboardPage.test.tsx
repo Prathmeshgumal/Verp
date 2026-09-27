@@ -7,8 +7,9 @@ import { DashboardPage } from './DashboardPage';
 
 // Leaflet needs a real browser; the page only relies on the days it passes and onOpen.
 vi.mock('./today/WorkingMap', () => ({
-  WorkingMap: (props: { days: { dayId: string }[]; refused: { id: string }[]; onOpen: (id: string) => void }) => (
+  WorkingMap: (props: { days: { dayId: string }[]; refused: { id: string }[]; onOpen: (id: string) => void; focus?: { id: string } | null }) => (
     <div>
+      <output data-testid="map-focus">{props.focus?.id ?? 'none'}</output>
       <output data-testid="map-days">{props.days.map((d) => d.dayId).join(',') || 'none'}</output>
       <output data-testid="map-refused">{props.refused.map((r) => r.id).join(',') || 'none'}</output>
       <button type="button" onClick={() => props.onOpen('d1')}>
@@ -87,10 +88,19 @@ test('refused check-ins are counted, listed and put on the map', async () => {
   renderWithProviders(<DashboardPage />, { api: { dashboard: vi.fn(async () => dashboardToday()) } });
   await screen.findByText('Fri 25 Sep 2026');
   expect(within(screen.getByText('Refused today').parentElement!).getByText('1')).toBeInTheDocument();
-  const row = screen.getByRole('listitem', { name: /Amol Patil/ });
+  const row = screen.getByRole('button', { name: 'Amol Patil, show on map' });
   expect(within(row).getByText('Check-in refused · outside the site')).toBeInTheDocument();
   expect(within(row).getByText('1.5 km from Plot 7 · 09:40')).toBeInTheDocument();
   expect(screen.getByTestId('map-refused')).toHaveTextContent('ev9');
+});
+
+test('clicking a refused attempt shows it on the map', async () => {
+  const { user } = renderWithProviders(<DashboardPage />, { api: { dashboard: vi.fn(async () => dashboardToday()) } });
+  const row = await screen.findByRole('button', { name: 'Amol Patil, show on map' });
+  expect(screen.getByTestId('map-focus')).toHaveTextContent('none');
+  await user.click(row);
+  expect(screen.getByTestId('map-focus')).toHaveTextContent('ev9');
+  expect(row).toHaveAttribute('aria-pressed', 'true');
 });
 
 test('no refused attempts shows no list', async () => {

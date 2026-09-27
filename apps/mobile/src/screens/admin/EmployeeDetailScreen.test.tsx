@@ -35,6 +35,7 @@ async function renderDetail(extra: Parameters<typeof fakeApi>[0] = {}, employee:
     resetPin: jest.fn(async () => ({ pin: '555123' })),
     listSites: jest.fn(async () => [{ id: 's1', name: 'Plot 7', address: null, lat: 18.59, lng: 73.73, radiusM: 100, isActive: true }, { id: 's2', name: 'Yard', address: null, lat: 18.6, lng: 73.7, radiusM: 100, isActive: true }] as never),
     listAttendance: jest.fn(async () => ({ items: [day], total: 1, page: 1, pageSize: 50 })),
+    listRefused: jest.fn(async () => ({ items: [], total: 0, page: 1, pageSize: 5 })),
     ...extra,
   };
   await renderWithAuth(
@@ -111,4 +112,36 @@ test('Open in Attendance shows this employee there', async () => {
     screen: 'AttendanceList',
     params: { filters: { from: addDays(today, -29), to: today, employeeId: 'e1', employeeName: 'Anil Pawar' } },
   });
+});
+
+test('refused attempts from the last 30 days open a map, and See all opens the Refused list', async () => {
+  const attempt = {
+    id: 'ev1',
+    employeeId: 'e1',
+    name: 'Anil Pawar',
+    siteId: 's1',
+    siteName: 'Plot 7',
+    workDate: '2026-09-22',
+    type: 'OUT' as const,
+    result: 'OUTSIDE_SITE' as const,
+    serverTime: '2026-09-22T12:40:00Z',
+    lat: 18.6,
+    lng: 73.75,
+    accuracyM: 9,
+    distanceM: 340,
+  };
+  const listRefused = jest.fn(async () => ({ items: [attempt], total: 8, page: 1, pageSize: 5 }));
+  const { parent } = await renderDetail({ listRefused });
+  expect(await screen.findByText('Check-out refused · outside the site')).toBeOnTheScreen();
+  expect(listRefused).toHaveBeenCalledWith(expect.objectContaining({ employeeId: 'e1', page: 1, pageSize: 5 }));
+  expect(screen.getByText('340 m from Plot 7')).toBeOnTheScreen();
+
+  await fireEvent.press(screen.getByRole('button', { name: 'See all' }));
+  expect(parent.navigate).toHaveBeenCalledWith('AttendanceTab', {
+    screen: 'AttendanceList',
+    params: { filters: expect.objectContaining({ employeeId: 'e1', employeeName: 'Anil Pawar' }), view: 'refused' },
+  });
+
+  await fireEvent.press(screen.getByRole('button', { name: /Tue 22 Sep.*Show on map/ }));
+  expect(await screen.findByTestId('refused-map')).toBeOnTheScreen();
 });

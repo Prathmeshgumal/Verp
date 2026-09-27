@@ -3,7 +3,8 @@ import { fireEvent, screen } from '@testing-library/react-native';
 import type { DashboardTodayDto } from '@ve/shared';
 import { fakeApi } from '../../testing/fakeApi';
 import { adminUser, fakeNavigation, loggedIn, renderWithAuth } from '../../testing/render';
-import { formatDistance, TodayScreen } from './TodayScreen';
+import { formatDistance } from './refused';
+import { TodayScreen } from './TodayScreen';
 
 const mapDay = { employeeId: 'e1', name: 'Ramesh Kale', siteId: 's1', siteName: 'Plot 7', status: 'CHECKED_IN' as const, checkInAt: '2026-09-25T03:32:00Z', checkOutAt: null, checkInLat: 18.59, checkInLng: 73.73, needsReview: false };
 const dashboard: DashboardTodayDto = {
@@ -21,7 +22,7 @@ const dashboard: DashboardTodayDto = {
     { ...mapDay, dayId: 'd2', employeeId: 'e2', name: 'Amol Patil' },
   ],
   refused: [
-    { id: 'ev9', employeeId: 'e3', name: 'Sunil More', siteName: 'Plot 7', type: 'IN', result: 'OUTSIDE_SITE', serverTime: '2026-09-25T04:10:00Z', lat: 18.6, lng: 73.75, accuracyM: 10, distanceM: 1500 },
+    { id: 'ev9', employeeId: 'e3', name: 'Sunil More', siteId: 's1', siteName: 'Plot 7', type: 'IN', result: 'OUTSIDE_SITE', serverTime: '2026-09-25T04:10:00Z', lat: 18.6, lng: 73.75, accuracyM: 10, distanceM: 1500 },
   ],
 };
 
@@ -56,6 +57,15 @@ test('refused attempts show why and how far away', async () => {
   expect(screen.getByText('Refused attempts')).toBeOnTheScreen();
   expect(screen.getByText('Check-in refused · outside the site')).toBeOnTheScreen();
   expect(screen.getByText('1.5 km from Plot 7 · 9:40 AM')).toBeOnTheScreen();
+});
+
+test('tapping a refused attempt shows where the phone was on a map', async () => {
+  await renderToday();
+  expect(screen.queryByTestId('refused-map')).toBeNull();
+  await fireEvent.press(screen.getByRole('button', { name: 'Sunil More, Show on map' }));
+  expect(await screen.findByTestId('refused-map')).toBeOnTheScreen();
+  expect(screen.getByText('±10 m')).toBeOnTheScreen();
+  expect(screen.getByText('1.5 km')).toBeOnTheScreen();
 });
 
 test('missed check-outs and review counts open the filtered attendance list', async () => {

@@ -354,6 +354,21 @@
       "range": "Enter a whole number from {{min}} to {{max}}",
       "save": "Save settings",
       "saved": "Settings saved"
+    },
+    "refused": {
+      "showOnMap": "Show on map",
+      "distance": "Distance from {{site}}",
+      "accuracy": "GPS accuracy",
+      "tabDays": "Days",
+      "tabRefused": "Refused",
+      "count_one": "{{count}} refused attempt",
+      "count_other": "{{count}} refused attempts",
+      "count": "{{count}} refused attempts",
+      "empty": "No refused attempts for these filters.",
+      "recent": "Refused attempts",
+      "last30": "last 30 days",
+      "none30": "No refused check-ins or check-outs in the last 30 days.",
+      "seeAll": "See all"
     }
   },
   "profile": {

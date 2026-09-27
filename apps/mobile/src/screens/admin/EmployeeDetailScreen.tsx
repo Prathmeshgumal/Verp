@@ -4,7 +4,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
-import { normalizePhone, type EmployeeDetailDto } from '@ve/shared';
+import { normalizePhone, type EmployeeDetailDto, type RefusedAttemptDto } from '@ve/shared';
 import { useAuth } from '../../auth/AuthContext';
 import { addDays, formatTime, formatWorkDateMedium, toIsoWithOffset } from '../../attendance/format';
 import { localToday } from '../../attendance/localDate';
@@ -23,6 +23,10 @@ import { TextField } from '../../ui/TextField';
 import { adminErrorKey } from './adminErrors';
 import { StatusBadge } from './AttendanceListScreen';
 import { PinReveal } from './PinReveal';
+import { RefusedRow, RefusedSheet } from './refused';
+
+/** The employee page shows the latest few; the Attendance tab has the rest. */
+const RECENT_REFUSED = 5;
 
 type Props = NativeStackScreenProps<EmployeesStackParamList, 'EmployeeDetail'>;
 
@@ -42,6 +46,11 @@ export function EmployeeDetailScreen({ navigation, route }: Props) {
     queryKey: queryKeys.attendance({ from, to: today, employeeId: id }),
     queryFn: () => api.listAttendance({ from, to: today, employeeId: id, page: 1, pageSize: 50 }),
   });
+  const refused = useQuery({
+    queryKey: queryKeys.refused({ from, to: today, employeeId: id }),
+    queryFn: () => api.listRefused({ from, to: today, employeeId: id, page: 1, pageSize: RECENT_REFUSED }),
+  });
+  const [openAttempt, setOpenAttempt] = useState<RefusedAttemptDto | null>(null);
   const [newPin, setNewPin] = useState<string | null>(null);
   const [notice, setNotice] = useState<{ text: string; error?: boolean } | null>(null);
   const [busy, setBusy] = useState(false);
@@ -219,7 +228,45 @@ export function EmployeeDetailScreen({ navigation, route }: Props) {
             </Pressable>
           ))}
         </Card>
+
+        <Card style={{ gap: 4, borderWidth: 1, borderColor: colors.line, paddingHorizontal: 0, paddingBottom: 4 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6 }}>
+              <Text variant="label">{t('admin.refused.recent')}</Text>
+              <Text variant="small" color={colors.muted}>
+                {t('admin.refused.last30')}
+              </Text>
+            </View>
+            {refused.data && refused.data.total > 0 ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t('admin.refused.seeAll')}
+                onPress={() =>
+                  navigation.getParent()?.navigate('AttendanceTab', {
+                    screen: 'AttendanceList',
+                    params: { filters: { from, to: today, employeeId: e.id, employeeName: e.name }, view: 'refused' },
+                  })
+                }
+                style={{ minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 4 }}
+              >
+                <Text variant="small" color={colors.info}>
+                  {refused.data.total > RECENT_REFUSED ? `${t('admin.refused.seeAll')} (${refused.data.total})` : t('admin.refused.seeAll')}
+                </Text>
+                <Icon name="chevronRight" size={16} color={colors.info} />
+              </Pressable>
+            ) : null}
+          </View>
+          {refused.data?.items.length === 0 ? (
+            <Text color={colors.muted} style={{ paddingHorizontal: 16, paddingBottom: 10, paddingTop: 6 }}>
+              {t('admin.refused.none30')}
+            </Text>
+          ) : null}
+          {(refused.data?.items ?? []).map((a) => (
+            <RefusedRow key={a.id} attempt={a} showName={false} onPress={() => setOpenAttempt(a)} />
+          ))}
+        </Card>
       </ScrollView>
+      <RefusedSheet attempt={openAttempt} onClose={() => setOpenAttempt(null)} />
     </Screen>
   );
 }

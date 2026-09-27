@@ -6,13 +6,14 @@ import type { Api } from '../../api/endpoints';
 import { ApiError } from '../../api/errors';
 import { saveBlob } from '../../lib/download';
 import { todayIn } from '../../lib/time';
-import { adminDay, employee, site } from '../../testing/fakes';
+import { adminDay, employee, refusedAttempt, site } from '../../testing/fakes';
 import { renderWithProviders } from '../../testing/render';
 import { pickOption } from '../../testing/select';
 import { AttendancePage } from './AttendancePage';
 
 vi.mock('../../lib/download', () => ({ saveBlob: vi.fn() }));
 vi.mock('./DayMap', () => ({ DayMap: () => null }));
+vi.mock('../refused/RefusedMap', () => ({ RefusedMap: () => <div data-testid="refused-map" /> }));
 
 function renderPage(route = '/attendance', api: Partial<Api> = {}, total = 1) {
   const listAttendance = vi.fn(async () => ({ items: [adminDay()], total, page: 1, pageSize: 50 }));
@@ -105,4 +106,29 @@ test('a day in the URL opens the drawer; closing it keeps the filters', async ()
   expect(await within(drawer).findByRole('heading', { name: 'Ravi Kumar' })).toBeInTheDocument();
   await user.click(within(drawer).getByRole('button', { name: 'Close' }));
   expect(screen.getByTestId('location')).toHaveTextContent(/^\/attendance\?from=2026-09-01&to=2026-09-25$/);
+});
+
+test('the refused attempts tab lists earlier refused attempts with the same filters', async () => {
+  const listRefused = vi.fn(async () => ({ items: [refusedAttempt()], total: 1, page: 1, pageSize: 50 }));
+  const { user, listAttendance } = renderPage('/attendance?from=2026-09-01&to=2026-09-25&employeeId=e3', { listRefused });
+  await screen.findByRole('button', { name: 'Ravi Kumar' });
+  await user.click(screen.getByRole('tab', { name: 'Refused attempts' }));
+  expect(await screen.findByText('Amol Patil')).toBeInTheDocument();
+  expect(listRefused).toHaveBeenCalledWith({ from: '2026-09-01', to: '2026-09-25', employeeId: 'e3', siteId: undefined, page: 1, pageSize: 50 });
+  expect(screen.getByTestId('location')).toHaveTextContent('view=refused');
+  expect(screen.getByText('1 refused attempt')).toBeInTheDocument();
+  expect(screen.getByText('1.5 km from Plot 7')).toBeInTheDocument();
+  expect(screen.queryByLabelText('Status')).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: /Export CSV/ })).not.toBeInTheDocument();
+  expect(listAttendance).toHaveBeenCalledTimes(1);
+});
+
+test('opening a refused attempt shows where the phone was', async () => {
+  const listRefused = vi.fn(async () => ({ items: [refusedAttempt()], total: 1, page: 1, pageSize: 50 }));
+  const { user } = renderPage('/attendance?view=refused&from=2026-09-01&to=2026-09-25', { listRefused });
+  await user.click(await screen.findByRole('button', { name: /22 Sep 2026/ }));
+  const drawer = await screen.findByRole('dialog', { name: 'Refused attempt' });
+  expect(within(drawer).getByText('Check-in refused · outside the site')).toBeInTheDocument();
+  expect(within(drawer).getByTestId('refused-map')).toBeInTheDocument();
+  expect(within(drawer).getByText('±12 m')).toBeInTheDocument();
 });

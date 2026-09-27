@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import type { DashboardRefusedAttempt } from '@ve/shared';
-import { ArrowUpRightIcon } from 'lucide-react';
+import { ArrowUpRightIcon, MapPinIcon } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router';
 import { SwitchField } from '../components/Field';
@@ -10,6 +10,7 @@ import { Panel, PanelHeader } from '../components/Panel';
 import { SimpleTable } from '../components/DataTable';
 import { cn } from '@/lib/utils';
 import { queryKeys } from '../lib/queryKeys';
+import { refusedTitle, refusedWhere } from '../lib/refused';
 import { formatTime, formatWorkDate } from '../lib/time';
 import { useCompanyTz } from '../lib/useCompanySettings';
 import { useServices } from '../services';
@@ -50,36 +51,36 @@ function StatCell({ label, value, href, tone }: Stat) {
   );
 }
 
-const REASON: Record<DashboardRefusedAttempt['result'], string> = {
-  OUTSIDE_SITE: 'outside the site',
-  LOW_ACCURACY: 'location not accurate enough',
-};
-
-export function formatDistance(m: number): string {
-  return m < 1000 ? `${Math.round(m)} m` : `${(m / 1000).toFixed(1)} km`;
-}
-
 /** Check-ins and check-outs the server refused because of where the phone was. */
-function RefusedPanel({ attempts, tz }: { attempts: DashboardRefusedAttempt[]; tz: string }) {
+function RefusedPanel({ attempts, tz, focusedId, onShow }: { attempts: DashboardRefusedAttempt[]; tz: string; focusedId: string | null; onShow: (id: string) => void }) {
   return (
     <Panel>
       <PanelHeader title="Refused attempts">
         <span className="text-danger ve-num text-xs">{attempts.length}</span>
       </PanelHeader>
       <ul className="grid px-2 pt-1 pb-2">
-        {attempts.map((a) => {
-          const where = a.distanceM != null ? `${formatDistance(a.distanceM)} from ${a.siteName ?? 'the site'}` : `accuracy ±${Math.round(a.accuracyM)} m`;
-          return (
-            <li key={a.id} aria-label={a.name} className="flex items-start gap-3 rounded-lg px-2 py-2">
+        {attempts.map((a) => (
+          <li key={a.id}>
+            <button
+              type="button"
+              aria-label={`${a.name}, show on map`}
+              aria-pressed={focusedId === a.id}
+              onClick={() => onShow(a.id)}
+              className={cn(
+                'group flex w-full items-start gap-3 rounded-lg px-2 py-2 text-left transition-colors',
+                focusedId === a.id ? 'bg-danger/8' : 'hover:bg-accent/60',
+              )}
+            >
               <span aria-hidden className="bg-danger mt-1.5 size-2 shrink-0 rounded-full" />
-              <div className="min-w-0">
-                <p className="text-sm font-medium">{a.name}</p>
-                <p className="text-sm">{`${a.type === 'IN' ? 'Check-in' : 'Check-out'} refused · ${REASON[a.result]}`}</p>
-                <p className="text-muted-foreground text-xs">{`${where} · ${formatTime(a.serverTime, tz)}`}</p>
-              </div>
-            </li>
-          );
-        })}
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-medium">{a.name}</span>
+                <span className="block text-sm">{refusedTitle(a)}</span>
+                <span className="text-muted-foreground block text-xs">{`${refusedWhere(a)} · ${formatTime(a.serverTime, tz)}`}</span>
+              </span>
+              <MapPinIcon aria-hidden className={cn('mt-1 size-4 shrink-0 transition-opacity', focusedId === a.id ? 'text-danger' : 'text-muted-foreground opacity-0 group-hover:opacity-100')} />
+            </button>
+          </li>
+        ))}
       </ul>
     </Panel>
   );
@@ -92,6 +93,7 @@ export function DashboardPage() {
   const sites = useQuery({ queryKey: queryKeys.sites, queryFn: () => api.listSites() });
   const [showFinished, setShowFinished] = useState(false);
   const [openDayId, setOpenDayId] = useState<string | null>(null);
+  const [focus, setFocus] = useState<{ id: string; n: number } | null>(null);
 
   if (!query.data) {
     return query.isError ? <PageError error={query.error} onRetry={() => void query.refetch()} /> : <PageLoader />;
@@ -142,6 +144,7 @@ export function DashboardPage() {
               sites={sites.data ?? []}
               tz={tz}
               onOpen={setOpenDayId}
+              focus={focus}
               height="clamp(360px, calc(100vh - 330px), 640px)"
             />
           </div>
@@ -168,7 +171,7 @@ export function DashboardPage() {
               </div>
             )}
           </Panel>
-          {d.refused.length > 0 ? <RefusedPanel attempts={d.refused} tz={tz} /> : null}
+          {d.refused.length > 0 ? <RefusedPanel attempts={d.refused} tz={tz} focusedId={focus?.id ?? null} onShow={(id) => setFocus((f) => ({ id, n: (f?.n ?? 0) + 1 }))} /> : null}
         </div>
       </div>
       {openDayId ? <AttendanceDrawer dayId={openDayId} onClose={() => setOpenDayId(null)} /> : null}

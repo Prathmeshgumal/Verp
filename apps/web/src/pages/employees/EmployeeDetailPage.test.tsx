@@ -4,9 +4,11 @@ import { expect, test, vi } from 'vitest';
 import type { Api } from '../../api/endpoints';
 import { NetworkError } from '../../api/errors';
 import { addDays, todayIn } from '../../lib/time';
-import { adminDay, employee, site } from '../../testing/fakes';
+import { adminDay, employee, refusedAttempt, site } from '../../testing/fakes';
 import { renderWithProviders } from '../../testing/render';
 import { EmployeeDetailPage } from './EmployeeDetailPage';
+
+vi.mock('../refused/RefusedMap', () => ({ RefusedMap: () => null }));
 
 function detail(overrides: Partial<EmployeeDetailDto> = {}): EmployeeDetailDto {
   return {
@@ -21,7 +23,7 @@ function renderPage(api: Partial<Api> = {}, emp = detail()) {
   const utils = renderWithProviders(<EmployeeDetailPage />, {
     route: '/employees/e1',
     path: '/employees/:id',
-    api: { getEmployee: vi.fn(async () => emp), listSites: vi.fn(async () => [site()]), listAttendance, ...api },
+    api: { getEmployee: vi.fn(async () => emp), listSites: vi.fn(async () => [site()]), listAttendance, listRefused: vi.fn(async () => ({ items: [], total: 0, page: 1, pageSize: 100 })), ...api },
   });
   return { ...utils, listAttendance };
 }
@@ -99,4 +101,17 @@ test('a failed action says why', async () => {
   await user.click(await screen.findByRole('button', { name: 'Log out everywhere' }));
   await user.click(within(dialog()).getByRole('button', { name: 'Log out everywhere' }));
   expect(await screen.findByText('Cannot reach the server. Check your internet')).toBeInTheDocument();
+});
+
+test('shows refused attempts from the last 30 days, each opening a map', async () => {
+  const today = todayIn('Asia/Kolkata');
+  const listRefused = vi.fn(async () => ({ items: [refusedAttempt({ employeeId: 'e1', name: 'Ravi Kumar', result: 'LOW_ACCURACY' as const, distanceM: null, accuracyM: 90 })], total: 1, page: 1, pageSize: 100 }));
+  const { user } = renderPage({ listRefused });
+  expect(await screen.findByText('Location not accurate')).toBeInTheDocument();
+  expect(listRefused).toHaveBeenCalledWith({ from: addDays(today, -29), to: today, employeeId: 'e1', page: 1, pageSize: 100 });
+  expect(screen.getByText('accuracy ±90 m')).toBeInTheDocument();
+  expect(screen.getByRole('link', { name: /See all/ })).toHaveAttribute('href', `/attendance?view=refused&from=${addDays(today, -29)}&to=${today}&employeeId=e1`);
+  await user.click(screen.getByRole('button', { name: /22 Sep 2026/ }));
+  const drawer = await screen.findByRole('dialog', { name: 'Refused attempt' });
+  expect(within(drawer).getByText('Check-in refused · location not accurate enough')).toBeInTheDocument();
 });

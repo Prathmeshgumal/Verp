@@ -23,8 +23,11 @@ export interface AttendanceFilters {
   needsReview?: boolean;
 }
 
+/** The Attendance tab lists days, or the attempts that were refused. */
+export type AttendanceView = 'days' | 'refused';
+
 export type AttendanceStackParamList = {
-  AttendanceList: { filters?: Partial<AttendanceFilters> } | undefined;
+  AttendanceList: { filters?: Partial<AttendanceFilters>; view?: AttendanceView } | undefined;
   AttendanceDetail: { id: string };
 };
 
