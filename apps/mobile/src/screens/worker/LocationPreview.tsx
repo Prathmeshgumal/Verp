@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Pressable, useWindowDimensions, View } from 'react-native';
+import { View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { previewStatus, type PreviewStatus } from '../../attendance/preview';
 import { LeafletMap } from '../../maps/LeafletMap';
@@ -18,10 +18,8 @@ interface Props {
   active: boolean;
 }
 
-/** The map is the main thing on Home: 40% of the window, between 200 and 420 px. */
-export function previewMapHeight(windowHeight: number): number {
-  return Math.max(200, Math.min(420, Math.round(windowHeight * 0.4)));
-}
+/** The map fills the space Home has left, but never gets shorter than this. */
+export const PREVIEW_MIN_HEIGHT = 240;
 
 const DOT: Record<PreviewStatus['kind'], string> = {
   inside: colors.checkIn,
@@ -35,8 +33,6 @@ export function LocationPreview({ site, maxAccuracyM, active }: Props) {
   const { t } = useTranslation();
   const [problem, setProblem] = useState<LocationProblem | null>(null);
   const [ready, setReady] = useState(false);
-  const [recenterKey, setRecenterKey] = useState(0);
-  const { height: windowHeight } = useWindowDimensions();
   /** Ask once; later runs only check. Android backgrounds the app while its dialog is open, which re-runs this. */
   const asked = useRef(false);
 
@@ -89,25 +85,16 @@ export function LocationPreview({ site, maxAccuracyM, active }: Props) {
           : t('home.preview.finding');
 
   return (
-    <Card style={{ padding: 0, overflow: 'hidden', borderWidth: 1, borderColor: colors.line }}>
-      <View>
+    <Card style={{ flex: 1, padding: 0, overflow: 'hidden', borderWidth: 1, borderColor: colors.line }}>
+      <View style={{ flex: 1, minHeight: PREVIEW_MIN_HEIGHT }}>
         <LeafletMap
           testID="preview-map"
           center={{ lat: site.lat, lng: site.lng }}
           radiusM={site.radiusM}
-          height={previewMapHeight(windowHeight)}
+          height="fill"
           me={fix ? { lat: fix.lat, lng: fix.lng, accuracyM: fix.accuracyM } : null}
           follow
-          recenterKey={recenterKey}
         />
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={t('home.preview.centre')}
-          onPress={() => setRecenterKey((k) => k + 1)}
-          style={{ position: 'absolute', right: 10, bottom: 10, width: 48, height: 48, borderRadius: 24, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center', elevation: 3 }}
-        >
-          <Icon name="locate" size={22} />
-        </Pressable>
       </View>
       <View style={{ paddingVertical: 10, paddingHorizontal: 14, gap: 4 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>

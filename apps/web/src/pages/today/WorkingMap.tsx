@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Circle, CircleMarker, MapContainer, Marker, Popup, Tooltip, useMap, useMapEvents } from 'react-leaflet';
 import { formatTime } from '../../lib/time';
 import { MAP_LIMITS, OsmTiles } from '../../maps/OsmTiles';
+import { RecenterControl } from '../../maps/RecenterControl';
 import { INDIA_BOUNDS } from '../sites/SiteMapPicker';
 import { bubbleHtml, GROUP_BELOW_ZOOM, siteBubbles, stackDays, stackHtml, tagLabel, tagTone } from './workingMap';
 
@@ -126,6 +127,7 @@ export function WorkingMap({ days, refused, sites, tz, onOpen, height, focus = n
       ))}
       <Tags days={days} sites={sites} tz={tz} onOpen={onOpen} />
       <FocusRefused focus={focus} refused={refused} markers={markers} />
+      <RecenterControl bounds={startBounds(days, sites)} />
     </MapContainer>
   );
 }

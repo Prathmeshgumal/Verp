@@ -3,6 +3,7 @@ import L from 'leaflet';
 import { Fragment, useEffect, useRef } from 'react';
 import { Circle, MapContainer, Marker, Tooltip, useMap } from 'react-leaflet';
 import { MAP_LIMITS, OsmTiles } from '../../maps/OsmTiles';
+import { RecenterControl } from '../../maps/RecenterControl';
 import { INDIA_BOUNDS } from './SiteMapPicker';
 
 interface Props {
@@ -60,6 +61,7 @@ export function SitesMap({ sites, selectedId, hoveredId, onSelect }: Props) {
         );
       })}
       <FlyToSelected sites={sites} selectedId={selectedId} />
+      <RecenterControl bounds={boundsOf(sites)} maxZoom={16} />
     </MapContainer>
   );
 }

@@ -26,14 +26,14 @@ const palette: Record<Variant, { bg: string; fg: string; shadow?: string; border
   link: { bg: 'transparent', fg: colors.info },
 };
 
-const heights: Record<Size, number> = { big: 150, large: 72, normal: 60, small: 48 };
+const heights: Record<Size, number> = { big: 150, large: 56, normal: 60, small: 48 };
 
 export function Button({ label, onPress, variant = 'primary', size = 'normal', icon, disabled, testID }: Props) {
   const p = palette[variant];
   const big = size === 'big';
   const height = heights[size];
   return (
-    <View style={[p.shadow && !disabled ? { backgroundColor: p.shadow, borderRadius: radius.xl, paddingBottom: 6 } : null]}>
+    <View style={[p.shadow && !disabled ? { backgroundColor: p.shadow, borderRadius: radius.xl, paddingBottom: size === 'large' ? 4 : 6 } : null]}>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={label}
@@ -53,12 +53,12 @@ export function Button({ label, onPress, variant = 'primary', size = 'normal', i
           p.border ? { borderWidth: 1, borderColor: p.border } : null,
         ]}
       >
-        {icon ? <Icon name={icon} size={big ? 40 : 22} color={p.fg} strokeWidth={big ? 2.2 : 2} /> : null}
+        {icon ? <Icon name={icon} size={big ? 40 : 20} color={p.fg} strokeWidth={big ? 2.2 : 2} /> : null}
         <Text
           color={p.fg}
           style={{
             fontFamily: big || size === 'large' ? fonts.heading : fonts.bodyBold,
-            fontSize: big ? 30 : size === 'large' ? 24 : size === 'small' ? 15 : 18,
+            fontSize: big ? 30 : size === 'large' ? 20 : size === 'small' ? 15 : 18,
             letterSpacing: big ? 0.6 : 0,
           }}
         >

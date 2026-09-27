@@ -1,7 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import WebView, { type WebViewMessageEvent } from 'react-native-webview';
+import { useTranslation } from 'react-i18next';
 import { getDeviceInfo } from '../native/device';
+import { colors } from '../theme/tokens';
+import { Icon } from '../ui/Icon';
 
 export interface LatLng {
   lat: number;
@@ -34,7 +37,8 @@ interface Props {
   /** null = no pin yet (a new site); the map shows `overview`, or India. */
   center: LatLng | null;
   radiusM: number;
-  height: number;
+  /** 'fill' = take the parent's remaining height. */
+  height: number | 'fill';
   draggable?: boolean;
   /** A tap on the map moves the pin there (reported through onMove). */
   tapToPlace?: boolean;
@@ -100,8 +104,11 @@ export function LeafletMap({
   onMove,
   testID,
 }: Props) {
+  const { t } = useTranslation();
   const ref = useRef<WebView<object>>(null);
   const [ready, setReady] = useState(false);
+  // Bumped by the recenter button; the map refits whenever the combined key changes.
+  const [recenters, setRecenters] = useState(0);
   const [tileUrl, setTileUrl] = useState<string | null>(null);
 
   useEffect(() => {
@@ -110,7 +117,7 @@ export function LeafletMap({
       .catch((err: unknown) => console.warn('map: no tile url', err));
   }, []);
 
-  const state = JSON.stringify({ center, radiusM, draggable, tapToPlace, pins, me, follow, overview, recenterKey, tileUrl, sites, tags });
+  const state = JSON.stringify({ center, radiusM, draggable, tapToPlace, pins, me, follow, overview, recenterKey: `${recenterKey}:${recenters}`, tileUrl, sites, tags });
   useEffect(() => {
     if (ready && tileUrl) ref.current?.injectJavaScript(`window.veMap && window.veMap.update(${state}); true;`);
   }, [ready, tileUrl, state]);
@@ -123,7 +130,7 @@ export function LeafletMap({
   }
 
   return (
-    <View style={{ height, backgroundColor: '#E9E4D8', pointerEvents: interactive ? 'auto' : 'none' }}>
+    <View style={{ ...(height === 'fill' ? { flex: 1 } : { height }), backgroundColor: '#E9E4D8', pointerEvents: interactive ? 'auto' : 'none' }}>
       <WebView<object>
         ref={ref}
         testID={testID}
@@ -136,6 +143,29 @@ export function LeafletMap({
         onMessage={onMessage}
         style={{ flex: 1, backgroundColor: 'transparent' }}
       />
+      {interactive ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t('map.recenter')}
+          onPress={() => setRecenters((n) => n + 1)}
+          hitSlop={6}
+          style={({ pressed }) => ({
+            position: 'absolute',
+            right: 10,
+            bottom: 10,
+            width: 44,
+            height: 44,
+            borderRadius: 22,
+            backgroundColor: colors.surface,
+            alignItems: 'center',
+            justifyContent: 'center',
+            elevation: 3,
+            opacity: pressed ? 0.8 : 1,
+          })}
+        >
+          <Icon name="locate" size={22} />
+        </Pressable>
+      ) : null}
     </View>
   );
 }
