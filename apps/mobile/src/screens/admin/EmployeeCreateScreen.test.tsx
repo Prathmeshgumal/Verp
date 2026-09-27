@@ -34,13 +34,15 @@ async function renderCreate(createEmployee = jest.fn(async () => created)) {
 async function fill() {
   await fireEvent.changeText(screen.getByLabelText('Full name'), ' Sunita Jadhav ');
   await fireEvent.changeText(screen.getByLabelText('Phone number'), '98123 45678');
-  await fireEvent.press(await screen.findByRole('radio', { name: 'Plot 7' }));
+  await fireEvent.press(screen.getByRole('button', { name: 'Site: No site yet' }));
+  expect(screen.queryByRole('button', { name: 'Old site' })).toBeNull();
+  await fireEvent.press(await screen.findByRole('button', { name: 'Plot 7' }));
 }
 
 test('creates the employee and shows the PIN once', async () => {
   const { createEmployee, navigation } = await renderCreate();
   await fill();
-  expect(screen.queryByRole('radio', { name: 'Old site' })).toBeNull();
+  expect(screen.getByRole('button', { name: 'Site: Plot 7' })).toBeOnTheScreen();
   await fireEvent.press(screen.getByRole('button', { name: 'Create employee' }));
   expect(await screen.findByText('482913')).toBeOnTheScreen();
   expect(screen.getByText('PIN for Sunita Jadhav')).toBeOnTheScreen();
