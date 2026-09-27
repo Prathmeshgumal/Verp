@@ -148,24 +148,20 @@ export function SettingsScreen() {
         ) : null}
         <Button label={busy ? t('admin.employees.saving') : t('admin.settings.save')} onPress={() => void save()} disabled={busy} />
 
-        <View style={{ backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.line, padding: 16, gap: 14, marginTop: 8 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-            <Avatar name={user.name} />
-            <View style={{ flex: 1 }}>
-              <Text variant="bodyStrong">{user.name}</Text>
-              <Text variant="small" color={colors.muted}>
-                {user.email ?? t('admin.tag')}
-              </Text>
-            </View>
-          </View>
-          <Button label={t('common.logout')} variant="danger" icon="logout" onPress={() => void confirmLogout()} />
-          {version ? (
-            <Text variant="small" color={colors.muted} style={{ textAlign: 'center' }}>
-              {t('menu.appVersion', { version })}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 4 }}>
+          <Avatar name={user.name} />
+          <View style={{ flex: 1 }}>
+            <Text variant="bodyStrong">{user.name}</Text>
+            <Text variant="small" color={colors.muted}>
+              {user.email ?? t('admin.tag')}
+              {version ? ` · ${t('menu.appVersion', { version })}` : ''}
             </Text>
-          ) : null}
+          </View>
         </View>
       </ScrollView>
+      <View testID="settings-footer" style={{ paddingHorizontal: 16, paddingVertical: 12, borderTopWidth: 1, borderTopColor: colors.line }}>
+        <Button label={t('common.logout')} variant="danger" icon="logout" onPress={() => void confirmLogout()} />
+      </View>
     </Screen>
   );
 }
