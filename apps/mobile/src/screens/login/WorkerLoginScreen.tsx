@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Pressable, ScrollView, TextInput, View } from 'react-native';
+import React, { useRef, useState } from 'react';
+import { ScrollView, TextInput, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { normalizePhone } from '@ve/shared';
@@ -8,14 +8,12 @@ import { loginErrorKey, lostReasonKey } from '../../auth/loginErrors';
 import type { AuthStackParamList } from '../../navigation/types';
 import { colors, fonts, radius, TOUCH_MIN } from '../../theme/tokens';
 import { Button } from '../../ui/Button';
-import { Icon } from '../../ui/Icon';
 import { Screen } from '../../ui/Screen';
 import { Text } from '../../ui/Text';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'WorkerLogin'>;
 
 const PIN_LENGTH = 6;
-const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'del'] as const;
 
 export function WorkerLoginScreen({ navigation }: Props) {
   const { t } = useTranslation();
@@ -23,6 +21,7 @@ export function WorkerLoginScreen({ navigation }: Props) {
   const [phone, setPhone] = useState('');
   const [pin, setPin] = useState('');
   const [busy, setBusy] = useState(false);
+  const pinRef = useRef<React.ComponentRef<typeof TextInput>>(null);
   const [errorKey, setErrorKey] = useState<string | null>(
     state.status === 'loggedOut' ? lostReasonKey(state.reason) : null,
   );
@@ -40,28 +39,36 @@ export function WorkerLoginScreen({ navigation }: Props) {
     } catch (err) {
       setErrorKey(loginErrorKey(err, 'worker'));
       setPin('');
+      pinRef.current?.focus();
     } finally {
       setBusy(false);
     }
   }
 
-  function press(key: (typeof KEYS)[number]) {
+  function onPinChange(text: string) {
     if (busy) return;
-    if (key === 'del') {
-      setPin((p) => p.slice(0, -1));
-      return;
-    }
-    if (pin.length >= PIN_LENGTH) return;
-    const next = pin + key;
+    const next = text.replace(/\D/g, '').slice(0, PIN_LENGTH);
     setPin(next);
     if (next.length === PIN_LENGTH) void submit(next);
   }
 
   return (
     <Screen edges={['top', 'bottom']}>
-      <ScrollView contentContainerStyle={{ padding: 24, paddingTop: 40, gap: 20, flexGrow: 1 }} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        contentContainerStyle={{ padding: 24, paddingTop: 40, gap: 20, flexGrow: 1 }}
+        keyboardShouldPersistTaps="handled"
+      >
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-          <View style={{ width: 40, height: 40, borderRadius: 10, backgroundColor: colors.dark, alignItems: 'center', justifyContent: 'center' }}>
+          <View
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 10,
+              backgroundColor: colors.dark,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
             <Text color={colors.onDark} style={{ fontFamily: fonts.heading, fontSize: 16 }}>
               VE
             </Text>
@@ -86,6 +93,10 @@ export function WorkerLoginScreen({ navigation }: Props) {
             onChangeText={setPhone}
             keyboardType="phone-pad"
             autoComplete="tel"
+            autoFocus={!phone}
+            returnKeyType="next"
+            onSubmitEditing={() => pinRef.current?.focus()}
+            submitBehavior="submit"
             maxLength={16}
             editable={!busy}
             style={{
@@ -104,28 +115,63 @@ export function WorkerLoginScreen({ navigation }: Props) {
 
         <View style={{ gap: 8 }}>
           <Text variant="label">{t('login.pin')}</Text>
-          <View
-            accessible
-            accessibilityLabel={t('login.pinEntered', { n: pin.length })}
-            style={{ flexDirection: 'row', gap: 8 }}
-          >
-            {Array.from({ length: PIN_LENGTH }, (_, i) => (
-              <View
-                key={i}
-                style={{
-                  flex: 1,
-                  height: 56,
-                  borderRadius: radius.sm,
-                  borderWidth: 2,
-                  borderColor: i === pin.length ? colors.dark : colors.inputBorder,
-                  backgroundColor: colors.surface,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                {i < pin.length ? <View style={{ width: 14, height: 14, borderRadius: 7, backgroundColor: colors.dark }} /> : null}
-              </View>
-            ))}
+          <View>
+            <View
+              accessible
+              accessibilityLabel={t('login.pinEntered', { n: pin.length })}
+              style={{ flexDirection: 'row', gap: 8 }}
+            >
+              {Array.from({ length: PIN_LENGTH }, (_, i) => (
+                <View
+                  key={i}
+                  style={{
+                    flex: 1,
+                    height: 56,
+                    borderRadius: radius.sm,
+                    borderWidth: 2,
+                    borderColor: i === pin.length ? colors.dark : colors.inputBorder,
+                    backgroundColor: colors.surface,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  {i < pin.length ? (
+                    <View
+                      style={{
+                        width: 14,
+                        height: 14,
+                        borderRadius: 7,
+                        backgroundColor: colors.dark,
+                      }}
+                    />
+                  ) : null}
+                </View>
+              ))}
+            </View>
+            {/* The real input: invisible, laid over the boxes, so a tap anywhere on them opens the phone's number keyboard. */}
+            <TextInput
+              ref={pinRef}
+              accessibilityLabel={t('login.pin')}
+              value={pin}
+              onChangeText={onPinChange}
+              keyboardType="number-pad"
+              maxLength={PIN_LENGTH}
+              secureTextEntry
+              autoComplete="off"
+              importantForAutofill="no"
+              caretHidden
+              contextMenuHidden
+              editable={!busy}
+              style={{
+                position: 'absolute',
+                top: 0,
+                right: 0,
+                bottom: 0,
+                left: 0,
+                opacity: 0.02,
+                color: 'transparent',
+              }}
+            />
           </View>
         </View>
 
@@ -136,37 +182,13 @@ export function WorkerLoginScreen({ navigation }: Props) {
         ) : null}
         {busy ? <Text color={colors.muted}>{t('login.busy')}</Text> : null}
 
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-          {KEYS.map((key, i) =>
-            key === '' ? (
-              <View key={`blank-${i}`} style={{ width: '31.5%' }} />
-            ) : (
-              <Pressable
-                key={key}
-                accessibilityRole="button"
-                accessibilityLabel={key === 'del' ? t('login.deleteDigit') : key}
-                onPress={() => press(key)}
-                style={({ pressed }) => ({
-                  width: '31.5%',
-                  height: TOUCH_MIN,
-                  borderRadius: radius.md,
-                  backgroundColor: key === 'del' ? 'transparent' : pressed ? colors.lineSoft : colors.surface,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                })}
-              >
-                {key === 'del' ? (
-                  <Icon name="backspace" size={28} />
-                ) : (
-                  <Text style={{ fontFamily: fonts.monoSemi, fontSize: 26 }}>{key}</Text>
-                )}
-              </Pressable>
-            ),
-          )}
-        </View>
-
         <View style={{ flexGrow: 1 }} />
-        <Button label={t('login.adminLink')} variant="link" size="small" onPress={() => navigation.navigate('AdminLogin')} />
+        <Button
+          label={t('login.adminLink')}
+          variant="link"
+          size="small"
+          onPress={() => navigation.navigate('AdminLogin')}
+        />
       </ScrollView>
     </Screen>
   );
