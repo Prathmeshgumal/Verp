@@ -1,10 +1,11 @@
 import React from 'react';
-import { FlatList, Pressable, View } from 'react-native';
+import { FlatList, Pressable, useWindowDimensions, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../auth/AuthContext';
 import { queryKeys } from '../../attendance/queryKeys';
+import { LeafletMap } from '../../maps/LeafletMap';
 import type { SitesStackParamList } from '../../navigation/types';
 import { colors, fonts, radius } from '../../theme/tokens';
 import { ErrorState, Loading } from '../../ui/Centered';
@@ -18,6 +19,7 @@ export function SitesScreen({ navigation }: Props) {
   const { t } = useTranslation();
   const { api } = useAuth();
   const query = useQuery({ queryKey: queryKeys.sites, queryFn: () => api.listSites() });
+  const { height } = useWindowDimensions();
 
   return (
     <Screen>
@@ -35,13 +37,29 @@ export function SitesScreen({ navigation }: Props) {
           contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 96, gap: 8 }}
           refreshing={query.isRefetching}
           onRefresh={() => void query.refetch()}
+          ListHeaderComponent={
+            query.data.length > 0 ? (
+              <View style={{ borderRadius: radius.lg, overflow: 'hidden', borderWidth: 1, borderColor: colors.line, marginBottom: 4 }}>
+                <LeafletMap
+                  testID="sites-map"
+                  center={null}
+                  radiusM={0}
+                  height={Math.max(240, Math.min(420, Math.round(height * 0.4)))}
+                  sites={query.data.map((s) => ({ lat: s.lat, lng: s.lng, radiusM: s.radiusM, active: s.isActive }))}
+                  tags={query.data.map((s) => ({ key: s.id, lat: s.lat, lng: s.lng, label: s.name, count: 1, tone: s.isActive ? 'green' : 'grey' }))}
+                  recenterKey={query.data.length}
+                  onTag={(id) => navigation.navigate('SiteEdit', { id })}
+                />
+              </View>
+            ) : undefined
+          }
           ListEmptyComponent={<Text color={colors.muted}>{t('admin.sites.empty')}</Text>}
           renderItem={({ item }) => (
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={item.name}
               onPress={() => navigation.navigate('SiteEdit', { id: item.id })}
-              style={{ backgroundColor: colors.surface, borderRadius: radius.lg, padding: 14, minHeight: 64, flexDirection: 'row', alignItems: 'center', gap: 12 }}
+              style={{ backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.line, padding: 14, minHeight: 64, flexDirection: 'row', alignItems: 'center', gap: 12 }}
             >
               <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: colors.lineSoft, alignItems: 'center', justifyContent: 'center' }}>
                 <Icon name="pin" size={20} />

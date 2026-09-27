@@ -1,5 +1,5 @@
 import type { FastifyInstance } from 'fastify';
-import { attendanceListQuerySchema, fixCheckoutSchema } from '@ve/shared';
+import { attendanceListQuerySchema, fixCheckoutSchema, refusedListQuerySchema } from '@ve/shared';
 import { idParamsSchema } from '../../lib/params';
 import { authOf } from '../../plugins/auth';
 import {
@@ -9,6 +9,7 @@ import {
   listAttendance,
   markReviewed,
 } from './admin-service';
+import { listRefused } from './refused';
 
 export async function adminAttendanceRoutes(app: FastifyInstance) {
   const deps = app.deps;
@@ -24,6 +25,8 @@ export async function adminAttendanceRoutes(app: FastifyInstance) {
       .header('content-disposition', `attachment; filename="attendance_${q.from}_${q.to}.csv"`)
       .send(csv);
   });
+
+  app.get('/attendance/refused', async (req) => listRefused(deps, refusedListQuerySchema.parse(req.query)));
 
   app.get('/attendance/:id', async (req) => getAttendanceDetail(deps, idOf(req.params)));
 

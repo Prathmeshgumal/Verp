@@ -8,5 +8,6 @@ export const queryKeys = {
   settings: ['admin', 'settings'] as const,
   site: (id: string) => ['admin', 'site', id] as const,
   attendance: (params: object) => ['admin', 'attendance', params] as const,
+  refused: (params: object) => ['admin', 'refused', params] as const,
   attendanceDay: (id: string) => ['admin', 'attendanceDay', id] as const,
 };

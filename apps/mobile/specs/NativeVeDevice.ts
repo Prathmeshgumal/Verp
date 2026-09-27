@@ -30,6 +30,8 @@ export interface Spec extends TurboModule {
   /** Streams fixes about every intervalMs through onLocationUpdate until stopLocationWatch. A new call replaces the running watch. */
   startLocationWatch(intervalMs: number): void;
   stopLocationWatch(): void;
+  /** Saves text as a file in the app's cache and opens the share menu for it (e.g. a CSV export). */
+  shareFile(fileName: string, content: string, mimeType: string, title: string): Promise<void>;
   readonly onLocationUpdate: CodegenTypes.EventEmitter<NativeFix>;
 }
 

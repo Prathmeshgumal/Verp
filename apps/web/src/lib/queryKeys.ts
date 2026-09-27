@@ -6,5 +6,6 @@ export const queryKeys = {
   sites: ['sites', 'list'] as const,
   site: (id: string) => ['sites', 'detail', id] as const,
   attendance: (params: object) => ['attendance', 'list', params] as const,
+  refused: (params: object) => ['attendance', 'refused', params] as const,
   attendanceDay: (id: string) => ['attendance', 'detail', id] as const,
 };

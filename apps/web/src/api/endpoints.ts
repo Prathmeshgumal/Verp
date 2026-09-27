@@ -11,6 +11,7 @@ import type {
   FixCheckout,
   Paginated,
   PlaceLinkDto,
+  RefusedAttemptDto,
   SettingsDto,
   SettingsUpdate,
   SiteCreate,
@@ -33,6 +34,15 @@ export interface AttendanceQuery {
   status?: AttendanceStatus;
   /** true = only days that need review; false/undefined = any. */
   needsReview?: boolean;
+}
+
+export interface RefusedQuery {
+  from: string;
+  to: string;
+  employeeId?: string;
+  siteId?: string;
+  page: number;
+  pageSize: number;
 }
 
 export interface AttendancePageQuery extends AttendanceQuery {
@@ -77,6 +87,8 @@ export function createApi(client: ApiClient) {
 
     listAttendance: (q: AttendancePageQuery) =>
       get<Paginated<AdminDayDto>>('/admin/attendance', { ...attendanceParams(q), page: q.page, pageSize: q.pageSize }),
+    /** Check-ins and check-outs refused for where the phone was, on any day in the range. */
+    listRefused: (q: RefusedQuery) => get<Paginated<RefusedAttemptDto>>('/admin/attendance/refused', { ...q }),
     getAttendance: (id: string) => get<AdminDayDetailDto>(`/admin/attendance/${id}`),
     fixCheckout: (id: string, body: FixCheckout) => send<AdminDayDto>('PATCH', `/admin/attendance/${id}/checkout`, body),
     markReviewed: (id: string) => send<AdminDayDto>('POST', `/admin/attendance/${id}/review`),

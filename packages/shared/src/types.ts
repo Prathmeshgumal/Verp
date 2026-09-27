@@ -182,6 +182,7 @@ export interface DashboardRefusedAttempt {
   employeeId: string;
   name: string;
   /** The employee's assigned site, if any. */
+  siteId: string | null;
   siteName: string | null;
   type: 'IN' | 'OUT';
   result: 'OUTSIDE_SITE' | 'LOW_ACCURACY';
@@ -190,6 +191,11 @@ export interface DashboardRefusedAttempt {
   lng: number;
   accuracyM: number;
   distanceM: number | null;
+}
+
+/** A refused attempt on any day, for the history lists. */
+export interface RefusedAttemptDto extends DashboardRefusedAttempt {
+  workDate: string;
 }
 
 export interface SettingsDto {

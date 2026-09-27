@@ -10,6 +10,7 @@ export interface FakeNativeState {
   locationEnabled: boolean;
   fix: FakeFix | null;
   reminders: FakeReminder[];
+  shared: { fileName: string; content: string; mimeType: string }[];
   uuidSeq: number;
   watchIntervalMs: number | null;
 }
@@ -29,6 +30,7 @@ function initialState(): FakeNativeState {
     locationEnabled: true,
     fix: { lat: 18.5912, lng: 73.7389, accuracyM: 12, isMock: false },
     reminders: [],
+    shared: [],
     uuidSeq: 0,
     watchIntervalMs: null,
   };
@@ -84,6 +86,9 @@ export const fakeNative = {
   },
   stopLocationWatch: () => {
     fakeState.watchIntervalMs = null;
+  },
+  shareFile: async (fileName: string, content: string, mimeType: string, _title: string) => {
+    fakeState.shared.push({ fileName, content, mimeType });
   },
   onLocationUpdate: (listener: FixListener) => {
     fixListeners.add(listener);

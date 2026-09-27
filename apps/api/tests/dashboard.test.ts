@@ -86,6 +86,7 @@ describe('GET /admin/dashboard/today', () => {
         id: expect.any(String),
         employeeId: emp.user.id,
         name: 'Anil',
+        siteId: site.id,
         siteName: 'Plot 7',
         type: 'IN',
         result: 'OUTSIDE_SITE',

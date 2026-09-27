@@ -115,6 +115,17 @@ export const attendanceListQuerySchema = z
   })
   .refine((q) => q.from <= q.to, { message: 'from must not be after to', path: ['from'] });
 
+export const refusedListQuerySchema = z
+  .strictObject({
+    from: z.iso.date(),
+    to: z.iso.date(),
+    employeeId: z.uuid().optional(),
+    siteId: z.uuid().optional(),
+    page: z.coerce.number().int().min(1).default(1),
+    pageSize: z.coerce.number().int().min(1).max(100).default(50),
+  })
+  .refine((q) => q.from <= q.to, { message: 'from must not be after to', path: ['from'] });
+
 export const myAttendanceQuerySchema = z.strictObject({
   from: z.iso.date().optional(),
   to: z.iso.date().optional(),
@@ -145,6 +156,7 @@ export type EmployeeCreate = z.output<typeof employeeCreateSchema>;
 export type EmployeeUpdate = z.output<typeof employeeUpdateSchema>;
 export type EmployeeListQuery = z.output<typeof employeeListQuerySchema>;
 export type AttendanceListQuery = z.output<typeof attendanceListQuerySchema>;
+export type RefusedListQuery = z.output<typeof refusedListQuerySchema>;
 export type MyAttendanceQuery = z.output<typeof myAttendanceQuerySchema>;
 export type FixCheckout = z.output<typeof fixCheckoutSchema>;
 export type SettingsUpdate = z.output<typeof settingsUpdateSchema>;

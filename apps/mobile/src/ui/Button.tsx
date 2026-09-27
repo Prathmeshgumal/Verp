@@ -4,7 +4,7 @@ import { colors, fonts, radius, TOUCH_MIN } from '../theme/tokens';
 import { Icon, type IconName } from './Icon';
 import { Text } from './Text';
 
-type Variant = 'primary' | 'secondary' | 'checkIn' | 'checkOut' | 'link';
+type Variant = 'primary' | 'secondary' | 'danger' | 'checkIn' | 'checkOut' | 'link';
 type Size = 'big' | 'large' | 'normal' | 'small';
 
 interface Props {
@@ -20,6 +20,7 @@ interface Props {
 const palette: Record<Variant, { bg: string; fg: string; shadow?: string; border?: string }> = {
   primary: { bg: colors.dark, fg: colors.white },
   secondary: { bg: colors.surface, fg: colors.text, border: colors.inputBorder },
+  danger: { bg: colors.surface, fg: colors.danger, border: colors.danger },
   checkIn: { bg: colors.checkIn, fg: colors.white, shadow: colors.checkInShadow },
   checkOut: { bg: colors.checkOut, fg: colors.white, shadow: colors.checkOutShadow },
   link: { bg: 'transparent', fg: colors.info },

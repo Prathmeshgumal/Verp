@@ -21,7 +21,7 @@ async function renderEmployees() {
   const listEmployees = jest.fn(async () => [emp]);
   const navigation = fakeNavigation();
   await renderWithAuth(<EmployeesScreen navigation={navigation as never} route={{} as never} />, {
-    api: fakeApi({ listEmployees }),
+    api: fakeApi({ listEmployees, listSites: jest.fn(async () => [{ id: 's1', name: 'Plot 7', address: null, lat: 1, lng: 1, radiusM: 100, isActive: true }] as never) }),
     state: loggedIn(adminUser),
   });
   return { listEmployees, navigation };
@@ -31,20 +31,29 @@ test('lists active employees with phone, code and site', async () => {
   const { listEmployees } = await renderEmployees();
   expect(await screen.findByText('Anil Pawar')).toBeOnTheScreen();
   expect(screen.getByText('+919876543210 · E-7 · Plot 7')).toBeOnTheScreen();
-  expect(listEmployees).toHaveBeenCalledWith({ q: '', isActive: true });
+  expect(listEmployees).toHaveBeenCalledWith({ q: '', isActive: true, siteId: undefined });
 });
 
 test('search waits for typing to stop, then asks the server', async () => {
   const { listEmployees } = await renderEmployees();
   await screen.findByText('Anil Pawar');
   await fireEvent.changeText(screen.getByLabelText('Name, phone or code'), 'anil');
-  await waitFor(() => expect(listEmployees).toHaveBeenLastCalledWith({ q: 'anil', isActive: true }));
+  await waitFor(() => expect(listEmployees).toHaveBeenLastCalledWith({ q: 'anil', isActive: true, siteId: undefined }));
 });
 
 test('Inactive shows deactivated employees', async () => {
   const { listEmployees } = await renderEmployees();
   await fireEvent.press(await screen.findByRole('button', { name: 'Inactive' }));
-  await waitFor(() => expect(listEmployees).toHaveBeenLastCalledWith({ q: '', isActive: false }));
+  await waitFor(() => expect(listEmployees).toHaveBeenLastCalledWith({ q: '', isActive: false, siteId: undefined }));
+});
+
+test('All and a site narrow the list', async () => {
+  const { listEmployees } = await renderEmployees();
+  await fireEvent.press(await screen.findByRole('button', { name: 'All' }));
+  await waitFor(() => expect(listEmployees).toHaveBeenLastCalledWith({ q: '', isActive: undefined, siteId: undefined }));
+  await fireEvent.press(screen.getByRole('button', { name: 'Site: All sites' }));
+  await fireEvent.press(screen.getByRole('button', { name: 'Plot 7' }));
+  await waitFor(() => expect(listEmployees).toHaveBeenLastCalledWith({ q: '', isActive: undefined, siteId: 's1' }));
 });
 
 test('add and open', async () => {

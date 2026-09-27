@@ -7,6 +7,7 @@ import { fakeApi } from '../../testing/fakeApi';
 import { fakeNative, fakeState } from '../../testing/fakeNative';
 import { adminUser, fakeNavigation, loggedIn, renderWithAuth } from '../../testing/render';
 import { injectedScripts } from '../../testing/webView';
+import * as placeSearch from '../../maps/placeSearch';
 import { SiteEditScreen } from './SiteEditScreen';
 
 const site: SiteDto = { id: 's1', name: 'Plot 7', lat: 18.59, lng: 73.73, radiusM: 100, address: null, isActive: true, createdAt: 'x', updatedAt: 'x' };
@@ -168,4 +169,15 @@ test('a slow link lookup does not undo a pin placed meanwhile', async () => {
   await fireEvent(screen.getByTestId('site-map'), 'message', moved(18.6, 73.7));
   await act(async () => answer({ lat: 17.3615636, lng: 78.4746832 }));
   expect(screen.getByText('18.60000, 73.70000')).toBeOnTheScreen();
+});
+
+test('searching for a place lists matches; picking one moves the pin', async () => {
+  const search = jest.spyOn(placeSearch, 'searchPlaces').mockResolvedValue([{ name: 'Hinjewadi Phase 1, Pune, Maharashtra', lat: 18.5913, lng: 73.7389 }]);
+  await renderEdit({});
+  await fireEvent.changeText(screen.getByLabelText('Search for a place'), 'Hinjewadi');
+  await fireEvent.press(screen.getByRole('button', { name: 'Search' }));
+  expect(search).toHaveBeenCalledWith('Hinjewadi');
+  await fireEvent.press(await screen.findByRole('button', { name: 'Hinjewadi Phase 1, Pune, Maharashtra' }));
+  expect(screen.getByText('From search · check the circle before saving.')).toBeOnTheScreen();
+  expect(screen.getByText('18.59130, 73.73890')).toBeOnTheScreen();
 });

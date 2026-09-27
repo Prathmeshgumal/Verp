@@ -131,26 +131,30 @@ interface SelectFieldProps extends FieldFrame {
 
 export function SelectField({ label, description, error, className, data, value = '', onChange, onBlur, placeholder, disabled }: SelectFieldProps) {
   const id = useId();
+  const [open, setOpen] = useState(false);
+  const options = data.map((option) => (typeof option === 'string' ? { value: option, label: option } : option));
+  const selected = options.find((o) => o.value === value);
   return (
     <Frame id={id} label={label} description={description} error={error} className={className}>
       <Select
         value={value === '' ? EMPTY : value}
         onValueChange={(v) => onChange(v === EMPTY ? '' : v)}
-        onOpenChange={(open) => (open ? undefined : onBlur?.())}
+        onOpenChange={(next) => {
+          setOpen(next);
+          if (!next) onBlur?.();
+        }}
         disabled={disabled}
       >
         <SelectTrigger id={id} aria-invalid={error ? true : undefined} aria-describedby={describedBy(id, description, error)}>
-          <SelectValue placeholder={placeholder} />
+          <SelectValue placeholder={placeholder}>{selected?.label}</SelectValue>
         </SelectTrigger>
         <SelectContent>
-          {data.map((option) => {
-            const { value: v, label: text } = typeof option === 'string' ? { value: option, label: option } : option;
-            return (
-              <SelectItem key={v} value={v === '' ? EMPTY : v}>
-                {text}
-              </SelectItem>
-            );
-          })}
+          {/* Radix mounts every item even while closed; with ~400 time zones that froze page switches. */}
+          {(open ? options : selected ? [selected] : []).map((o) => (
+            <SelectItem key={o.value} value={o.value === '' ? EMPTY : o.value}>
+              {o.label}
+            </SelectItem>
+          ))}
         </SelectContent>
       </Select>
     </Frame>

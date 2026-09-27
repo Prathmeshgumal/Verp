@@ -12,6 +12,8 @@ export interface RequestOptions {
   /** false = public endpoint: no token, no refresh. */
   auth?: boolean;
   timeoutMs?: number;
+  /** Return the body as plain text (e.g. a CSV) instead of parsing JSON. */
+  text?: boolean;
 }
 
 export interface TokenStore {
@@ -73,9 +75,10 @@ export function createApiClient({
     }
   }
 
-  async function parse<T>(res: Response): Promise<T> {
+  async function parse<T>(res: Response, asText = false): Promise<T> {
     if (res.status >= 500) throw new NetworkError('server', `HTTP ${res.status}`);
     const text = await res.text();
+    if (asText && res.ok) return text as T;
     let data: unknown;
     if (text) {
       try {
@@ -129,9 +132,9 @@ export function createApiClient({
     return refreshing;
   }
 
-  async function finish<T>(res: Response): Promise<T> {
+  async function finish<T>(res: Response, asText?: boolean): Promise<T> {
     try {
-      return await parse<T>(res);
+      return await parse<T>(res, asText);
     } catch (err) {
       if (err instanceof ApiError && err.code === 'ACCOUNT_INACTIVE') await loseSession(err.code);
       else if (err instanceof ApiError && err.status === 401) await loseSession('SESSION_EXPIRED');
@@ -140,13 +143,13 @@ export function createApiClient({
   }
 
   async function request<T>(method: Method, path: string, options: RequestOptions = {}): Promise<T> {
-    if (options.auth === false) return parse<T>(await send(method, path, options, null));
+    if (options.auth === false) return parse<T>(await send(method, path, options, null), options.text);
     const token = accessToken ?? (await refreshAccess());
     const first = await send(method, path, options, token);
-    if (first.status !== 401) return finish<T>(first);
+    if (first.status !== 401) return finish<T>(first, options.text);
     // Someone else may already have refreshed while this request was in flight.
     const fresh = accessToken && accessToken !== token ? accessToken : await refreshAccess();
-    return finish<T>(await send(method, path, options, fresh));
+    return finish<T>(await send(method, path, options, fresh), options.text);
   }
 
   return {

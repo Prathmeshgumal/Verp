@@ -13,8 +13,11 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router';
 import { App } from './App';
 import { AuthProvider } from './auth/AuthContext';
+import { blockLinkDrags } from './lib/noLinkDrag';
 import { AppProviders, createQueryClient } from './providers';
 import { createServices } from './services';
+
+blockLinkDrags();
 
 const services = createServices();
 const queryClient = createQueryClient();
