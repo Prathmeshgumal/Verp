@@ -24,7 +24,7 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     setupFiles: ['./src/testing/setup.ts'],
-    include: ['src/**/*.test.{ts,tsx}'],
+    include: ['src/**/*.test.{ts,tsx}', 'api/**/*.test.ts'],
     css: false,
     // Vitest 3+: restoreMocks only undoes vi.spyOn; clearMocks also wipes call history of vi.fn() mocks.
     clearMocks: true,
