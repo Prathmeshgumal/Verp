@@ -352,7 +352,9 @@
       "clockHelp": "Flag a day when the phone's clock is off by more than this.",
       "range": "Enter a whole number from {{min}} to {{max}}",
       "save": "Save settings",
-      "saved": "Settings saved"
+      "saved": "Settings saved",
+      "unsaved": "Unsaved changes",
+      "discard": "Discard"
     },
     "refused": {
       "showOnMap": "Show on map",
