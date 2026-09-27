@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { PublicUser } from '@ve/shared';
 import { AuthContext, type AuthContextValue, type AuthState } from '../auth/AuthContext';
 import type { Api } from '../api/endpoints';
+import { ConfirmProvider } from '../ui/ConfirmDialog';
 import { fakeApi } from './fakeApi';
 
 export const employeeUser: PublicUser = {
@@ -46,7 +47,9 @@ export async function renderWithAuth(ui: ReactElement, { api = fakeApi(), state 
   };
   const utils = await render(
     <QueryClientProvider client={queryClient}>
-      <AuthContext.Provider value={value}>{ui}</AuthContext.Provider>
+      <AuthContext.Provider value={value}>
+        <ConfirmProvider>{ui}</ConfirmProvider>
+      </AuthContext.Provider>
     </QueryClientProvider>,
   );
   return { ...utils, auth: value, queryClient };

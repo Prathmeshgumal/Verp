@@ -1,7 +1,7 @@
 import React from 'react';
-import { Alert } from 'react-native';
-import { act, fireEvent, screen } from '@testing-library/react-native';
+import { fireEvent, screen } from '@testing-library/react-native';
 import type { MeTodayResponse } from '@ve/shared';
+import { answerConfirm } from '../../testing/confirm';
 import { fakeApi } from '../../testing/fakeApi';
 import { renderWithAuth } from '../../testing/render';
 import { ProfileScreen } from './ProfileScreen';
@@ -19,11 +19,18 @@ test('shows the worker, their site and when they joined', async () => {
 });
 
 test('Log out asks first, then logs out', async () => {
-  const alert = jest.spyOn(Alert, 'alert');
   const { auth } = await renderWithAuth(<ProfileScreen />, { api: fakeApi({ today: jest.fn(async () => today) }) });
   await fireEvent.press(await screen.findByRole('button', { name: 'Log out' }));
-  const buttons = alert.mock.calls[0]?.[2] ?? [];
+  expect(screen.getByText('You will need your phone number and PIN to log in again.')).toBeOnTheScreen();
   expect(auth.logout).not.toHaveBeenCalled();
-  await act(async () => buttons[1]?.onPress?.());
+  await answerConfirm('Log out?', 'Log out');
   expect(auth.logout).toHaveBeenCalled();
+});
+
+test('Cancel in the dialog keeps you logged in', async () => {
+  const { auth } = await renderWithAuth(<ProfileScreen />, { api: fakeApi({ today: jest.fn(async () => today) }) });
+  await fireEvent.press(await screen.findByRole('button', { name: 'Log out' }));
+  await answerConfirm('Log out?', 'Cancel');
+  expect(auth.logout).not.toHaveBeenCalled();
+  expect(screen.queryByRole('header', { name: 'Log out?' })).toBeNull();
 });

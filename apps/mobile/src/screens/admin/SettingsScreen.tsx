@@ -15,7 +15,7 @@ import { PickerField } from '../../ui/PickerField';
 import { Screen } from '../../ui/Screen';
 import { Text } from '../../ui/Text';
 import { TextField } from '../../ui/TextField';
-import { confirmLogout } from '../worker/confirmLogout';
+import { useConfirmLogout } from '../worker/useConfirmLogout';
 import { adminErrorKey } from './adminErrors';
 
 /** Common zones for the company; the saved one is always listed. */
@@ -33,7 +33,8 @@ const LIMITS: Record<NumberKey, [number, number]> = { maxAccuracyM: [5, 500], de
 
 export function SettingsScreen() {
   const { t } = useTranslation();
-  const { api, logout } = useAuth();
+  const { api } = useAuth();
+  const confirmLogout = useConfirmLogout();
   const user = useUser();
   const queryClient = useQueryClient();
   const query = useQuery({ queryKey: queryKeys.settings, queryFn: () => api.getSettings() });
@@ -157,7 +158,7 @@ export function SettingsScreen() {
               </Text>
             </View>
           </View>
-          <Button label={t('common.logout')} variant="secondary" icon="logout" onPress={() => confirmLogout(t, logout)} />
+          <Button label={t('common.logout')} variant="danger" icon="logout" onPress={() => void confirmLogout()} />
           {version ? (
             <Text variant="small" color={colors.muted} style={{ textAlign: 'center' }}>
               {t('menu.appVersion', { version })}

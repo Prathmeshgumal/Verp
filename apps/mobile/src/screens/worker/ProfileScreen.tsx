@@ -11,7 +11,7 @@ import { Button } from '../../ui/Button';
 import { Icon, type IconName } from '../../ui/Icon';
 import { Screen } from '../../ui/Screen';
 import { Text } from '../../ui/Text';
-import { confirmLogout } from './confirmLogout';
+import { useConfirmLogout } from './useConfirmLogout';
 
 function initials(name: string): string {
   const parts = name.trim().split(/\s+/);
@@ -21,7 +21,8 @@ function initials(name: string): string {
 /** The worker's own details; more personal features will live here. */
 export function ProfileScreen() {
   const { t } = useTranslation();
-  const { api, logout } = useAuth();
+  const { api } = useAuth();
+  const confirmLogout = useConfirmLogout();
   const user = useUser();
   const today = useQuery({ queryKey: queryKeys.today, queryFn: () => api.today() }).data;
   const [version, setVersion] = useState<string | null>(null);
@@ -73,13 +74,15 @@ export function ProfileScreen() {
           ))}
         </View>
 
-        <Button label={t('common.logout')} variant="secondary" icon="logout" onPress={() => confirmLogout(t, logout)} />
+      </ScrollView>
+      <View testID="profile-footer" style={{ paddingHorizontal: 20, paddingTop: 12, paddingBottom: 12, gap: 8, borderTopWidth: 1, borderTopColor: colors.line }}>
+        <Button label={t('common.logout')} variant="danger" icon="logout" onPress={() => void confirmLogout()} />
         {version ? (
           <Text variant="small" color={colors.muted} style={{ textAlign: 'center' }}>
             {t('menu.appVersion', { version })}
           </Text>
         ) : null}
-      </ScrollView>
+      </View>
     </Screen>
   );
 }
