@@ -8,7 +8,7 @@ import { fakeApi } from '../../testing/fakeApi';
 import { emitFakeLocation, fakeState } from '../../testing/fakeNative';
 import { renderWithAuth } from '../../testing/render';
 import { HomeScreen } from './HomeScreen';
-import { previewMapHeight } from './LocationPreview';
+import { PREVIEW_MIN_HEIGHT } from './LocationPreview';
 
 const site = { id: 's1', name: 'Plot 7, Hinjewadi', lat: 18.59, lng: 73.73, radiusM: 100 };
 const today = (extra: Partial<MeTodayResponse> = {}): MeTodayResponse => ({
@@ -244,10 +244,10 @@ test('there is no menu button on Home any more', async () => {
   expect(screen.queryByRole('button', { name: 'Menu' })).toBeNull();
 });
 
-test('the preview map takes 40% of the screen, within limits', () => {
-  expect(previewMapHeight(800)).toBe(320);
-  expect(previewMapHeight(1400)).toBe(420);
-  expect(previewMapHeight(400)).toBe(200);
+test('the map fills the space above the button, with a minimum height', async () => {
+  await renderHome();
+  expect(screen.getByTestId('home-map-area')).toHaveStyle({ flex: 1 });
+  expect(PREVIEW_MIN_HEIGHT).toBeGreaterThanOrEqual(200);
 });
 
 test('coming back to the app checks location without asking for permission again', async () => {

@@ -54,3 +54,18 @@ test('a tapped tag comes back with its key', () => {
   expect(parseMapMessage('{"type":"tag","key":"d1"}')).toEqual({ type: 'tag', key: 'd1' });
   expect(parseMapMessage('{"type":"tag","key":5}')).toBeNull();
 });
+
+test('the recenter button makes the map fit its area again', async () => {
+  await render(<LeafletMap testID="map" center={{ lat: 18.5, lng: 73.8 }} radiusM={100} height={200} />);
+  await fireEvent(screen.getByTestId('map'), 'message', message({ type: 'ready' }));
+  await waitFor(() => expect(injectedScripts).toHaveLength(1));
+  expect(injectedScripts[0]).toContain('"recenterKey":"0:0"');
+  await fireEvent.press(screen.getByRole('button', { name: 'Back to the area' }));
+  await waitFor(() => expect(injectedScripts).toHaveLength(2));
+  expect(injectedScripts[1]).toContain('"recenterKey":"0:1"');
+});
+
+test('a static map has no recenter button', async () => {
+  await render(<LeafletMap center={{ lat: 18.5, lng: 73.8 }} radiusM={100} height={200} interactive={false} />);
+  expect(screen.queryByRole('button', { name: 'Back to the area' })).toBeNull();
+});

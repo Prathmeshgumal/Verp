@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import { Circle, CircleMarker, MapContainer, Tooltip, useMap } from 'react-leaflet';
 import type { DashboardRefusedAttempt, SiteDto } from '@ve/shared';
 import { MAP_LIMITS, OsmTiles } from '../../maps/OsmTiles';
+import { RecenterControl } from '../../maps/RecenterControl';
 
 /** The drawer animates open; Leaflet must re-measure once it has its final size. */
 function FixSizeAfterOpen() {
@@ -39,6 +40,7 @@ export function RefusedMap({ attempt, site, height = 300 }: { attempt: Dashboard
         </Tooltip>
       </CircleMarker>
       <FixSizeAfterOpen />
+      <RecenterControl bounds={bounds.pad(0.2)} />
     </MapContainer>
   );
 }

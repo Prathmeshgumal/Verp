@@ -3,6 +3,7 @@ import { useEffect, useRef } from 'react';
 import { Circle, MapContainer, Marker, useMap, useMapEvents } from 'react-leaflet';
 import type { Reading } from '../../lib/locate';
 import { MAP_LIMITS, OsmTiles } from '../../maps/OsmTiles';
+import { RecenterControl } from '../../maps/RecenterControl';
 
 export interface LatLng {
   lat: number;
@@ -92,6 +93,7 @@ export function SiteMapPicker({ center, radiusM, onMove, recenterKey, accuracy =
       <ClickToMove onMove={onMove} />
       <Recenter center={center} radiusM={radiusM} recenterKey={recenterKey} />
       <FitOverview overview={overview} hasPin={center !== null} />
+      <RecenterControl bounds={startBounds(center, radiusM, overview)} maxZoom={18} />
     </MapContainer>
   );
 }

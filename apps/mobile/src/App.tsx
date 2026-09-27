@@ -8,6 +8,7 @@ import { getDeviceInfo } from './native/device';
 import { RootNavigator } from './navigation/RootNavigator';
 import { createServices, type Services } from './services';
 import { ErrorState, Loading } from './ui/Centered';
+import { ConfirmProvider } from './ui/ConfirmDialog';
 
 export default function App() {
   const [services, setServices] = useState<Services | null>(null);
@@ -37,7 +38,9 @@ export default function App() {
       {services ? (
         <QueryClientProvider client={services.queryClient}>
           <AuthProvider client={services.client} api={services.api}>
-            <RootNavigator />
+            <ConfirmProvider>
+              <RootNavigator />
+            </ConfirmProvider>
           </AuthProvider>
         </QueryClientProvider>
       ) : failed ? (

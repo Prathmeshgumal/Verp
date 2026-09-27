@@ -4,11 +4,22 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useAuth, useUser } from '../../auth/AuthContext';
 import { createSubmitDeps } from '../../attendance/deps';
-import { formatDuration, formatHhMm, formatLongDate, formatTime, minutesSince } from '../../attendance/format';
+import {
+  formatDuration,
+  formatHhMm,
+  formatLongDate,
+  formatTime,
+  minutesSince,
+} from '../../attendance/format';
 import { homeView, type HomeView } from '../../attendance/homeState';
 import { outcomeView, type AttendanceAction } from '../../attendance/messages';
 import { queryKeys } from '../../attendance/queryKeys';
-import { resumePendingOnLaunch, submitAttendance, type SubmitOutcome, type SubmitStep } from '../../attendance/submitFlow';
+import {
+  resumePendingOnLaunch,
+  submitAttendance,
+  type SubmitOutcome,
+  type SubmitStep,
+} from '../../attendance/submitFlow';
 import { useNow } from '../../attendance/useNow';
 import { openAppSettings, openLocationSettings } from '../../native/location';
 import { useScreenActive } from '../../native/useScreenActive';
@@ -46,14 +57,18 @@ export function HomeScreen() {
   useEffect(() => {
     if (!today || resumed.current) return;
     resumed.current = true;
-    resumePendingOnLaunch(today, deps).catch((err: unknown) => console.warn('home: resume failed', err));
+    resumePendingOnLaunch(today, deps).catch((err: unknown) =>
+      console.warn('home: resume failed', err),
+    );
   }, [today, deps]);
 
   // Android drops alarms on reboot or force-stop; re-arm the check-out reminder whenever Home sees an open day.
   const openDay = today?.day?.status === 'CHECKED_IN' ? today : null;
   useEffect(() => {
     if (!openDay) return;
-    deps.reminder.schedule(openDay).catch((err: unknown) => console.warn('home: reminder re-arm failed', err));
+    deps.reminder
+      .schedule(openDay)
+      .catch((err: unknown) => console.warn('home: reminder re-arm failed', err));
   }, [openDay, deps]);
 
   const run = useCallback(
@@ -62,7 +77,9 @@ export function HomeScreen() {
       inFlight.current = true;
       setPhase({ kind: 'busy', step: 'starting' });
       try {
-        const outcome = await submitAttendance(action, today, deps, (step) => setPhase({ kind: 'busy', step }));
+        const outcome = await submitAttendance(action, today, deps, (step) =>
+          setPhase({ kind: 'busy', step }),
+        );
         setPhase({ kind: 'result', action, outcome });
       } catch (err) {
         console.warn('home: submit failed', err);
@@ -86,15 +103,20 @@ export function HomeScreen() {
 
   const { view, missedYesterday } = homeView(today);
   const firstName = user.name.split(' ')[0] ?? user.name;
-  const result = phase.kind === 'result' ? outcomeView(phase.outcome.code, phase.action, phase.outcome.result) : null;
+  const result =
+    phase.kind === 'result'
+      ? outcomeView(phase.outcome.code, phase.action, phase.outcome.result)
+      : null;
 
   function onResultAction() {
     if (phase.kind !== 'result' || !result) return;
     const action = phase.action;
     setPhase({ kind: 'idle' });
     if (result.action === 'retry') void run(action);
-    if (result.action === 'openAppSettings') openAppSettings().catch((e: unknown) => console.warn(e));
-    if (result.action === 'openLocationSettings') openLocationSettings().catch((e: unknown) => console.warn(e));
+    if (result.action === 'openAppSettings')
+      openAppSettings().catch((e: unknown) => console.warn(e));
+    if (result.action === 'openLocationSettings')
+      openLocationSettings().catch((e: unknown) => console.warn(e));
   }
 
   return (
@@ -108,64 +130,130 @@ export function HomeScreen() {
         </Text>
       </View>
 
-      <ScrollView testID="home-scroll" contentContainerStyle={{ flexGrow: 1, paddingBottom: 16 }}>
+      <ScrollView testID="home-scroll" contentContainerStyle={{ flexGrow: 1, paddingBottom: 12 }}>
         {missedYesterday ? (
           <View style={{ marginHorizontal: 16, marginTop: 12 }}>
-            <Banner tone="warn" icon="alert" title={t('home.missedTitle')} body={t('home.missedBody')} />
+            <Banner
+              tone="warn"
+              icon="alert"
+              title={t('home.missedTitle')}
+              body={t('home.missedBody')}
+            />
           </View>
         ) : null}
 
         <StatusCard view={view} now={now} />
 
         {(view.kind === 'checkIn' || view.kind === 'working') && today.site ? (
-          <View style={{ marginHorizontal: 16, marginTop: 12 }}>
-            <LocationPreview site={today.site} maxAccuracyM={today.maxAccuracyM} active={screenActive && phase.kind === 'idle'} />
+          <View testID="home-map-area" style={{ flex: 1, marginHorizontal: 16, marginTop: 12 }}>
+            <LocationPreview
+              site={today.site}
+              maxAccuracyM={today.maxAccuracyM}
+              active={screenActive && phase.kind === 'idle'}
+            />
           </View>
         ) : null}
 
-        <View style={{ flex: 1, justifyContent: 'center', paddingHorizontal: 16, paddingTop: 12, gap: 16 }}>
-          {view.kind === 'done' ? (
-            <Card style={{ borderRadius: 28, paddingVertical: 32, paddingHorizontal: 24, alignItems: 'center', gap: 16 }}>
-              <View style={{ width: 96, height: 96, borderRadius: 48, backgroundColor: colors.successBg, alignItems: 'center', justifyContent: 'center' }}>
-                <Icon name="check" size={48} color={colors.checkIn} strokeWidth={2.4} />
-              </View>
-              <Text variant="h1" style={{ fontSize: 32 }}>
-                {t('home.doneTitle')}
-              </Text>
-              <Text variant="monoLarge">
-                {`${formatTime(view.checkInAt, t, false)} – ${view.checkOutAt ? formatTime(view.checkOutAt, t, false) : '?'}`}
-              </Text>
-              {view.workedMinutes != null ? (
-                <Text color={colors.muted} style={{ fontSize: 18 }}>
-                  {t('home.worked', { duration: formatDuration(view.workedMinutes, t) })}
+        {view.kind === 'done' || view.kind === 'noSite' ? (
+          <View
+            style={{
+              flex: 1,
+              justifyContent: 'center',
+              paddingHorizontal: 16,
+              paddingTop: 12,
+              gap: 16,
+            }}
+          >
+            {view.kind === 'done' ? (
+              <Card
+                style={{
+                  borderRadius: 28,
+                  paddingVertical: 32,
+                  paddingHorizontal: 24,
+                  alignItems: 'center',
+                  gap: 16,
+                }}
+              >
+                <View
+                  style={{
+                    width: 96,
+                    height: 96,
+                    borderRadius: 48,
+                    backgroundColor: colors.successBg,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Icon name="check" size={48} color={colors.checkIn} strokeWidth={2.4} />
+                </View>
+                <Text variant="h1" style={{ fontSize: 32 }}>
+                  {t('home.doneTitle')}
                 </Text>
-              ) : null}
-            </Card>
-          ) : null}
-          {view.kind === 'noSite' ? (
-            <Card style={{ alignItems: 'center', gap: 12, paddingVertical: 32 }}>
-              <Icon name="person" size={40} color={colors.muted} />
-              <Text variant="h2">{t('home.noSiteTitle')}</Text>
-              <Text color={colors.muted}>{t('home.noSiteBody')}</Text>
-            </Card>
-          ) : null}
-        </View>
+                <Text variant="monoLarge">
+                  {`${formatTime(view.checkInAt, t, false)} – ${view.checkOutAt ? formatTime(view.checkOutAt, t, false) : '?'}`}
+                </Text>
+                {view.workedMinutes != null ? (
+                  <Text color={colors.muted} style={{ fontSize: 18 }}>
+                    {t('home.worked', { duration: formatDuration(view.workedMinutes, t) })}
+                  </Text>
+                ) : null}
+              </Card>
+            ) : null}
+            {view.kind === 'noSite' ? (
+              <Card style={{ alignItems: 'center', gap: 12, paddingVertical: 32 }}>
+                <Icon name="person" size={40} color={colors.muted} />
+                <Text variant="h2">{t('home.noSiteTitle')}</Text>
+                <Text color={colors.muted}>{t('home.noSiteBody')}</Text>
+              </Card>
+            ) : null}
+          </View>
+        ) : null}
       </ScrollView>
 
       {view.kind === 'checkIn' || view.kind === 'working' ? (
-        <View testID="home-action" style={{ paddingHorizontal: 16, paddingTop: 10, paddingBottom: 12, gap: 8, borderTopWidth: 1, borderTopColor: colors.line, backgroundColor: colors.bg }}>
+        <View
+          testID="home-action"
+          style={{
+            paddingHorizontal: 16,
+            paddingTop: 10,
+            paddingBottom: 10,
+            gap: 6,
+            borderTopWidth: 1,
+            borderTopColor: colors.line,
+            backgroundColor: colors.bg,
+          }}
+        >
           {view.kind === 'checkIn' ? (
             <>
-              <Button label={t('home.checkIn')} variant="checkIn" size="large" icon="checkIn" onPress={() => void run('checkIn')} />
-              <Text color={colors.muted} style={{ textAlign: 'center', fontSize: 14 }}>
+              <Button
+                label={t('home.checkIn')}
+                variant="checkIn"
+                size="large"
+                icon="checkIn"
+                onPress={() => void run('checkIn')}
+              />
+              <Text color={colors.muted} style={{ textAlign: 'center', fontSize: 13 }}>
                 {t('home.checkInHint')}
               </Text>
             </>
           ) : null}
           {view.kind === 'working' ? (
             <>
-              <Button label={t('home.checkOut')} variant="checkOut" size="large" icon="checkOut" onPress={() => void run('checkOut')} />
-              <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6 }}>
+              <Button
+                label={t('home.checkOut')}
+                variant="checkOut"
+                size="large"
+                icon="checkOut"
+                onPress={() => void run('checkOut')}
+              />
+              <View
+                style={{
+                  flexDirection: 'row',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  gap: 6,
+                }}
+              >
                 <Icon name="bell" size={16} color={colors.muted} />
                 <Text color={colors.muted} style={{ fontSize: 14 }}>
                   {t('home.reminderAt', { time: formatHhMm(today.reminderTime, t) })}
@@ -195,8 +283,28 @@ function StatusCard({ view, now }: { view: HomeView; now: Date }) {
   const { t } = useTranslation();
   if (view.kind === 'checkIn') {
     return (
-      <Card style={{ marginHorizontal: 16, marginTop: 12, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 1, borderColor: colors.line }}>
-        <View style={{ width: 40, height: 40, borderRadius: 10, backgroundColor: colors.lineSoft, alignItems: 'center', justifyContent: 'center' }}>
+      <Card
+        style={{
+          marginHorizontal: 16,
+          marginTop: 12,
+          paddingVertical: 12,
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 12,
+          borderWidth: 1,
+          borderColor: colors.line,
+        }}
+      >
+        <View
+          style={{
+            width: 40,
+            height: 40,
+            borderRadius: 10,
+            backgroundColor: colors.lineSoft,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
           <Icon name="pin" />
         </View>
         <View style={{ flex: 1, gap: 2 }}>
@@ -212,9 +320,21 @@ function StatusCard({ view, now }: { view: HomeView; now: Date }) {
   }
   if (view.kind === 'working') {
     return (
-      <View style={{ marginHorizontal: 16, marginTop: 12, paddingVertical: 14, paddingHorizontal: 16, borderRadius: 16, backgroundColor: colors.checkIn, gap: 2 }}>
+      <View
+        style={{
+          marginHorizontal: 16,
+          marginTop: 12,
+          paddingVertical: 14,
+          paddingHorizontal: 16,
+          borderRadius: 16,
+          backgroundColor: colors.checkIn,
+          gap: 2,
+        }}
+      >
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: colors.workingDot }} />
+          <View
+            style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: colors.workingDot }}
+          />
           <Text variant="label" color={colors.white} style={{ fontSize: 14 }}>
             {t('home.working')}
           </Text>
@@ -223,7 +343,10 @@ function StatusCard({ view, now }: { view: HomeView; now: Date }) {
           {t('home.since', { time: formatTime(view.since, t) })}
         </Text>
         <Text color={colors.workingSub} style={{ fontSize: 15 }}>
-          {t('home.soFar', { site: view.siteName, duration: formatDuration(minutesSince(view.since, now), t) })}
+          {t('home.soFar', {
+            site: view.siteName,
+            duration: formatDuration(minutesSince(view.since, now), t),
+          })}
         </Text>
       </View>
     );

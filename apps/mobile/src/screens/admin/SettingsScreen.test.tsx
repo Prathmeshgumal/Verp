@@ -1,7 +1,7 @@
 import React from 'react';
-import { Alert } from 'react-native';
-import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
+import { fireEvent, screen, waitFor } from '@testing-library/react-native';
 import type { SettingsDto } from '@ve/shared';
+import { answerConfirm } from '../../testing/confirm';
 import { fakeApi } from '../../testing/fakeApi';
 import { adminUser, loggedIn, renderWithAuth } from '../../testing/render';
 import { reminderTimes, SettingsScreen } from './SettingsScreen';
@@ -42,10 +42,10 @@ test('numbers out of range are not sent', async () => {
 });
 
 test('log out asks first', async () => {
-  const alert = jest.spyOn(Alert, 'alert');
   const auth = await renderSettings();
   await fireEvent.press(screen.getByRole('button', { name: 'Log out' }));
-  await act(async () => alert.mock.calls[0]?.[2]?.[1]?.onPress?.());
+  expect(auth.logout).not.toHaveBeenCalled();
+  await answerConfirm('Log out?', 'Log out');
   expect(auth.logout).toHaveBeenCalled();
 });
 

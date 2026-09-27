@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, Pressable, ScrollView, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { TFunction } from 'i18next';
@@ -15,7 +15,8 @@ import { Banner } from '../../ui/Banner';
 import { Button } from '../../ui/Button';
 import { Card } from '../../ui/Card';
 import { ErrorState, Loading } from '../../ui/Centered';
-import { Icon } from '../../ui/Icon';
+import { useConfirm } from '../../ui/ConfirmDialog';
+import { Icon, type IconName } from '../../ui/Icon';
 import { PickerField } from '../../ui/PickerField';
 import { Screen } from '../../ui/Screen';
 import { Text } from '../../ui/Text';
@@ -69,11 +70,9 @@ export function EmployeeDetailScreen({ navigation, route }: Props) {
     }
   }
 
-  function confirm(title: string, body: string, action: string, onYes: () => void) {
-    Alert.alert(title, body, [
-      { text: t('common.cancel'), style: 'cancel' },
-      { text: action, style: 'destructive', onPress: onYes },
-    ]);
+  const ask = useConfirm();
+  function confirm(title: string, body: string, action: string, onYes: () => void, icon: IconName = 'alert', tone: 'danger' | 'neutral' = 'danger') {
+    void ask({ title, body, confirmLabel: action, icon, tone }).then((yes) => yes && onYes());
   }
 
   if (newPin) return <PinReveal title={t('admin.employees.newPin')} pin={newPin} onDone={() => setNewPin(null)} />;
@@ -122,6 +121,8 @@ export function EmployeeDetailScreen({ navigation, route }: Props) {
               onPress={() =>
                 confirm(t('admin.employees.resetTitle'), t('admin.employees.resetBody'), t('admin.employees.resetPin'), () =>
                   void act(async () => setNewPin((await api.resetPin(id)).pin), t('admin.employees.newPin')),
+                  'key',
+                  'neutral',
                 )
               }
             />
@@ -136,6 +137,7 @@ export function EmployeeDetailScreen({ navigation, route }: Props) {
               onPress={() =>
                 confirm(t('admin.employees.logoutTitle'), t('admin.employees.logoutBody', { name: e.name }), t('admin.employees.logoutEverywhere'), () =>
                   void act(() => api.revokeSessions(id), t('admin.employees.loggedOut')),
+                  'logout',
                 )
               }
             />
@@ -158,6 +160,8 @@ export function EmployeeDetailScreen({ navigation, route }: Props) {
                     )
                   : confirm(t('admin.employees.activateTitle'), t('admin.employees.activateBody', { name: e.name }), t('admin.employees.activate'), () =>
                       void act(() => api.updateEmployee(id, { isActive: true }), t('admin.employees.activated')),
+                      'check',
+                      'neutral',
                     )
               }
             />

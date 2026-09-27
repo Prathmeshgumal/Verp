@@ -15,8 +15,13 @@ async function renderLogin(loginEmployee = jest.fn(async () => {}), reason: stri
   return { navigation, loginEmployee };
 }
 
+/** The PIN is a real text box (the phone's own number keyboard), typed into one digit at a time. */
 async function typePin(pin: string) {
-  for (const digit of pin) await fireEvent.press(screen.getByRole('button', { name: digit }));
+  let typed = '';
+  for (const digit of pin) {
+    typed += digit;
+    await fireEvent.changeText(screen.getByLabelText('PIN'), typed);
+  }
 }
 
 test('phone plus six digits logs in', async () => {
@@ -46,11 +51,21 @@ test('a wrong PIN shows a plain message and clears the PIN', async () => {
   expect(screen.getByLabelText('0 of 6 digits entered')).toBeOnTheScreen();
 });
 
-test('delete removes the last digit', async () => {
+test('the PIN uses the phone number keyboard, keeps digits only and shows how many are typed', async () => {
   await renderLogin();
-  await typePin('12');
-  await fireEvent.press(screen.getByRole('button', { name: 'Delete' }));
+  const pin = screen.getByLabelText('PIN');
+  expect(pin.props.keyboardType).toBe('number-pad');
+  expect(screen.queryByRole('button', { name: '5' })).toBeNull();
+  await fireEvent.changeText(pin, '1a2-');
+  expect(screen.getByLabelText('2 of 6 digits entered')).toBeOnTheScreen();
+  await fireEvent.changeText(pin, '1');
   expect(screen.getByLabelText('1 of 6 digits entered')).toBeOnTheScreen();
+});
+
+test('Next on the phone keyboard moves to the PIN', async () => {
+  await renderLogin();
+  const phone = screen.getByLabelText('Phone number');
+  expect(phone.props.returnKeyType).toBe('next');
 });
 
 test('shows why the worker was logged out', async () => {

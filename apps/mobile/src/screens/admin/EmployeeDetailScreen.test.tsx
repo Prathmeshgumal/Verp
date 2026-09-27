@@ -1,7 +1,7 @@
 import React from 'react';
-import { Alert } from 'react-native';
-import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
+import { fireEvent, screen, waitFor } from '@testing-library/react-native';
 import type { EmployeeDetailDto } from '@ve/shared';
+import { answerConfirm } from '../../testing/confirm';
 import { fakeApi } from '../../testing/fakeApi';
 import { addDays } from '../../attendance/format';
 import { localToday } from '../../attendance/localDate';
@@ -62,11 +62,10 @@ test('a day in the last 30 opens its detail', async () => {
 });
 
 test('reset PIN asks first, then shows the new PIN once', async () => {
-  const alert = jest.spyOn(Alert, 'alert');
   const { api } = await renderDetail();
   await fireEvent.press(screen.getByRole('button', { name: 'Reset PIN' }));
   expect(api.resetPin).not.toHaveBeenCalled();
-  await act(async () => alert.mock.calls[0]?.[2]?.[1]?.onPress?.());
+  await answerConfirm('Reset PIN?', 'Reset PIN');
   expect(await screen.findByText('555123')).toBeOnTheScreen();
   await fireEvent.press(screen.getByRole('button', { name: 'Done' }));
   expect(screen.queryByText('555123')).toBeNull();
@@ -84,16 +83,16 @@ test('details can be edited and saved', async () => {
 });
 
 test('deactivate and log out everywhere ask first', async () => {
-  const alert = jest.spyOn(Alert, 'alert');
   const updateEmployee = jest.fn(async () => detail);
   const revokeSessions = jest.fn(async () => undefined);
   await renderDetail({ updateEmployee, revokeSessions });
   await fireEvent.press(screen.getByRole('button', { name: 'Deactivate' }));
   expect(updateEmployee).not.toHaveBeenCalled();
-  await act(async () => alert.mock.calls[0]?.[2]?.[1]?.onPress?.());
-  expect(updateEmployee).toHaveBeenCalledWith('e1', { isActive: false });
+  await answerConfirm('Deactivate employee?', 'Deactivate');
+  await waitFor(() => expect(updateEmployee).toHaveBeenCalledWith('e1', { isActive: false }));
   await fireEvent.press(screen.getByRole('button', { name: 'Log out everywhere' }));
-  await act(async () => alert.mock.calls[1]?.[2]?.[1]?.onPress?.());
+  await answerConfirm('Log out everywhere?', 'Log out everywhere');
+  await waitFor(() => expect(revokeSessions).toHaveBeenCalledWith('e1'));
   expect(revokeSessions).toHaveBeenCalledWith('e1');
 });
 
